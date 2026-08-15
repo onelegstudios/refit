@@ -1,0 +1,396 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+/*
+|--------------------------------------------------------------------------
+| Sheaf component recorder
+|--------------------------------------------------------------------------
+|
+| Refreshes resources/sheaf/components.json: the components Sheaf ships and the
+| tags each one answers to. ComponentMap is checked against it, so a component
+| renamed upstream fails CI here rather than a user's view at runtime.
+|
+| Sheaf is a copy-paste library — its CLI writes source into the application and
+| nothing of it lives in vendor/ — so there is no installed package to read the
+| way bin/scan-flux-internals.php reads Flux. The public registry is the source
+| instead, and it is genuinely public: sheafui/components is MIT, so this needs
+| no licence, no credentials, and no sidecar install.
+|
+| Each component directory carries a config.yml listing where its files land:
+|
+|   files:
+|     index: resources/views/components/ui/navlist/index.blade.php
+|     item:  resources/views/components/ui/navlist/item.blade.php
+|
+| which is the authority on the tag names, because the install path *is* the
+| Blade component name. `index` is the component's own tag, a single file named
+| after its directory likewise; anything else is a dotted part.
+|
+| Only names are recorded. None of Sheaf's source is copied here.
+|
+| Usage:
+|   php bin/scan-sheaf-components.php [options]
+|
+| Options:
+|   --repo=owner/name  Registry to read. Defaults to sheafui/components.
+|   --ref=branch       Branch or tag. Defaults to the repository's default.
+|   --path=dir         Read a local checkout instead of GitHub.
+|   --check            Report drift against the manifest, write nothing.
+|                      Exits non-zero when the registry disagrees.
+|   --dest=path        Write to a different manifest file.
+|   --help             Show this help.
+|
+*/
+
+use Onelegstudios\Refit\Libraries\Sheaf\ComponentMap;
+use Onelegstudios\Refit\Libraries\Sheaf\Components;
+
+require __DIR__.'/../vendor/autoload.php';
+
+const DEFAULT_REPO = 'sheafui/components';
+
+const INSTALL_ROOT = 'resources/views/components/ui/';
+
+exit(main($argv));
+
+function main(array $argv): int
+{
+    $options = parseOptions(array_slice($argv, 1));
+
+    if (isset($options['help'])) {
+        info('Usage: php bin/scan-sheaf-components.php [--repo=owner/name] [--ref=branch] [--path=dir] [--check] [--dest=path]');
+
+        return 0;
+    }
+
+    $destination = $options['dest'] ?? Components::manifestPath();
+    $check = isset($options['check']);
+    $repo = $options['repo'] ?? DEFAULT_REPO;
+
+    try {
+        [$components, $source] = isset($options['path'])
+            ? readLocal(rtrim($options['path'], '/'))
+            : readRegistry($repo, $options['ref'] ?? null);
+    } catch (RuntimeException $exception) {
+        error($exception->getMessage());
+
+        return 1;
+    }
+
+    if ($components === []) {
+        error('No components found — the registry layout may have changed.');
+
+        return 1;
+    }
+
+    ksort($components);
+
+    info(sprintf('%s %d component(s) from %s', $check ? 'Checked' : 'Recorded', count($components), $source));
+
+    $recorded = Components::components();
+    $added = array_values(array_diff(array_keys($components), array_keys($recorded)));
+    $removed = array_values(array_diff(array_keys($recorded), array_keys($components)));
+    $changed = [];
+
+    foreach ($components as $name => $parts) {
+        $was = $recorded[$name] ?? null;
+
+        if ($was !== null && $was !== $parts) {
+            $changed[] = $name;
+        }
+    }
+
+    foreach ([['new', $added], ['gone', $removed], ['changed', $changed]] as [$label, $names]) {
+        if ($names !== []) {
+            info(sprintf('  %-8s %s', $label, implode(', ', $names)));
+        }
+    }
+
+    $broken = reportBrokenMappings($components);
+    $drifted = $added !== [] || $removed !== [] || $changed !== [];
+
+    if ($check) {
+        if ($broken !== []) {
+            error('ComponentMap points at components Sheaf no longer ships.');
+            error('Fix the mapping, then run `composer sheaf:components` to re-record.');
+
+            return 1;
+        }
+
+        if (! $drifted) {
+            info('Manifest matches the registry.');
+
+            return 0;
+        }
+
+        error('Sheaf ships a different set of components than the manifest records.');
+        error('Run `composer sheaf:components` to refresh it, then review ComponentMap.');
+
+        return 1;
+    }
+
+    if (! $drifted) {
+        info('Done — the manifest already matched the registry.');
+
+        return 0;
+    }
+
+    if (! writeManifest($destination, [
+        'generated_at' => gmdate('c'),
+        'source' => $source,
+        'components' => $components,
+    ])) {
+        return 1;
+    }
+
+    info('Done — review the diff before committing.');
+
+    return 0;
+}
+
+/**
+ * Read every component's config.yml straight out of the GitHub tree.
+ *
+ * One tree call plus one call per config, rather than cloning: the files are a
+ * few hundred bytes each and this runs on a schedule, not in a hot path.
+ *
+ * @return array{array<string, list<string>>, string}
+ */
+function readRegistry(string $repo, ?string $ref): array
+{
+    $ref ??= (string) (json(request("https://api.github.com/repos/{$repo}"))['default_branch'] ?? 'main');
+    $tree = json(request("https://api.github.com/repos/{$repo}/git/trees/{$ref}?recursive=1"));
+
+    $configs = [];
+
+    foreach ($tree['tree'] ?? [] as $entry) {
+        $path = $entry['path'] ?? '';
+
+        if (($entry['type'] ?? '') === 'blob' && preg_match('#^components/([^/]+)/config\.yml$#', $path, $matches) === 1) {
+            $configs[$matches[1]] = $path;
+        }
+    }
+
+    $components = [];
+
+    foreach ($configs as $name => $path) {
+        $body = request("https://raw.githubusercontent.com/{$repo}/{$ref}/{$path}");
+        $parts = partsFrom($name, $body);
+
+        if ($parts !== []) {
+            $components[$name] = $parts;
+        }
+    }
+
+    return [$components, "{$repo}@{$ref}"];
+}
+
+/**
+ * @return array{array<string, list<string>>, string}
+ */
+function readLocal(string $path): array
+{
+    $directory = $path.'/components';
+
+    if (! is_dir($directory)) {
+        throw new RuntimeException("No components directory under [{$path}].");
+    }
+
+    $components = [];
+
+    foreach ((array) glob($directory.'/*/config.yml') as $config) {
+        $name = basename(dirname((string) $config));
+        $parts = partsFrom($name, (string) file_get_contents((string) $config));
+
+        if ($parts !== []) {
+            $components[$name] = $parts;
+        }
+    }
+
+    return [$components, $path];
+}
+
+/**
+ * The tag suffixes one component provides, read from its config's install paths.
+ *
+ * The path is the authority, not the key beside it: Blade resolves a component
+ * by where its file sits, and `text: resources/views/components/ui/text.blade.php`
+ * is `<x-ui.text>` while `index: .../button/index.blade.php` is `<x-ui.button>`.
+ *
+ * Deliberately not a YAML parser. The configs are two flat keys deep and adding
+ * symfony/yaml to a package whose whole point is having few dependencies, for one
+ * scheduled script, is not a trade worth making.
+ *
+ * @return list<string>
+ */
+function partsFrom(string $component, string $yaml): array
+{
+    $prefix = INSTALL_ROOT.$component;
+    $parts = [];
+
+    foreach (preg_split('/\R/', $yaml) ?: [] as $line) {
+        if (preg_match('/^\s+\S+:\s*(\S+\.blade\.php)\s*$/', $line, $matches) !== 1) {
+            continue;
+        }
+
+        $path = $matches[1];
+
+        // The component's own tag, as a single file named after it.
+        if ($path === $prefix.'.blade.php') {
+            $parts[''] = true;
+
+            continue;
+        }
+
+        if (! str_starts_with($path, $prefix.'/')) {
+            continue;
+        }
+
+        $suffix = substr($path, strlen($prefix) + 1, -strlen('.blade.php'));
+
+        // Sheaf's own internals: `abstract` is a shared partial, `runtime` is
+        // wiring, and `variant/*` is chosen by a prop rather than written as a
+        // tag. None of them is something a view says out loud.
+        if (in_array($suffix, ['abstract', 'runtime'], true) || str_contains($suffix, '/')) {
+            continue;
+        }
+
+        $parts[$suffix === 'index' ? '' : $suffix] = true;
+    }
+
+    $names = array_keys($parts);
+
+    sort($names);
+
+    return $names;
+}
+
+/**
+ * Mappings pointing at a component the registry no longer has.
+ *
+ * @param  array<string, list<string>>  $components
+ * @return list<string>
+ */
+function reportBrokenMappings(array $components): array
+{
+    $available = [];
+
+    foreach ($components as $name => $parts) {
+        foreach ($parts as $part) {
+            $available[$part === '' ? $name : $name.'.'.$part] = true;
+        }
+    }
+
+    $broken = [];
+
+    foreach (ComponentMap::TAGS as $flux => $sheaf) {
+        // Not every target is a Sheaf component: `flux:menu` becomes Blade's own
+        // `<x-slot:menu>`, which no registry can vouch for and none needs to.
+        if (! str_starts_with($sheaf, ComponentMap::PREFIX)) {
+            continue;
+        }
+
+        $tag = substr($sheaf, strlen(ComponentMap::PREFIX));
+
+        if (! isset($available[$tag])) {
+            $broken[] = sprintf('%s -> %s', $flux, $sheaf);
+        }
+    }
+
+    foreach ($broken as $line) {
+        error('  no such component: '.$line);
+    }
+
+    return $broken;
+}
+
+function request(string $url): string
+{
+    $headers = ['User-Agent: onelegstudios-laravel-refit', 'Accept: application/vnd.github+json'];
+    $token = getenv('GITHUB_TOKEN') ?: getenv('GH_TOKEN');
+
+    if (is_string($token) && $token !== '') {
+        $headers[] = 'Authorization: Bearer '.$token;
+    }
+
+    $body = @file_get_contents($url, false, stream_context_create([
+        'http' => ['header' => implode("\r\n", $headers), 'timeout' => 30, 'ignore_errors' => true],
+    ]));
+
+    if ($body === false) {
+        throw new RuntimeException("Unable to reach [{$url}].");
+    }
+
+    return $body;
+}
+
+/**
+ * @return array<mixed>
+ */
+function json(string $body): array
+{
+    $decoded = json_decode($body, true);
+
+    if (! is_array($decoded)) {
+        throw new RuntimeException('GitHub returned something that is not JSON. Rate limited? Set GITHUB_TOKEN.');
+    }
+
+    if (isset($decoded['message']) && ! isset($decoded['tree']) && ! isset($decoded['default_branch'])) {
+        throw new RuntimeException('GitHub said: '.(string) $decoded['message']);
+    }
+
+    return $decoded;
+}
+
+/**
+ * @return array<string, string>
+ */
+function parseOptions(array $arguments): array
+{
+    $options = [];
+
+    foreach ($arguments as $argument) {
+        if (! str_starts_with((string) $argument, '--')) {
+            continue;
+        }
+
+        [$key, $value] = array_pad(explode('=', substr((string) $argument, 2), 2), 2, '');
+
+        $options[$key] = $value;
+    }
+
+    return $options;
+}
+
+function writeManifest(string $path, array $manifest): bool
+{
+    $directory = dirname($path);
+
+    if (! is_dir($directory) && ! mkdir($directory, 0755, true)) {
+        error("Unable to create [{$directory}].");
+
+        return false;
+    }
+
+    $json = json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+
+    if ($json === false || file_put_contents($path, $json.PHP_EOL) === false) {
+        error("Unable to write [{$path}].");
+
+        return false;
+    }
+
+    return true;
+}
+
+function info(string $message): void
+{
+    fwrite(STDOUT, $message.PHP_EOL);
+}
+
+function error(string $message): void
+{
+    fwrite(STDERR, $message.PHP_EOL);
+}

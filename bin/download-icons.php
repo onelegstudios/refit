@@ -41,6 +41,7 @@ declare(strict_types=1);
 */
 
 use Onelegstudios\Refit\Icons\IconMap;
+use Onelegstudios\Refit\Libraries\Flux\OwnedIcons;
 
 require __DIR__.'/../vendor/autoload.php';
 
@@ -265,7 +266,7 @@ function requiredIcons(): array
     $names = array_unique(array_merge(
         array_values(IconMap::HEROICONS_TO_LUCIDE),
         array_keys(IconMap::LUCIDE_TO_HEROICONS),
-        array_values(IconMap::FLUX_OWNED),
+        array_values(OwnedIcons::ARTWORK),
     ));
 
     sort($names);
@@ -554,7 +555,7 @@ function listIcons(): void
 {
     $aliases = [];
 
-    foreach ([...IconMap::HEROICONS_TO_LUCIDE, ...IconMap::FLUX_OWNED] as $heroicon => $lucide) {
+    foreach ([...IconMap::HEROICONS_TO_LUCIDE, ...OwnedIcons::ARTWORK] as $heroicon => $lucide) {
         $aliases[$lucide][] = $heroicon;
     }
 

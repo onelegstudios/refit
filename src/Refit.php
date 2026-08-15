@@ -4,16 +4,18 @@ declare(strict_types=1);
 
 namespace Onelegstudios\Refit;
 
+use Onelegstudios\Refit\Contracts\Library;
 use Onelegstudios\Refit\Contracts\Task;
 use Onelegstudios\Refit\Project\Project;
 use Onelegstudios\Refit\Tasks\TaskGroup;
 
 /**
- * The task registry.
+ * The task and library registry.
  *
- * Packages register their own tasks from a service provider:
+ * Packages register their own from a service provider:
  *
  *     Refit::task(new MyCustomTask);
+ *     Refit::library(new MyDesignSystem);
  */
 class Refit
 {
@@ -21,6 +23,11 @@ class Refit
      * @var list<Task>
      */
     private array $tasks = [];
+
+    /**
+     * @var list<Library>
+     */
+    private array $libraries = [];
 
     public function task(Task ...$tasks): static
     {
@@ -96,5 +103,53 @@ class Refit
     public function groups(): array
     {
         return TaskGroup::cases();
+    }
+
+    public function library(Library ...$libraries): static
+    {
+        foreach ($libraries as $library) {
+            $this->libraries[] = $library;
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return list<Library>
+     */
+    public function libraries(): array
+    {
+        return $this->libraries;
+    }
+
+    public function resolveLibrary(string $key): ?Library
+    {
+        foreach ($this->libraries as $library) {
+            if ($library->key() === $key) {
+                return $library;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Registered libraries as prompt options, keyed by library key.
+     *
+     * Every library is offered, including ones the project is not set up for.
+     * A target the project cannot take yet fails its own preflight with the
+     * commands to fix it, which is more use than the option quietly missing.
+     *
+     * @return array<string, string>
+     */
+    public function libraryOptions(): array
+    {
+        $options = [];
+
+        foreach ($this->libraries as $library) {
+            $options[$library->key()] = sprintf('%s — %s', $library->label(), $library->hint());
+        }
+
+        return $options;
     }
 }

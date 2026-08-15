@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Onelegstudios\Refit\Tasks;
 
 use Onelegstudios\Refit\Contracts\Task;
+use Onelegstudios\Refit\Libraries\FluxLibrary;
 use Onelegstudios\Refit\Plan\Actions\RemoveLinesContaining;
 use Onelegstudios\Refit\Plan\Plan;
 use Onelegstudios\Refit\Plan\Report;
@@ -47,7 +48,11 @@ final class RemoveFluxProSource implements Task
 
     public function appliesTo(Project $project): bool
     {
-        return ! $project->fluxPro
+        // Only worth offering to a project staying on Flux. One that is leaving
+        // takes both @source lines out with RemoveFlux, and offering to remove
+        // half of something you are about to remove entirely is just confusing.
+        return $project->targets(FluxLibrary::KEY)
+            && $project->library(FluxLibrary::KEY)?->pro !== true
             && $project->exists(self::STYLESHEET)
             && str_contains($project->get(self::STYLESHEET), self::NEEDLE);
     }

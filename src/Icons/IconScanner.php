@@ -6,6 +6,7 @@ namespace Onelegstudios\Refit\Icons;
 
 use FilesystemIterator;
 use Onelegstudios\Refit\Blade\TagParser;
+use Onelegstudios\Refit\Libraries\Vocabulary;
 use Onelegstudios\Refit\Project\Project;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -16,10 +17,16 @@ use RecursiveIteratorIterator;
  * Two forms carry a name: the attribute form (`icon="home"`) and the tag form
  * (`<flux:icon.key />`). Both are collected with the files they appear in, so the
  * report can point at a specific view when a name has no translation.
+ *
+ * Which tags and attributes those are comes from the library's
+ * {@see Vocabulary}, so the same scanner reads a Flux tree or a Sheaf one.
  */
 final class IconScanner
 {
-    public function __construct(private readonly TagParser $parser = new TagParser) {}
+    public function __construct(
+        private readonly Vocabulary $vocabulary,
+        private readonly TagParser $parser = new TagParser,
+    ) {}
 
     /**
      * @return array<string, list<string>> Icon name mapped to the paths using it.
@@ -48,15 +55,17 @@ final class IconScanner
     {
         $names = [];
 
-        foreach ($this->parser->parse($source, 'flux:') as $tag) {
-            $suffix = $tag->nameAfter('flux:icon.');
+        foreach ($this->parser->parse($source, $this->vocabulary->prefix) as $tag) {
+            $suffix = $this->vocabulary->dottedIconTag === null
+                ? null
+                : $tag->nameAfter($this->vocabulary->dottedIconTag);
 
             if ($suffix !== null && $suffix !== '') {
                 $names[] = $suffix;
             }
 
             foreach ($tag->attributes as $attribute) {
-                if (! IconMap::namesAnIcon($tag->name, $attribute->name)) {
+                if (! $this->vocabulary->namesAnIcon($tag->name, $attribute->name)) {
                     continue;
                 }
 
@@ -106,7 +115,7 @@ final class IconScanner
             return [];
         }
 
-        $keys = implode('|', array_map(preg_quote(...), IconMap::NAME_ATTRIBUTES));
+        $keys = implode('|', array_map(preg_quote(...), $this->vocabulary->nameAttributes));
         $names = [];
 
         foreach ($blocks[1] as $block) {
@@ -129,53 +138,14 @@ final class IconScanner
     }
 
     /**
-     * Where each Flux edition keeps the Blade stubs refit reads, relative to the
-     * project root.
+     * Every icon name one directory of a library's own Blade stubs renders.
      *
-     * `flux-pro` is a licensed package, so it is absent from most installs —
-     * including every contributor checkout without a licence. Its absence is
+     * Flux renders icons from inside its own components, so the override set has
+     * to cover names that never appear in application code. Reading the installed
+     * package beats guessing: it stays correct as Flux changes, and
+     * `bin/scan-flux-internals.php` records it through the same parser the command
+     * uses. A missing directory yields nothing — an uninstalled edition is
      * ordinary, not an error.
-     *
-     * @var list<string>
-     */
-    public const array STUB_DIRECTORIES = [
-        'vendor/livewire/flux/stubs',
-        'vendor/livewire/flux-pro/stubs',
-    ];
-
-    /**
-     * Icon names the installed Flux package renders from inside its own
-     * components, discovered by reading its Blade stubs.
-     *
-     * Scanning beats guessing: it stays correct as Flux changes. When the package
-     * is not installed — running against a fixture, for instance — the caller
-     * falls back to the recorded list {@see FluxInternals} reads.
-     *
-     * @return list<string>
-     */
-    public function scanFluxPackage(Project $project): array
-    {
-        $names = [];
-
-        foreach (self::STUB_DIRECTORIES as $relative) {
-            foreach ($this->scanStubDirectory($project->path($relative)) as $name) {
-                $names[] = $name;
-            }
-        }
-
-        $names = array_values(array_unique($names));
-
-        sort($names);
-
-        return $names;
-    }
-
-    /**
-     * Every icon name one directory of Flux stubs renders.
-     *
-     * Split out from {@see scanFluxPackage()} so `bin/scan-flux-internals.php`
-     * can read a licensed install through the same parser the command uses. A
-     * missing directory yields nothing.
      *
      * @return list<string>
      */

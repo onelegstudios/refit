@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace Onelegstudios\Refit\Project;
 
+use Onelegstudios\Refit\Contracts\Library;
+use Onelegstudios\Refit\Libraries\FluxLibrary;
+use Onelegstudios\Refit\Libraries\SheafLibrary;
+use Onelegstudios\Refit\Support\Composer;
+
 /**
  * Builds a {@see Project} by probing the filesystem.
  *
@@ -13,6 +18,23 @@ namespace Onelegstudios\Refit\Project;
  */
 final class ProjectDetector
 {
+    /**
+     * @var list<Library>
+     */
+    private readonly array $libraries;
+
+    /**
+     * @param  list<Library>|null  $libraries  The libraries to probe for. Defaults
+     *                                         to the ones refit ships, so a bare
+     *                                         `new ProjectDetector` still works;
+     *                                         the service provider passes the
+     *                                         configured set instead.
+     */
+    public function __construct(?array $libraries = null)
+    {
+        $this->libraries = $libraries ?? [new FluxLibrary, new SheafLibrary];
+    }
+
     public function detect(string $root): Project
     {
         $root = rtrim($root, DIRECTORY_SEPARATOR);
@@ -21,9 +43,27 @@ final class ProjectDetector
             root: $root,
             componentStyle: $this->componentStyle($root),
             features: $this->features($root),
-            fluxPro: $this->hasFluxPro($root),
+            libraries: $this->installedLibraries($root),
             chiselPending: file_exists($root.'/chisel.php'),
         );
+    }
+
+    /**
+     * @return list<LibraryInstall>
+     */
+    private function installedLibraries(string $root): array
+    {
+        $installed = [];
+
+        foreach ($this->libraries as $library) {
+            $install = $library->detect($root);
+
+            if ($install instanceof LibraryInstall) {
+                $installed[] = $install;
+            }
+        }
+
+        return $installed;
     }
 
     /**
@@ -47,7 +87,7 @@ final class ProjectDetector
             $features[] = Feature::Teams;
         }
 
-        if ($this->requires($root, 'laravel/workos')) {
+        if ((new Composer($root))->requires('laravel/workos')) {
             $features[] = Feature::WorkOs;
         }
 
@@ -85,46 +125,6 @@ final class ProjectDetector
             $matches = glob(sprintf('%s/%s/%s/*%s.blade.php', $root, $base, $directory, $file));
 
             if ($matches !== false && $matches !== []) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Flux Pro is never in composer.json — it is a private repository the user
-     * adds themselves — so the lock file is the honest signal.
-     */
-    private function hasFluxPro(string $root): bool
-    {
-        if ($this->requires($root, 'livewire/flux-pro')) {
-            return true;
-        }
-
-        $lock = @file_get_contents($root.'/composer.lock');
-
-        return $lock !== false && str_contains($lock, '"livewire/flux-pro"');
-    }
-
-    private function requires(string $root, string $package): bool
-    {
-        $contents = @file_get_contents($root.'/composer.json');
-
-        if ($contents === false) {
-            return false;
-        }
-
-        $manifest = json_decode($contents, true);
-
-        if (! is_array($manifest)) {
-            return false;
-        }
-
-        foreach (['require', 'require-dev'] as $section) {
-            $packages = $manifest[$section] ?? null;
-
-            if (is_array($packages) && array_key_exists($package, $packages)) {
                 return true;
             }
         }

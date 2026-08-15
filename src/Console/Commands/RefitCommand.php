@@ -7,11 +7,13 @@ namespace Onelegstudios\Refit\Console\Commands;
 use Illuminate\Console\Command;
 use JsonException;
 use Onelegstudios\Refit\Contracts\Action;
+use Onelegstudios\Refit\Contracts\Library;
 use Onelegstudios\Refit\Contracts\Task;
-use Onelegstudios\Refit\Icons\IconPlanner;
 use Onelegstudios\Refit\Icons\IconStrategy;
+use Onelegstudios\Refit\Libraries\FluxLibrary;
 use Onelegstudios\Refit\Plan\Actions\RunProcess;
 use Onelegstudios\Refit\Plan\Applier;
+use Onelegstudios\Refit\Plan\DependencyFailed;
 use Onelegstudios\Refit\Plan\Plan;
 use Onelegstudios\Refit\Plan\Report;
 use Onelegstudios\Refit\Plan\Stage;
@@ -63,11 +65,23 @@ class RefitCommand extends Command
 
         $this->summarise($project);
 
-        $strategy = $this->askIcons($answers);
+        $target = $this->askLibrary($refit, $answers);
+
+        if (! $target instanceof Library) {
+            return self::FAILURE;
+        }
+
+        $project = $project->targeting($target);
+
+        if (! $this->libraryPreflight($target, $project)) {
+            return self::FAILURE;
+        }
+
+        $strategy = $this->askIcons($target, $answers);
         $tasks = $this->askTasks($refit, $project, $answers);
 
         $report = new Report;
-        $plan = $this->build($project, $strategy, $tasks, $report);
+        $plan = $this->build($project, $target, $strategy, $tasks, $report);
 
         if ($plan->isEmpty()) {
             $this->components->info('Nothing to do — the choices you made leave the project as it is.');
@@ -91,9 +105,19 @@ class RefitCommand extends Command
 
         $this->newLine();
 
-        $applier->apply($plan, $project, $report, function (Action $action): void {
-            $this->line('  <fg=gray>'.$action->describe().'</>');
-        });
+        try {
+            $applier->apply($plan, $project, $report, function (Action $action): void {
+                $this->line('  <fg=gray>'.$action->describe().'</>');
+            });
+        } catch (DependencyFailed $exception) {
+            // Dependencies are the first stage, so nothing has been rewritten and
+            // there is nothing to unpick — which is the only reason stopping dead
+            // is the kind thing to do here.
+            $this->newLine();
+            $this->components->error($exception->getMessage());
+
+            return self::FAILURE;
+        }
 
         $this->finish($project, $report);
 
@@ -146,32 +170,110 @@ class RefitCommand extends Command
         $this->newLine();
         $this->components->twoColumnDetail('<fg=cyan;options=bold>Starter kit</>', $project->describe());
         $this->components->twoColumnDetail('Views', (string) count($project->blades()).' Blade files');
-        $this->components->twoColumnDetail('Flux', $project->fluxPro ? 'Pro' : 'free tier');
+
+        foreach ($project->libraries as $library) {
+            $this->components->twoColumnDetail(ucfirst($library->key), $library->describe());
+        }
+
         $this->newLine();
+    }
+
+    /**
+     * Which library the user wants to end on.
+     *
+     * Asked before icons because it decides what the icon question even means:
+     * Flux resolves artwork through a view directory it owns, Sheaf through a
+     * component the application owns, and only one of them can offer Lucide.
+     *
+     * @param  array<string, mixed>|null  $answers
+     */
+    private function askLibrary(Refit $refit, ?array $answers): ?Library
+    {
+        $options = $refit->libraryOptions();
+
+        if ($options === []) {
+            $this->components->error('No UI libraries are registered — check the `libraries` key in config/refit.php.');
+
+            return null;
+        }
+
+        if ($answers !== null) {
+            // Flux is the default because it is what the kit ships: an --answers
+            // payload written before libraries existed still means "keep Flux".
+            $given = $answers['library'] ?? FluxLibrary::KEY;
+            $library = $refit->resolveLibrary(is_string($given) ? $given : '');
+
+            if (! $library instanceof Library) {
+                $this->components->error(sprintf(
+                    'Unknown library [%s]. Registered: %s.',
+                    is_string($given) ? $given : gettype($given),
+                    implode(', ', array_keys($options)),
+                ));
+
+                return null;
+            }
+
+            return $library;
+        }
+
+        if (count($options) === 1) {
+            return $refit->resolveLibrary((string) array_key_first($options));
+        }
+
+        $choice = select(
+            label: 'Which component library should this project end up on?',
+            options: $options,
+            default: FluxLibrary::KEY,
+            hint: 'Anything other than Flux rewrites every view, and Flux comes out.',
+        );
+
+        return $refit->resolveLibrary((string) $choice);
+    }
+
+    /**
+     * Refuse when the chosen target is not something this project can take yet.
+     */
+    private function libraryPreflight(Library $target, Project $project): bool
+    {
+        $problems = $target->preflight($project);
+
+        foreach ($problems as $problem) {
+            $this->components->error($problem);
+        }
+
+        return $problems === [];
     }
 
     /**
      * @param  array<string, mixed>|null  $answers
      */
-    private function askIcons(?array $answers): IconStrategy
+    private function askIcons(Library $target, ?array $answers): IconStrategy
     {
-        if ($answers !== null) {
-            $given = $answers['icons'] ?? IconStrategy::Keep->value;
+        $strategies = $target->iconStrategies();
+        $default = $strategies[0] ?? IconStrategy::Keep;
 
-            return IconStrategy::tryFrom(is_string($given) ? $given : '') ?? IconStrategy::Keep;
+        if ($answers !== null) {
+            $given = $answers['icons'] ?? $default->value;
+            $chosen = IconStrategy::tryFrom(is_string($given) ? $given : '');
+
+            return $chosen !== null && in_array($chosen, $strategies, true) ? $chosen : $default;
+        }
+
+        if (count($strategies) < 2) {
+            return $default;
         }
 
         $options = [];
 
-        foreach (IconStrategy::cases() as $case) {
-            $options[$case->value] = $case->label();
+        foreach ($strategies as $case) {
+            $options[$case->value] = sprintf('%s — %s', $case->label(), $case->hint());
         }
 
         $choice = select(
             label: 'The kit ships Heroicons with a few Lucide icons vendored in. What would you like?',
             options: $options,
-            default: IconStrategy::Keep->value,
-            hint: 'Lucide also overrides the icons Flux renders inside its own components.',
+            default: $default->value,
+            hint: 'Only the sets your chosen library can resolve are listed.',
         );
 
         return IconStrategy::from($choice);
@@ -207,11 +309,15 @@ class RefitCommand extends Command
     /**
      * @param  list<Task>  $tasks
      */
-    private function build(Project $project, IconStrategy $strategy, array $tasks, Report $report): Plan
+    private function build(Project $project, Library $target, IconStrategy $strategy, array $tasks, Report $report): Plan
     {
         $plan = new Plan;
 
-        (new IconPlanner)->contribute($plan, $project, $strategy, $report);
+        // Migration first: the icon sweeps rewrite tags, so they have to run
+        // against the ones the migration has already produced rather than the
+        // Flux ones it replaced.
+        $target->planMigration($plan, $project, $strategy, $report);
+        $target->planIcons($plan, $project, $strategy, $report);
 
         foreach ($tasks as $task) {
             $task->contribute($plan, $project, $report);

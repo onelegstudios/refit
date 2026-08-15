@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
+    <head>
+        @include('partials.head')
+    </head>
+    <body class="min-h-screen bg-white dark:bg-zinc-800">
+        <x-ui.layout>
+            <x-ui.sidebar sticky collapsible="mobile" class="border-e border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
+                <x-slot:brand>
+                    <x-app-logo :sidebar="true" href="{{ route('dashboard') }}" wire:navigate />
+                </x-slot:brand>
+__TEAM_SWITCHER__
+                <x-ui.navlist>
+                    <x-ui.navlist.group :heading="__('Platform')">
+                        <x-ui.navlist.item
+                            icon="home"
+                            :label="__('Dashboard')"
+                            :href="route('dashboard')"
+                            :current="request()->routeIs('dashboard')"
+                            wire:navigate
+                        />
+                    </x-ui.navlist.group>
+                </x-ui.navlist>
+
+                <x-ui.sidebar.push />
+
+                <x-ui.navlist>
+                    <x-ui.navlist.item
+                        icon="folder"
+                        :label="__('Repository')"
+                        href="https://github.com/laravel/livewire-starter-kit"
+                        target="_blank"
+                    />
+
+                    <x-ui.navlist.item
+                        icon="book-open"
+                        :label="__('Documentation')"
+                        href="https://laravel.com/docs/starter-kits#livewire"
+                        target="_blank"
+                    />
+                </x-ui.navlist>
+
+                <x-desktop-user-menu class="hidden lg:block" :name="auth()->user()->name" />
+            </x-ui.sidebar>
+
+            <x-ui.layout.main>
+                <x-ui.layout.header class="lg:hidden">
+                    <x-ui.sidebar.toggle class="lg:hidden" icon="bars-2" />
+
+                    <div class="flex-1"></div>
+
+                    <x-desktop-user-menu :name="auth()->user()->name" />
+                </x-ui.layout.header>
+
+                {{ $slot }}
+            </x-ui.layout.main>
+        </x-ui.layout>
+__CREATE_TEAM_MODAL__
+        @persist('toast')
+            <x-ui.toast />
+        @endpersist
+    </body>
+</html>

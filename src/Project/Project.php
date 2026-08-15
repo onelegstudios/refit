@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Onelegstudios\Refit\Project;
 
+use Onelegstudios\Refit\Contracts\Library;
 use Symfony\Component\Finder\Finder;
 
 /**
@@ -12,23 +13,67 @@ use Symfony\Component\Finder\Finder;
  * Everything refit knows about the application before it starts planning. Paths
  * are resolved against the project root so the whole package can be pointed at a
  * fixture directory during tests.
+ *
+ * `target` is the one field disk cannot answer — it is the library the user chose
+ * to end on, attached by {@see targeting()} once that question has been asked.
+ * Carrying it here rather than threading it through every signature keeps the
+ * `Task` contract to the two arguments it has always had.
  */
 final class Project
 {
     /**
      * @param  list<Feature>  $features
+     * @param  list<LibraryInstall>  $libraries
      */
     public function __construct(
         public readonly string $root,
         public readonly ComponentStyle $componentStyle,
         public readonly array $features,
-        public readonly bool $fluxPro,
+        public readonly array $libraries,
         public readonly bool $chiselPending,
+        public readonly ?Library $target = null,
     ) {}
 
     public function has(Feature $feature): bool
     {
         return in_array($feature, $this->features, strict: true);
+    }
+
+    /**
+     * The installed footprint of one library, or null when it is not installed.
+     */
+    public function library(string $key): ?LibraryInstall
+    {
+        foreach ($this->libraries as $library) {
+            if ($library->key === $key) {
+                return $library;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Is the user leaving this project on the named library?
+     */
+    public function targets(string $key): bool
+    {
+        return $this->target?->key() === $key;
+    }
+
+    /**
+     * The same project, with the chosen target attached.
+     */
+    public function targeting(Library $library): self
+    {
+        return new self(
+            root: $this->root,
+            componentStyle: $this->componentStyle,
+            features: $this->features,
+            libraries: $this->libraries,
+            chiselPending: $this->chiselPending,
+            target: $library,
+        );
     }
 
     /**

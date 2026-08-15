@@ -27,7 +27,7 @@ final class ApplyLedgerRenames extends BladeSweep
         return sprintf('rename %s', $this->description);
     }
 
-    protected function transform(string $source, Project $project, Report $report): string
+    protected function transform(string $source, string $path, Project $project, Report $report): string
     {
         foreach ($this->ledger->all() as $from => $to) {
             $source = $this->rewriter->rename($source, $from, $to);

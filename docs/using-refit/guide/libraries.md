@@ -1,0 +1,140 @@
+---
+title: Libraries
+description: Keeping Flux, or replacing it with Sheaf UI.
+order: 2
+---
+
+# Libraries
+
+The first thing refit asks is where you want to end up:
+
+```
+ Which component library should this project end up on?
+ ❯ Flux — keep the library the kit ships
+   Sheaf UI — replace Flux entirely
+```
+
+It is asked first because it decides what everything after it means. The icon
+question is different for each library, and two of the cleanup tasks only make
+sense for one of them.
+
+The starter kit ships Flux, so Flux is always the *source*. A library is somewhere
+a project can end up, and each one carries its own translation from Flux — which
+is why adding a third costs one class rather than a new pair for every library
+already registered.
+
+## Flux
+
+Keeping Flux changes no components at all. The run is exactly what refit did
+before libraries existed: the [icon question](/docs/using-refit/guide/icons), and
+whichever [tasks](/docs/using-refit/guide/tasks) you pick.
+
+This is the default, and `--answers` treats a missing `library` key as Flux, so a
+payload written before this feature existed still means what it always did.
+
+## Sheaf UI
+
+Choosing Sheaf rewrites every view onto [Sheaf's components](https://sheafui.dev)
+and takes Flux out. When it finishes there is no `<flux:*>` tag anywhere in
+`resources/views`, no `resources/views/flux` directory, and nothing left but the
+Composer package — which refit tells you to remove rather than removing for you.
+
+### You do not need to install it first
+
+Sheaf is a copy-paste library: its CLI writes component source into your
+application, and that code is then yours. Refit runs that CLI rather than
+reimplementing it — including the parts that put it there in the first place.
+
+| Stage | What happens |
+|---|---|
+| Dependencies | `composer require sheaf/cli`, then `php artisan sheaf:init`, then `php artisan sheaf:install <component>` — each one skipped if it has already been done |
+| Write | The chrome files, rewritten from refit's Sheaf stubs |
+| Reconcile | The overlays are reshaped, then every remaining tag and attribute is mapped |
+| Format | `pint --dirty`, as always |
+
+All of it shows up in the plan you confirm, so nothing is installed behind your
+back. If you would rather do it yourself, run those commands first and refit will
+find them done and leave them alone — the same way it leaves alone any component
+already sitting in `resources/views/components/ui`, so anything you have
+customised stays customised.
+
+`sheaf:init` is a one-time setup, and refit passes the flags your answers imply:
+`--with-dark-mode`, because every layout the kit ships puts `class="dark"` on the
+`<html>` element, and `--with-phosphor` when you asked for
+[Phosphor icons](/docs/using-refit/guide/icons).
+
+### If a dependency step fails
+
+The run stops, and nothing is rewritten.
+
+This stage exists to install what every later step rewrites your views *onto*, so
+carrying on after it failed would point an entire application at components that
+are not there. Being offline, or a Pro component wanting `php artisan sheaf:login`
+first, both land here. Fix it and run refit again — the plan is rebuilt from
+scratch each time, so the steps that did work are simply skipped.
+
+### The parts that move rather than rename
+
+Most of a Flux view is a rename away from a Sheaf one. Three things are not, and
+they are worth knowing about because they are where a diff will look surprising.
+
+**The chrome.** Flux's sidebar is a root element. Sheaf's sits inside an
+`<x-ui.layout>` next to an `<x-ui.layout.main>`, and the header the kit renders as
+a sibling belongs inside that main. No sequence of renames produces that nesting,
+so `layouts/app/sidebar.blade.php`, `layouts/app/header.blade.php` and
+`components/desktop-user-menu.blade.php` are written from stubs instead. The stubs
+are built entirely from components Sheaf ships. **Anything you had customised in
+those three files is in your git history rather than in the new ones** — which is
+the main reason refit insists on a clean tree.
+
+**Dropdown triggers.** Flux takes a dropdown's trigger as its first child; Sheaf
+takes it as `<x-slot:button>`. Refit wraps it.
+
+**Modal close buttons.** `<flux:modal.close>` is a wrapper meaning "clicking my
+child closes the modal". Sheaf's modal listens for a `close-modal` event, so the
+wrapper becomes an element that dispatches it.
+
+### What Sheaf has no answer for
+
+Refit never guesses. A tag with no Sheaf equivalent is left exactly as it was and
+named in [`REFIT-NOTES.md`](/docs/using-refit/reference/troubleshooting) along with
+the files it is still in.
+
+In practice that list is empty for a stock kit, because every one of them lives in
+a chrome file that gets rewritten from a stub. They surface if you have moved that
+markup somewhere unusual:
+
+| Tag | Why |
+|---|---|
+| `flux:profile`, `flux:sidebar.profile` | Sheaf ships no profile component — the sidebar footer is ordinary markup |
+| `flux:sidebar.header` | Sheaf's sidebar takes its header through `<x-slot:brand>` |
+| `flux:sidebar.collapse` | Sheaf uses `<x-ui.sidebar.toggle>` instead |
+| `flux:spacer` | Inside a sidebar this is `<x-ui.sidebar.push>`; elsewhere it has no counterpart |
+
+### Afterwards
+
+```bash
+composer remove livewire/flux
+npm run build
+```
+
+Then walk the app. Login, register, the two-factor setup modal, settings, and the
+sidebar both collapsed and on mobile — that is where the mapping is most likely to
+show a seam.
+
+## Running without prompts
+
+```bash
+php artisan refit --answers='{"library":"sheaf","icons":"heroicons","tasks":["remove-flux"]}'
+```
+
+An unknown library key fails the run and lists the registered ones rather than
+falling back to a default you did not ask for.
+
+## Adding your own
+
+A library is a class implementing `Onelegstudios\Refit\Contracts\Library`,
+registered the same way tasks are — in `config/refit.php`, or from a service
+provider with `Refit::library(new YourLibrary)`. See
+[Component mapping](/docs/development/internals/component-mapping) for what the
+contract asks of you.

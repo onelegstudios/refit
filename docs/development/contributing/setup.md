@@ -27,6 +27,7 @@ full suite passes without either installed.
 | `composer fixtures` | Download every `laravel new` Livewire variation to `tests/fixtures/starter-kits` |
 | `composer icons` / `composer icons:check` | Refresh the committed Lucide bundle, or report drift |
 | `composer flux:internals` / `…:check` | Re-record the icons Flux renders internally, or report drift |
+| `composer sheaf:components` / `…:check` | Re-record the components Sheaf ships, or report drift |
 | `composer refresh` | `icons` then `fixtures` |
 | `composer build` / `composer serve` | Build or serve the workbench application |
 

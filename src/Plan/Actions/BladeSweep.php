@@ -25,7 +25,23 @@ abstract class BladeSweep implements Action
 {
     private BladeGuard $guard;
 
-    abstract protected function transform(string $source, Project $project, Report $report): string;
+    /**
+     * @param  string  $path  Project-relative, so a sweep can name the file it is
+     *                        reporting on rather than only the tag.
+     */
+    abstract protected function transform(string $source, string $path, Project $project, Report $report): string;
+
+    /**
+     * Called once the whole tree has been walked.
+     *
+     * A sweep that collects as it goes — "these tags had no translation, in these
+     * files" — reports here, so one finding is one warning rather than one per
+     * file that happens to contain it.
+     */
+    protected function finish(Report $report): void
+    {
+        //
+    }
 
     public function apply(Project $project, Report $report): void
     {
@@ -38,7 +54,7 @@ abstract class BladeSweep implements Action
                 continue;
             }
 
-            $rewritten = $this->transform($source, $project, $report);
+            $rewritten = $this->transform($source, $path, $project, $report);
 
             if ($rewritten === $source) {
                 continue;
@@ -61,5 +77,7 @@ abstract class BladeSweep implements Action
 
             $report->changed($path);
         }
+
+        $this->finish($report);
     }
 }

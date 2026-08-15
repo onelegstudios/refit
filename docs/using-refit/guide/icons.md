@@ -1,7 +1,7 @@
 ---
 title: Icons
-description: Heroicons, Lucide, and the icons Flux draws from inside its own components.
-order: 2
+description: Heroicons, Lucide, Phosphor, and the icons a library draws from inside its own components.
+order: 3
 ---
 
 # Icons
@@ -11,7 +11,11 @@ A fresh Livewire kit already speaks two icon sets. Flux resolves
 [Lucide](https://lucide.dev) icons in as `resources/views/flux/icon/*.blade.php`
 overrides for names Heroicons does not have.
 
-Refit offers three answers.
+Which answers refit offers depends on the
+[library you chose](/docs/using-refit/guide/libraries), because how an icon gets
+resolved is a fact about the library rather than about the icon set.
+
+## Staying on Flux
 
 | Choice | What happens |
 |---|---|
@@ -22,6 +26,23 @@ Refit offers three answers.
 The two directions are not symmetric. Going to Heroicons is subtraction: four
 files deleted, their usages renamed. Going to Lucide is generation: an override
 file per icon, written from artwork refit bundles.
+
+## Moving to Sheaf
+
+Sheaf resolves icons through an `<x-ui.icon>` component that lives in your own
+codebase, so there is no override directory and nothing to generate.
+
+| Choice | What happens |
+|---|---|
+| **Heroicons only** | What Sheaf reads by default, and where a Flux kit almost entirely is already. The four vendored Lucide names are pointed back at Heroicons |
+| **Phosphor only** | The same, then every icon name is prefixed with `ps:`, which is how Sheaf picks its provider |
+
+Phosphor needs `php artisan sheaf:init --with-phosphor`. Refit says so rather than
+running it, because it changes what Sheaf installs.
+
+**Lucide is not offered under Sheaf.** It would need a third artwork mechanism —
+`blade-ui-kit/blade-icons` and the `bk:` name prefix — and a dependency you did
+not ask for. Nothing stops you doing it by hand afterwards.
 
 ## Where names are read from
 
@@ -43,6 +64,10 @@ An icon refit has no translation for is reported with the file it appears in,
 never silently dropped or guessed at.
 
 ## The icons Flux draws itself
+
+The rest of this page is about a Flux target. Sheaf's components are ordinary
+application Blade, so the scanner reads them like any other view and none of the
+machinery below applies.
 
 Going all-Lucide also covers the icons Flux renders from *inside* its own
 components — the chevron on a `flux:select`, the eye on a `viewable` input.

@@ -1,0 +1,50 @@
+@props([
+    'name' => null,
+])
+
+<x-ui.dropdown position="bottom-start" {{ $attributes }}>
+    <x-slot:button>
+        <x-ui.button variant="ghost" class="w-full justify-start" iconAfter="chevron-up-down" data-test="sidebar-menu-button">
+            <x-ui.avatar
+                :name="auth()->user()->name"
+                :initials="auth()->user()->initials()"
+            />
+
+            <span class="truncate">{{ $name ?? auth()->user()->name }}</span>
+        </x-ui.button>
+    </x-slot:button>
+
+    <x-slot:menu>
+        <div class="flex items-center gap-2 px-1 py-1.5 text-start text-sm">
+            <x-ui.avatar
+                :name="auth()->user()->name"
+                :initials="auth()->user()->initials()"
+            />
+            <div class="grid flex-1 text-start text-sm leading-tight">
+                <x-ui.heading class="truncate">{{ auth()->user()->name }}</x-ui.heading>
+                <x-ui.text class="truncate">{{ auth()->user()->email }}</x-ui.text>
+            </div>
+        </div>
+
+        <x-ui.dropdown.separator />
+
+        <x-ui.dropdown.item :href="route('profile.edit')" icon="cog-6-tooth" wire:navigate>
+            {{ __('Settings') }}
+        </x-ui.dropdown.item>
+
+        <x-ui.dropdown.separator />
+
+        <form method="POST" action="{{ route('logout') }}" class="w-full">
+            @csrf
+            <x-ui.dropdown.item
+                as="button"
+                type="submit"
+                icon="arrow-right-start-on-rectangle"
+                class="w-full cursor-pointer"
+                data-test="logout-button"
+            >
+                {{ __('Log out') }}
+            </x-ui.dropdown.item>
+        </form>
+    </x-slot:menu>
+</x-ui.dropdown>

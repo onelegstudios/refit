@@ -2,15 +2,39 @@
 
 declare(strict_types=1);
 
+use Onelegstudios\Refit\Libraries\FluxLibrary;
+use Onelegstudios\Refit\Libraries\SheafLibrary;
 use Onelegstudios\Refit\Tasks\KeepOneLayout;
 use Onelegstudios\Refit\Tasks\MoveAuthViewsOutOfPages;
 use Onelegstudios\Refit\Tasks\MoveComponentsOutOfPages;
 use Onelegstudios\Refit\Tasks\MoveToastsToTop;
 use Onelegstudios\Refit\Tasks\NamespaceComponents;
 use Onelegstudios\Refit\Tasks\PromotePartialsToComponents;
+use Onelegstudios\Refit\Tasks\RemoveFlux;
 use Onelegstudios\Refit\Tasks\RemoveFluxProSource;
 
 return [
+
+    /*
+    |--------------------------------------------------------------------------
+    | Libraries
+    |--------------------------------------------------------------------------
+    |
+    | The UI component libraries `php artisan refit` offers as a target. The
+    | starter kit ships Flux, so Flux is always the source — a library here is
+    | somewhere a project can end up, and listing Flux is what makes "keep what
+    | I have" an answer rather than a special case.
+    |
+    | Resolved from the container, like tasks, so a library may type-hint its
+    | own dependencies. Add your own here, or from a service provider with
+    | `Refit::library(new YourLibrary)`.
+    |
+    */
+
+    'libraries' => [
+        FluxLibrary::class,
+        SheafLibrary::class,
+    ],
 
     /*
     |--------------------------------------------------------------------------
@@ -35,6 +59,7 @@ return [
         MoveToastsToTop::class,
         KeepOneLayout::class,
         RemoveFluxProSource::class,
+        RemoveFlux::class,
     ],
 
     /*

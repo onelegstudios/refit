@@ -1,0 +1,273 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Onelegstudios\Refit\Libraries;
+
+use Onelegstudios\Refit\Contracts\Library;
+use Onelegstudios\Refit\Icons\IconMap;
+use Onelegstudios\Refit\Icons\IconStrategy;
+use Onelegstudios\Refit\Libraries\Sheaf\ComponentMap;
+use Onelegstudios\Refit\Libraries\Sheaf\LayoutStubs;
+use Onelegstudios\Refit\Plan\Actions\MapComponentTags;
+use Onelegstudios\Refit\Plan\Actions\PrefixIconNames;
+use Onelegstudios\Refit\Plan\Actions\RestructureOverlays;
+use Onelegstudios\Refit\Plan\Actions\RewriteIconNames;
+use Onelegstudios\Refit\Plan\Actions\RunProcess;
+use Onelegstudios\Refit\Plan\Plan;
+use Onelegstudios\Refit\Plan\Report;
+use Onelegstudios\Refit\Plan\Stage;
+use Onelegstudios\Refit\Project\LibraryInstall;
+use Onelegstudios\Refit\Project\Project;
+use Onelegstudios\Refit\Support\Composer;
+
+/**
+ * Sheaf UI — the first alternative target.
+ *
+ * Sheaf is distributed the way shadcn/ui is: a CLI copies component source into
+ * the application, under `resources/views/components/ui/`, and the code is then
+ * the user's. That is the opposite of Flux, which resolves everything out of a
+ * vendor package, and it decides most of what this class does differently:
+ *
+ * - refit installs components by running Sheaf's own CLI rather than writing any
+ *   component itself, so nothing here authors a substitute for something Sheaf
+ *   ships;
+ * - there is no override directory and no internal-icon manifest, because
+ *   Sheaf's components are ordinary application Blade that the icon scanner
+ *   already reads;
+ * - the chrome is a genuine rewrite rather than a rename, because Sheaf's sidebar
+ *   sits inside an `<x-ui.layout>` root that Flux has no counterpart for.
+ */
+final class SheafLibrary implements Library
+{
+    public const string KEY = 'sheaf';
+
+    public const string PACKAGE = 'sheaf/cli';
+
+    /** Where the CLI installs components, relative to the project root. */
+    public const string COMPONENT_DIRECTORY = 'resources/views/components/ui';
+
+    /** Written by `sheaf:init`, and the honest signal that it has been run. */
+    public const string THEME_STYLESHEET = 'resources/css/theme.css';
+
+    public function key(): string
+    {
+        return self::KEY;
+    }
+
+    public function label(): string
+    {
+        return 'Sheaf UI — replace Flux entirely';
+    }
+
+    public function hint(): string
+    {
+        return 'Installs Sheaf\'s components and rewrites every view onto them.';
+    }
+
+    public function vocabulary(): Vocabulary
+    {
+        return new Vocabulary(
+            prefix: 'x-ui.',
+            iconTag: 'x-ui.icon',
+            iconTagAttribute: 'name',
+            // Sheaf takes a trailing icon through `iconAfter`; the leading one is
+            // just `icon`. Both spellings are produced by the migration, so only
+            // these two ever appear in a Sheaf tree.
+            nameAttributes: ['icon', 'iconAfter'],
+            // Sheaf has no `<x-ui.icon.home />` form — every icon is named through
+            // an attribute, which is why the migration collapses Flux's dotted
+            // tags rather than renaming them.
+            dottedIconTag: null,
+            // Sheaf's icon component supports Heroicons' solid, mini and micro
+            // weights natively, so nothing has to drop `variant="solid"` the way
+            // the Lucide path does. Deliberately absent, not overlooked.
+            variantAttribute: null,
+            iconVariantAttribute: null,
+        );
+    }
+
+    public function detect(string $root): ?LibraryInstall
+    {
+        $composer = new Composer($root);
+        $installed = is_dir($root.'/'.self::COMPONENT_DIRECTORY);
+
+        if (! $composer->has(self::PACKAGE) && ! $installed) {
+            return null;
+        }
+
+        return new LibraryInstall(key: self::KEY);
+    }
+
+    /**
+     * Nothing to refuse over.
+     *
+     * Sheaf not being installed is not a reason to stop — it is the first thing
+     * the plan does about it. Both commands land in `Stage::Dependencies`, where
+     * the user sees them in the preview and agrees to them along with everything
+     * else, so refusing would only be making them run by hand what they had
+     * already said yes to.
+     */
+    public function preflight(Project $project): array
+    {
+        return [];
+    }
+
+    /**
+     * Sheaf's icon component reads Heroicons out of the box and can add Phosphor
+     * at init time. Lucide would need a third artwork mechanism — blade-icons and
+     * the `bk:` name prefix — so it is not offered here.
+     */
+    public function iconStrategies(): array
+    {
+        return [IconStrategy::Heroicons, IconStrategy::Phosphor];
+    }
+
+    public function planIcons(Plan $plan, Project $project, IconStrategy $strategy, Report $report): void
+    {
+        // The kit vendors a handful of Lucide icons as Flux overrides. Those
+        // overrides go with Flux, so their usages have to name something the icon
+        // set actually has. Four entries, and the table already exists.
+        $renames = [];
+
+        foreach (array_keys(IconMap::LUCIDE_TO_HEROICONS) as $lucide) {
+            $heroicon = IconMap::toHeroicons($lucide);
+
+            if ($heroicon !== null) {
+                $renames[$lucide] = $heroicon;
+            }
+        }
+
+        if ($renames !== []) {
+            $plan->add(Stage::Reconcile, new RewriteIconNames(
+                $renames,
+                'the kit\'s vendored Lucide names to Heroicons',
+                $this->vocabulary(),
+            ));
+        }
+
+        if ($strategy !== IconStrategy::Phosphor) {
+            $report->note('Icons stay on Heroicons, which is what Sheaf\'s icon component reads by default.');
+
+            return;
+        }
+
+        // When refit is the one running `sheaf:init`, it passes --with-phosphor
+        // itself. This note is for the project that was initialised before refit
+        // ever saw it, where the flag is no longer on offer.
+        if ($project->exists(self::THEME_STYLESHEET)) {
+            $report->note(
+                'Sheaf was already initialised, so refit could not pass --with-phosphor to `sheaf:init`. '
+                .'Install the Phosphor icons yourself with `composer require wireui/phosphoricons`, '
+                .'or the ps: names will not resolve.',
+            );
+        }
+
+        $plan->add(Stage::Reconcile, new PrefixIconNames('ps:', $this->vocabulary()));
+    }
+
+    public function planMigration(Plan $plan, Project $project, IconStrategy $strategy, Report $report): void
+    {
+        $this->planInstall($plan, $project, $strategy);
+
+        (new LayoutStubs)->contribute($plan, $project, $report);
+
+        // Ahead of the rename, because both of its rewrites read Flux's own
+        // arrangement — where a dropdown keeps its trigger, and what a modal
+        // close button wraps.
+        $plan->add(Stage::Reconcile, new RestructureOverlays);
+        $plan->add(Stage::Reconcile, new MapComponentTags);
+    }
+
+    /**
+     * Put Sheaf in the project, to whatever extent it is not there already.
+     *
+     * Three steps, in the only order they work in, and each skipped when it has
+     * already been done — so this is as happy running against a bare kit as
+     * against one where somebody has been using Sheaf for a month.
+     *
+     * All three are `required`, because everything after them rewrites views onto
+     * what they install. A failure here stops the run before a single file has
+     * changed, which is the whole reason the dependency stage runs first.
+     */
+    private function planInstall(Plan $plan, Project $project, IconStrategy $strategy): void
+    {
+        if (! (new Composer($project->root))->has(self::PACKAGE)) {
+            $plan->add(Stage::Dependencies, new RunProcess(
+                ['composer', 'require', self::PACKAGE, '--no-interaction'],
+                'Installing Sheaf\'s CLI',
+                required: true,
+            ));
+        }
+
+        if (! $project->exists(self::THEME_STYLESHEET)) {
+            $plan->add(Stage::Dependencies, new RunProcess(
+                $this->initCommand($strategy),
+                'Initialising Sheaf',
+                required: true,
+            ));
+        }
+
+        foreach ($this->missingComponents($project) as $component) {
+            $plan->add(Stage::Dependencies, new RunProcess(
+                ['php', 'artisan', 'sheaf:install', $component, '--no-interaction'],
+                sprintf('Installing Sheaf\'s "%s"', $component),
+                required: true,
+            ));
+        }
+    }
+
+    /**
+     * `sheaf:init` and the flags this kit's answers imply.
+     *
+     * Both are one-time decisions baked in at init, which is why the icon answer
+     * has to reach this far. Dark mode is not a guess either — every layout the
+     * kit ships puts `class="dark"` on the `<html>` element.
+     *
+     * @return list<string>
+     */
+    private function initCommand(IconStrategy $strategy): array
+    {
+        $command = ['php', 'artisan', 'sheaf:init', '--skip-prompts', '--with-dark-mode'];
+
+        if ($strategy === IconStrategy::Phosphor) {
+            $command[] = '--with-phosphor';
+        }
+
+        return $command;
+    }
+
+    /**
+     * Sheaf components this project needs and does not already have.
+     *
+     * Only the top-level names: Sheaf's own dependency graph pulls in whatever
+     * each one needs in turn, so asking for `navlist` is enough to get `icon`,
+     * `badge` and `button` with it.
+     *
+     * @return list<string>
+     */
+    private function missingComponents(Project $project): array
+    {
+        $needed = [];
+
+        foreach (ComponentMap::components() as $component) {
+            if ($this->hasComponent($project, $component)) {
+                continue;
+            }
+
+            $needed[] = $component;
+        }
+
+        return $needed;
+    }
+
+    /**
+     * Sheaf installs a component either as a directory of parts or as a single
+     * file, depending on how many pieces it has, so both shapes count as present.
+     */
+    private function hasComponent(Project $project, string $component): bool
+    {
+        return $project->exists(self::COMPONENT_DIRECTORY.'/'.$component)
+            || $project->exists(self::COMPONENT_DIRECTORY.'/'.$component.'.blade.php');
+    }
+}

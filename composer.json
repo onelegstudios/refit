@@ -79,6 +79,12 @@
     "flux:internals:check": [
       "@php bin/scan-flux-internals.php --check"
     ],
+    "sheaf:components": [
+      "@php bin/scan-sheaf-components.php"
+    ],
+    "sheaf:components:check": [
+      "@php bin/scan-sheaf-components.php --check"
+    ],
     "refresh": [
       "Composer\\Config::disableProcessTimeout",
       "@icons",

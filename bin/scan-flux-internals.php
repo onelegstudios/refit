@@ -51,9 +51,11 @@ declare(strict_types=1);
 |
 */
 
-use Onelegstudios\Refit\Icons\FluxInternals;
 use Onelegstudios\Refit\Icons\IconMap;
 use Onelegstudios\Refit\Icons\IconScanner;
+use Onelegstudios\Refit\Libraries\Flux\Internals;
+use Onelegstudios\Refit\Libraries\Flux\OwnedIcons;
+use Onelegstudios\Refit\Libraries\FluxLibrary;
 
 require __DIR__.'/../vendor/autoload.php';
 
@@ -70,7 +72,7 @@ function main(array $argv): int
     }
 
     $project = rtrim($options['project'] ?? defaultProject(), '/');
-    $destination = $options['dest'] ?? FluxInternals::manifestPath();
+    $destination = $options['dest'] ?? Internals::manifestPath();
     $check = isset($options['check']);
 
     if (! is_dir($project)) {
@@ -84,12 +86,12 @@ function main(array $argv): int
 
     info(sprintf('%s Flux stubs under %s', $check ? 'Checking' : 'Scanning', $project));
 
-    $scanner = new IconScanner;
+    $scanner = new IconScanner((new FluxLibrary)->vocabulary());
     $editions = [];
     $drift = [];
     $scannedAny = false;
 
-    foreach (IconScanner::STUB_DIRECTORIES as $relative) {
+    foreach (Internals::STUB_DIRECTORIES as $relative) {
         $package = packageFor($relative);
         $directory = $project.'/'.$relative;
         $was = $recorded[$package] ?? null;
@@ -339,7 +341,11 @@ function reportUntranslatable(array $editions): void
 
     foreach ($editions as $edition) {
         foreach ($edition['icons'] as $name) {
-            if (IconMap::toLucide($name) === null) {
+            // OwnedIcons covers the names Flux resolves from neither icon set —
+            // `loading` is its own spinner, and it has artwork without being a
+            // Heroicon, so it is translatable even though IconMap has never
+            // heard of it.
+            if (IconMap::toLucide($name) === null && OwnedIcons::artwork($name) === null) {
                 $names[$name] = true;
             }
         }

@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use Onelegstudios\Refit\Contracts\Task;
+use Onelegstudios\Refit\Libraries\FluxLibrary;
+use Onelegstudios\Refit\Libraries\SheafLibrary;
 use Onelegstudios\Refit\Plan\Applier;
 use Onelegstudios\Refit\Plan\Plan;
 use Onelegstudios\Refit\Plan\Report;
@@ -48,15 +50,32 @@ it('registers the configured tasks', function (): void {
             'toasts-at-top',
             'single-layout',
             'remove-flux-pro-source',
+            'remove-flux',
         ]);
 });
 
 it('only offers tasks that fit the detected kit', function (): void {
     $refit = app(Refit::class);
-    $keys = array_map(fn (Task $task): string => $task->key(), $refit->tasksFor(detectFixture('livewire')));
+    $project = detectFixture('livewire')->targeting(new FluxLibrary);
+    $keys = array_map(fn (Task $task): string => $task->key(), $refit->tasksFor($project));
 
     expect($keys)->toContain('partials-to-components')
-        ->and($keys)->toContain('remove-flux-pro-source');
+        ->and($keys)->toContain('remove-flux-pro-source')
+        // Nothing is being removed while the project stays on Flux.
+        ->and($keys)->not->toContain('remove-flux');
+});
+
+it('swaps the two Flux cleanups over when the target changes', function (): void {
+    $refit = app(Refit::class);
+    $sheaf = array_map(
+        fn (Task $task): string => $task->key(),
+        $refit->tasksFor(detectFixture('livewire')->targeting(new SheafLibrary)),
+    );
+
+    expect($sheaf)->toContain('remove-flux')
+        // Trimming one @source line off a stylesheet that is losing both would
+        // only be confusing.
+        ->and($sheaf)->not->toContain('remove-flux-pro-source');
 });
 
 it('turns partials into components and rewrites the includes', function (): void {
@@ -380,8 +399,8 @@ it('does not offer the Flux Pro cleanup when Flux Pro is installed', function ()
 
     file_put_contents($root.'/composer.lock', '{"packages":[{"name":"livewire/flux-pro"}]}');
 
-    $project = (new ProjectDetector)->detect($root);
+    $project = (new ProjectDetector)->detect($root)->targeting(new FluxLibrary);
 
-    expect($project->fluxPro)->toBeTrue()
+    expect($project->library(FluxLibrary::KEY)?->pro)->toBeTrue()
         ->and((new RemoveFluxProSource)->appliesTo($project))->toBeFalse();
 });

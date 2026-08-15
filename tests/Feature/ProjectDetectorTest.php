@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Onelegstudios\Refit\Libraries\FluxLibrary;
 use Onelegstudios\Refit\Project\ComponentStyle;
 use Onelegstudios\Refit\Project\Feature;
 use Onelegstudios\Refit\Project\ProjectDetector;
@@ -68,7 +69,7 @@ it('still finds the auth views once they have moved out of pages', function (): 
 });
 
 it('reports Flux Pro as absent for a stock kit', function (string $kit): void {
-    expect(detectFixture($kit)->fluxPro)->toBeFalse();
+    expect(detectFixture($kit)->library(FluxLibrary::KEY)?->pro)->toBeFalse();
 })->with(starterKits());
 
 it('notices chisel has not run yet', function (): void {

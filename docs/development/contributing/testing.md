@@ -59,6 +59,8 @@ before trusting a pass.
 | `detectFixture($kit)` | A detected `Project` for a fixture, read-only |
 | `copyFixture($kit)` | A throwaway copy in the temp directory, cleaned up at shutdown |
 | `requireFluxPro($kit)` | A fixture's licensed Flux stubs, or a skip |
+| `fluxScanner()` / `sheafScanner()` | An `IconScanner` reading one library's vocabulary |
+| `sheafComponents()` | Every tag a Sheaf install answers to, from the recorded manifest |
 
 Anything that applies a plan must use `copyFixture()`. Applying against the
 fixture itself corrupts it for every later test in the run.
@@ -110,6 +112,21 @@ $this->artisan('refit', [
 
 `--force` stands in for a clean git tree — a fixture copy is not a repository —
 and `--answers` suppresses both the confirmation and the offer to remove refit.
+Omitting `library` means Flux, so a test written before libraries existed still
+drives the run it always did.
+
+### Testing a Sheaf run
+
+Fixtures are raw checkouts with no `vendor/`, so a Sheaf target has to be staged:
+`sheafKit()` in `tests/Feature/SheafMigrationTest.php` adds `sheaf/cli` to the
+copied `composer.json`, writes a `resources/css/theme.css`, and creates the
+component directories the CLI would have written. That is not a fiction — those
+are exactly the two commands refit's preflight insists on, and pre-creating the
+components is what keeps the test about rewriting rather than about shelling out.
+
+The two assertions worth copying are the ones that would catch a bad mapping:
+no `<flux:*>` tag survives anywhere in the tree, and every `<x-ui.*>` tag produced
+names something in `sheafComponents()`.
 
 ## What skips, and why
 
@@ -128,10 +145,19 @@ Neither skip hides a regression in refit's own logic. See
 [The icon pipeline](/docs/development/internals/icon-pipeline) for the licensed job that
 covers the rest.
 
+Sheaf needs no such gate. Its registry is public and MIT, so
+`composer sheaf:components:check` runs anywhere, and the tests read the recorded
+manifest rather than the network.
+
 ## CI
 
 The matrix is PHP 8.3 / 8.4 / 8.5 against Laravel 13 and Testbench 11, each on
 `prefer-lowest` and `prefer-stable`.
+
+Two jobs sit outside the matrix. `flux-pro` re-records the icons Flux renders
+internally, and needs a licence. `sheaf-components` checks `ComponentMap` against
+Sheaf's registry, and needs nothing — it runs on every push and every fork's pull
+request. Both also run on the weekly schedule.
 
 Type coverage runs once, on PHP 8.5 / `prefer-stable`. It is a property of `src`
 rather than of the resolved dependency versions, and it *must* run on

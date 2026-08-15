@@ -63,13 +63,18 @@ undo. `--force` skips this check and both of its halves.
 
 ## Ask
 
-Two questions, in order:
+Three questions, in order — and the order is the point, because each one narrows
+the next:
 
-1. **Icons.** Keep the mix, go all-Heroicons, or go all-Lucide. See
+1. **Library.** Keep Flux, or replace it. See
+   [Libraries](/docs/using-refit/guide/libraries). A target the project is not set
+   up for is still offered — installing it is the first thing the plan does.
+2. **Icons.** Only the sets your chosen library can resolve are offered. See
    [Icons](/docs/using-refit/guide/icons).
-2. **Tasks.** A multiselect of the structural and cleanup tasks that fit the
-   detected kit. Only applicable tasks are listed, so you are never asked to pick
-   something that would do nothing. See [Tasks](/docs/using-refit/guide/tasks).
+3. **Tasks.** A multiselect of the structural and cleanup tasks that fit the
+   detected kit *and* the chosen target. Only applicable tasks are listed, so you
+   are never asked to pick something that would do nothing. See
+   [Tasks](/docs/using-refit/guide/tasks).
 
 ## Plan
 
@@ -77,7 +82,7 @@ Your answers become a list of actions, sorted into stages that run in order:
 
 | Stage | What lands here |
 |---|---|
-| `Dependencies` | Composer and npm changes, before anything reads `vendor/` |
+| `Dependencies` | Installing what the plan is about to rewrite onto, before anything reads it |
 | `Write` | Creating or overwriting files |
 | `Move` | Moving, renaming and deleting files |
 | `Reconcile` | Whole-tree reference rewriting, once every file has stopped moving |
@@ -105,6 +110,12 @@ Actions run in stage order, each one echoed as it goes. Afterwards refit prints
 any warnings, writes them to `REFIT-NOTES.md` if there are any
 ([configurable](/docs/using-refit/reference/configuration)), and offers to remove itself.
 
+A failure is reported and stepped over — a half-applied run is harder to reason
+about than one skipped file, and a clean tree means `git checkout .` is always
+there. The `Dependencies` stage is the exception: it installs what every later
+stage rewrites your views *onto*, so a failure there stops the run instead. It is
+the first stage, so nothing has been touched yet and there is nothing to unpick.
+
 ## Running without prompts
 
 `--answers` takes the same shape the prompts produce, which is also how the test
@@ -116,7 +127,8 @@ php artisan refit --answers='{"icons":"lucide","tasks":["partials-to-components"
 
 | Key | Value |
 |---|---|
-| `icons` | `keep`, `heroicons` or `lucide`. Anything unrecognised falls back to `keep` |
+| `library` | `flux` or `sheaf`. Omitted means `flux`, which is what the kit ships. An unregistered key fails the run rather than falling back |
+| `icons` | An icon set your chosen library offers. Anything else falls back to that library's first choice |
 | `tasks` | A list of task keys. Unknown keys are ignored — see [Tasks](/docs/using-refit/guide/tasks) for the list |
 
 With `--answers` there is no confirmation step (passing answers *is* the

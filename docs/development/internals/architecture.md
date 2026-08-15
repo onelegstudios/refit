@@ -13,6 +13,11 @@ ProjectDetector ──▶ Project ──▶ prompts ──▶ Plan ──▶ pre
      detect                       ask       plan     confirm      apply
 ```
 
+The first thing `ask` asks is which library the project should end up on, because
+that answer decides what the rest of them mean. See
+[Component mapping](/docs/development/internals/component-mapping) for the
+contract behind it.
+
 Everything up to `Applier::apply()` is pure. A `Plan` is a function of the
 detected project plus the user's answers and nothing else, which is what makes
 `--dry-run` free, and what lets the test suite assert on plans across every
@@ -30,16 +35,26 @@ not.
 which is what lets the entire package be pointed at a fixture directory during
 tests.
 
+`target` is the one field disk cannot answer: the library the user chose, attached
+by `Project::targeting()` once that question has been asked. Carrying it on the
+project rather than threading it through every signature is what keeps the `Task`
+contract at the two arguments it has always had.
+
 `blades()` and `looseComponents()` are scanned live on every call, not cached.
 The plan moves and deletes files while it runs, and the reconcile pass has to see
 the settled tree.
 
 ## The registry
 
-`Refit` is a small registry of `Task` instances, bound as a singleton by the
-service provider and populated from `config('refit.tasks')`. Each class is
-resolved from the container, so a task can type-hint its own dependencies, and
-`Refit::task()` lets a service provider add more.
+`Refit` is a small registry of `Task` and `Library` instances, bound as a
+singleton by the service provider and populated from `config('refit.tasks')` and
+`config('refit.libraries')`. Each class is resolved from the container, so either
+can type-hint its own dependencies, and `Refit::task()` / `Refit::library()` let a
+service provider add more.
+
+The registry is also where detection gets its list: the service provider hands
+`Refit::libraries()` to `ProjectDetector`, so a third-party library is probed for
+like any other.
 
 `tasksFor()` filters to the tasks whose `appliesTo()` is true for this project
 and sorts them by group order then label; `options()` renders that as the prompt
@@ -55,7 +70,7 @@ not have to know about each other:
 
 | Stage | For |
 |---|---|
-| `Dependencies` (10) | Composer and npm changes, before anything reads `vendor/` |
+| `Dependencies` (10) | Installing what the plan is about to rewrite onto, before anything reads it. The one stage where a failure aborts the run rather than being noted — it is first, so nothing has changed yet |
 | `Write` (20) | Creating or overwriting files |
 | `Move` (30) | Moving, renaming and deleting files |
 | `Reconcile` (40) | Whole-tree reference rewriting, once every file has stopped moving |

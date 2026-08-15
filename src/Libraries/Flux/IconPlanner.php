@@ -2,8 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Onelegstudios\Refit\Icons;
+namespace Onelegstudios\Refit\Libraries\Flux;
 
+use Onelegstudios\Refit\Icons\IconMap;
+use Onelegstudios\Refit\Icons\IconScanner;
+use Onelegstudios\Refit\Icons\IconStrategy;
+use Onelegstudios\Refit\Libraries\Vocabulary;
 use Onelegstudios\Refit\Plan\Actions\DeleteFile;
 use Onelegstudios\Refit\Plan\Actions\DropSolidIconVariant;
 use Onelegstudios\Refit\Plan\Actions\RewriteIconNames;
@@ -14,28 +18,34 @@ use Onelegstudios\Refit\Plan\Stage;
 use Onelegstudios\Refit\Project\Project;
 
 /**
- * Turns an icon strategy into plan actions.
+ * Turns an icon strategy into plan actions, for a project staying on Flux.
  *
  * The two directions are not symmetric. Going to Heroicons is subtraction: delete
  * the vendored Lucide overrides and point their usages at names Flux already
  * ships. Going to Lucide is generation, and has to cover the icons Flux renders
  * from inside its own components as well as the ones in application code.
+ *
+ * Both directions lean on Flux resolving an icon by bare name and letting a Blade
+ * file at `resources/views/flux/icon/{name}.blade.php` take precedence — a
+ * mechanism no other library refit knows about has, which is why this planner
+ * belongs to Flux rather than to icons in general.
  */
 final class IconPlanner
 {
     private const string OVERRIDE_DIRECTORY = 'resources/views/flux/icon';
 
     public function __construct(
-        private readonly IconScanner $scanner = new IconScanner,
+        private readonly Vocabulary $vocabulary,
+        private readonly IconScanner $scanner,
         private readonly OverrideGenerator $generator = new OverrideGenerator,
     ) {}
 
     public function contribute(Plan $plan, Project $project, IconStrategy $strategy, Report $report): void
     {
         match ($strategy) {
-            IconStrategy::Keep => $report->note('Icons left as they are — Heroicons with the kit\'s vendored Lucide overrides.'),
-            IconStrategy::Heroicons => $this->toHeroicons($plan, $project, $report),
-            IconStrategy::Lucide => $this->toLucide($plan, $project, $report),
+            IconStrategy::Heroicons => $this->planHeroicons($plan, $project, $report),
+            IconStrategy::Lucide => $this->planLucide($plan, $project, $report),
+            default => $report->note('Icons left as they are — Heroicons with the kit\'s vendored Lucide overrides.'),
         };
     }
 
@@ -66,7 +76,7 @@ final class IconPlanner
         return $overrides;
     }
 
-    private function toHeroicons(Plan $plan, Project $project, Report $report): void
+    private function planHeroicons(Plan $plan, Project $project, Report $report): void
     {
         $renames = [];
 
@@ -97,10 +107,10 @@ final class IconPlanner
             return;
         }
 
-        $plan->add(Stage::Reconcile, new RewriteIconNames($renames, 'Lucide to Heroicons'));
+        $plan->add(Stage::Reconcile, new RewriteIconNames($renames, 'Lucide to Heroicons', $this->vocabulary));
     }
 
-    private function toLucide(Plan $plan, Project $project, Report $report): void
+    private function planLucide(Plan $plan, Project $project, Report $report): void
     {
         $renames = [];
 
@@ -112,14 +122,14 @@ final class IconPlanner
 
         foreach ($this->scanner->scan($project) as $name => $paths) {
             // Names the kit already vendors as Lucide need art, but no rewrite.
-            if ($this->generator->has($name) && IconMap::toLucide($name) === null) {
+            if ($this->generator->has($name) && self::toLucide($name) === null) {
                 $overrides[$name] = $name;
                 $translated[] = $name;
 
                 continue;
             }
 
-            $lucide = IconMap::toLucide($name);
+            $lucide = self::toLucide($name);
 
             if ($lucide === null) {
                 $report->warn(sprintf(
@@ -149,7 +159,7 @@ final class IconPlanner
 
             // Flux draws this one itself, so the override keeps Flux's name and
             // the usages are left as they are.
-            if (IconMap::isFluxOwned($name)) {
+            if (OwnedIcons::owns($name)) {
                 $overrides[$name] = $lucide;
 
                 continue;
@@ -162,8 +172,8 @@ final class IconPlanner
             $overrides[$lucide] = $lucide;
         }
 
-        foreach ($this->fluxInternals($project, $report) as $name) {
-            $lucide = IconMap::toLucide($name);
+        foreach ($this->internals($project, $report) as $name) {
+            $lucide = self::toLucide($name);
 
             if ($lucide === null || ! $this->generator->has($lucide)) {
                 continue;
@@ -187,7 +197,7 @@ final class IconPlanner
                     $filename === $art ? '' : sprintf(
                         ' (Lucide "%s", %s)',
                         $art,
-                        IconMap::isFluxOwned($filename) ? 'in place of Flux\'s own' : 'for Flux internals',
+                        OwnedIcons::owns($filename) ? 'in place of Flux\'s own' : 'for Flux internals',
                     ),
                 ),
             ));
@@ -195,25 +205,49 @@ final class IconPlanner
 
         // Ahead of the rename, so it reads the names the views still carry.
         if ($translated !== []) {
-            $plan->add(Stage::Reconcile, new DropSolidIconVariant($translated));
+            $plan->add(Stage::Reconcile, new DropSolidIconVariant($translated, $this->vocabulary));
         }
 
         if ($renames !== []) {
-            $plan->add(Stage::Reconcile, new RewriteIconNames($renames, 'Heroicons to Lucide'));
+            $plan->add(Stage::Reconcile, new RewriteIconNames($renames, 'Heroicons to Lucide', $this->vocabulary));
         }
     }
 
     /**
+     * The Lucide artwork that stands in for a name the views write today.
+     *
+     * Two sources, because they answer different questions. {@see IconMap} knows
+     * what a Heroicon is called in Lucide; {@see OwnedIcons} knows what to draw
+     * for the handful of names Flux resolves from neither set.
+     */
+    private static function toLucide(string $name): ?string
+    {
+        return IconMap::toLucide($name) ?? OwnedIcons::artwork($name);
+    }
+
+    /**
+     * Icon names Flux renders from inside its own components.
+     *
      * @return list<string>
      */
-    private function fluxInternals(Project $project, Report $report): array
+    private function internals(Project $project, Report $report): array
     {
-        $scanned = $this->scanner->scanFluxPackage($project);
+        $scanned = [];
+
+        foreach (Internals::STUB_DIRECTORIES as $relative) {
+            foreach ($this->scanner->scanStubDirectory($project->path($relative)) as $name) {
+                $scanned[] = $name;
+            }
+        }
+
+        $scanned = array_values(array_unique($scanned));
+
+        sort($scanned);
 
         if ($scanned !== []) {
             $untranslatable = array_values(array_filter(
                 $scanned,
-                static fn (string $name): bool => IconMap::toLucide($name) === null,
+                static fn (string $name): bool => self::toLucide($name) === null,
             ));
 
             if ($untranslatable !== []) {
@@ -231,6 +265,6 @@ final class IconPlanner
         // needed — harmless, where a missing one leaves a stray Heroicon behind.
         $report->note('Flux is not installed here, so refit used its recorded list of the icons Flux renders internally.');
 
-        return FluxInternals::names();
+        return Internals::names();
     }
 }

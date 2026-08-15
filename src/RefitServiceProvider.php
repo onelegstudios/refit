@@ -7,7 +7,9 @@ namespace Onelegstudios\Refit;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\ServiceProvider;
 use Onelegstudios\Refit\Console\Commands\RefitCommand;
+use Onelegstudios\Refit\Contracts\Library;
 use Onelegstudios\Refit\Contracts\Task;
+use Onelegstudios\Refit\Project\ProjectDetector;
 
 class RefitServiceProvider extends ServiceProvider
 {
@@ -28,8 +30,21 @@ class RefitServiceProvider extends ServiceProvider
                 $refit->task($app->make($task));
             }
 
+            /** @var list<class-string<Library>> $libraries */
+            $libraries = $app->make('config')->get('refit.libraries', []);
+
+            foreach ($libraries as $library) {
+                $refit->library($app->make($library));
+            }
+
             return $refit;
         });
+
+        // Detection has to know which libraries to probe for, and the registry is
+        // where that list lives — including any a third party added.
+        $this->app->bind(ProjectDetector::class, static fn (Application $app): ProjectDetector => new ProjectDetector(
+            $app->make(Refit::class)->libraries(),
+        ));
     }
 
     /**

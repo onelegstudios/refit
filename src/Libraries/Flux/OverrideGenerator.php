@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Onelegstudios\Refit\Icons;
+namespace Onelegstudios\Refit\Libraries\Flux;
 
+use Onelegstudios\Refit\Icons\IconMap;
 use RuntimeException;
 
 /**
@@ -28,13 +29,13 @@ final class OverrideGenerator
     private const string CLASSES_PLACEHOLDER = '__CLASSES__';
 
     /**
-     * The classes every override starts from, before {@see IconMap::EXTRA_CLASSES}.
+     * The classes every override starts from, before {@see OwnedIcons::EXTRA_CLASSES}.
      */
     private const string BASE_CLASSES = 'shrink-0';
 
     public function __construct(
-        private readonly string $iconDirectory = __DIR__.'/../../resources/icons/lucide',
-        private readonly string $stubPath = __DIR__.'/../../stubs/flux-icon.blade.php.stub',
+        private readonly string $iconDirectory = __DIR__.'/../../../resources/icons/lucide',
+        private readonly string $stubPath = __DIR__.'/../../../stubs/flux-icon.blade.php.stub',
     ) {}
 
     public function has(string $lucideName): bool
@@ -75,7 +76,7 @@ final class OverrideGenerator
             sprintf(
                 "{{-- Credit: Lucide (https://lucide.dev) --}}\n{{-- Lucide's \"%s\", overriding the %s. --}}",
                 $lucideName,
-                IconMap::isFluxOwned($overrideName)
+                OwnedIcons::owns($overrideName)
                     ? 'icon Flux draws itself'
                     : 'Heroicons name Flux resolves internally',
             ),
@@ -89,7 +90,7 @@ final class OverrideGenerator
      */
     private function classes(string $overrideName): string
     {
-        $extra = IconMap::EXTRA_CLASSES[$overrideName] ?? null;
+        $extra = OwnedIcons::extraClasses($overrideName);
 
         return $extra === null ? self::BASE_CLASSES : self::BASE_CLASSES.' '.$extra;
     }

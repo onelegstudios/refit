@@ -1,7 +1,7 @@
 ---
 title: Writing your own task
 description: The Task interface, the plan API, and the actions refit ships.
-order: 4
+order: 5
 ---
 
 # Writing your own task
@@ -74,7 +74,8 @@ public function appliesTo(Project $project): bool
 | `root` | Absolute project root |
 | `componentStyle` | `ComponentStyle::SingleFile` or `ClassBased`, with a `viewDirectory()` helper |
 | `features` / `has(Feature)` | `Teams`, `WorkOs`, `Passkeys`, `TwoFactor`, `Registration` |
-| `fluxPro` | Whether the licensed edition is installed |
+| `libraries` / `library($key)` | The UI libraries installed here, and whether each is the paid tier |
+| `target` / `targets($key)` | The library the user chose to end on |
 | `chiselPending` | Whether `chisel.php` is still present |
 | `path()`, `exists()`, `get()` | Project-relative path helpers |
 | `blades()` | Every Blade file, as project-relative paths |
@@ -83,6 +84,17 @@ public function appliesTo(Project $project): bool
 `blades()` and `looseComponents()` are scanned live rather than cached: the plan
 moves and deletes files while it runs, so an action reading them at apply time
 sees the settled tree.
+
+`target` is the only member detection does not fill in — it is the library the
+user picked, attached once that question has been asked. A task that only makes
+sense for one target says so in `appliesTo()`:
+
+```php
+public function appliesTo(Project $project): bool
+{
+    return $project->targets('flux');
+}
+```
 
 ## Stages
 

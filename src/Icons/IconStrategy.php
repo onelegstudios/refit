@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Onelegstudios\Refit\Icons;
 
+use Onelegstudios\Refit\Contracts\Library;
+
 /**
  * What to do about the starter kit's mixed icon set.
  *
@@ -11,6 +13,11 @@ namespace Onelegstudios\Refit\Icons;
  * vendors a handful of Lucide icons in as `resources/views/flux/icon/*.blade.php`
  * overrides, because those names have no Heroicons equivalent — so a fresh
  * install is already speaking two icon sets at once.
+ *
+ * Not every answer makes sense for every target, so the list on offer comes from
+ * the chosen library's {@see Library::iconStrategies()}
+ * rather than from this enum. `Keep` only means something while the library stays
+ * put, and `Lucide` depends on Flux's override mechanism.
  */
 enum IconStrategy: string
 {
@@ -23,12 +30,16 @@ enum IconStrategy: string
     /** Move everything to Lucide, including the icons Flux renders internally. */
     case Lucide = 'lucide';
 
+    /** Move everything to Phosphor, which Sheaf can install alongside itself. */
+    case Phosphor = 'phosphor';
+
     public function label(): string
     {
         return match ($this) {
             self::Keep => 'Keep the current mix of Heroicons and Lucide',
             self::Heroicons => 'Heroicons only',
             self::Lucide => 'Lucide only',
+            self::Phosphor => 'Phosphor only',
         };
     }
 
@@ -36,8 +47,9 @@ enum IconStrategy: string
     {
         return match ($this) {
             self::Keep => 'Changes nothing — what a fresh starter kit gives you',
-            self::Heroicons => 'Removes the vendored Lucide overrides, uses what Flux ships',
+            self::Heroicons => 'Drops the kit\'s vendored Lucide overrides for names the set already has',
             self::Lucide => 'Generates Flux icon overrides so even Flux\'s own internals match',
+            self::Phosphor => 'Installs Phosphor with Sheaf and prefixes every icon name with ps:',
         };
     }
 }

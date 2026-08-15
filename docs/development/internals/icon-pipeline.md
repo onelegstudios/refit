@@ -9,6 +9,13 @@ order: 3
 Three things have to agree for an icon translation to work: a **mapping**, the
 **artwork**, and — for names Flux renders itself — the **recorded internals**.
 
+All of this is Flux's. It lives under `src/Libraries/Flux/`, because generating an
+override file that intercepts a library's own resolution is a mechanism no other
+library refit knows about has. What is shared sits in `src/Icons/`: `IconMap`'s
+set-to-set tables, `IconStrategy`, and the vocabulary-driven `IconScanner`. See
+[Component mapping](/docs/development/internals/component-mapping) for the seam
+between them.
+
 ```
 IconMap  ──▶  bin/download-icons.php  ──▶  resources/icons/lucide/*.svg
    │                                              │

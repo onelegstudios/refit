@@ -35,7 +35,7 @@ final class AddAttribute extends BladeSweep
         );
     }
 
-    protected function transform(string $source, Project $project, Report $report): string
+    protected function transform(string $source, string $path, Project $project, Report $report): string
     {
         return $this->rewriter->addAttribute($source, $this->tag, $this->attribute, $this->value);
     }

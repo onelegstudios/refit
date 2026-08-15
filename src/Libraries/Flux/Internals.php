@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Onelegstudios\Refit\Icons;
+namespace Onelegstudios\Refit\Libraries\Flux;
 
 /**
  * The recorded list of icons Flux renders from inside its own components.
  *
- * Scanning the installed package is always better — {@see IconScanner::scanFluxPackage()}
+ * Scanning the installed package is always better — {@see FluxLibrary::internals()}
  * stays correct as Flux changes, and it sees the licensed `flux-pro` stubs on the
  * machines that have them. This list is what refit falls back to when there is
  * nothing to scan: a fixture, a project where Flux is not installed yet, or a
@@ -18,8 +18,23 @@ namespace Onelegstudios\Refit\Icons;
  * them. Icon *names* are facts about which artwork a component asks for; none of
  * Flux's own source is copied here.
  */
-final class FluxInternals
+final class Internals
 {
+    /**
+     * Where each Flux edition keeps the Blade stubs refit reads, relative to the
+     * project root.
+     *
+     * `flux-pro` is a licensed package, so it is absent from most installs —
+     * including every contributor checkout without a licence. Its absence is
+     * ordinary, not an error.
+     *
+     * @var list<string>
+     */
+    public const array STUB_DIRECTORIES = [
+        'vendor/livewire/flux/stubs',
+        'vendor/livewire/flux-pro/stubs',
+    ];
+
     /**
      * @var array<string, mixed>|null
      */
@@ -27,7 +42,7 @@ final class FluxInternals
 
     public static function manifestPath(): string
     {
-        return dirname(__DIR__, 2).'/resources/flux/internal-icons.json';
+        return dirname(__DIR__, 3).'/resources/flux/internal-icons.json';
     }
 
     /**
