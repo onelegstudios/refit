@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Onelegstudios\Refit\Libraries\Sheaf\ComponentMap;
+use Onelegstudios\Refit\Libraries\Sheaf\Components;
 use Onelegstudios\Refit\Plan\Actions\MapComponentTags;
 use Onelegstudios\Refit\Plan\Report;
 use Onelegstudios\Refit\Project\ComponentStyle;
@@ -142,4 +143,36 @@ it('asks for a component by its top-level install name', function (): void {
         ->and(ComponentMap::componentFor('x-ui.button'))->toBe('button')
         ->and(ComponentMap::components())->toContain('navlist')
         ->and(ComponentMap::components())->not->toContain('navlist.item');
+});
+
+it('follows the dependency graph the whole way down', function (): void {
+    // Sheaf's sidebar needs navlist, which needs badge. Nothing names badge
+    // directly, so a single hop would miss it.
+    expect(Components::closure(['sidebar']))
+        ->toContain('sidebar')
+        ->toContain('navlist')
+        ->toContain('badge');
+});
+
+it('closes over what the map names, so nothing installed can reach for a stranger', function (): void {
+    $installed = Components::closure(ComponentMap::components());
+    $missing = [];
+
+    foreach ($installed as $component) {
+        foreach (Components::dependencies()[$component] ?? [] as $need) {
+            if (! in_array($need, $installed, true)) {
+                $missing[] = $component.' -> '.$need;
+            }
+        }
+    }
+
+    expect($missing)->toBe([]);
+});
+
+it('records that the dropdown needs a kbd, whatever its own config claims', function (): void {
+    // The regression: Sheaf declares `internal: [icon]` for dropdown and its
+    // item.blade.php then renders <x-ui.kbd>, so the recorder reads the source
+    // too. If this ever empties out, the recorder has stopped scanning Blade.
+    expect(Components::dependencies()['dropdown'] ?? [])->toContain('kbd')
+        ->and(Components::names())->toContain('kbd');
 });

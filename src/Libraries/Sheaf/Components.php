@@ -100,6 +100,74 @@ final class Components
     }
 
     /**
+     * Component name mapped to the other components it cannot render without.
+     *
+     * Recorded from both halves of the registry — what each config declares and
+     * what each component's Blade actually writes — because Sheaf's own configs
+     * under-declare. Only components with dependencies appear.
+     *
+     * @return array<string, list<string>>
+     */
+    public static function dependencies(): array
+    {
+        $dependencies = self::manifest()['dependencies'] ?? null;
+
+        if (! is_array($dependencies)) {
+            return [];
+        }
+
+        $normalised = [];
+
+        foreach ($dependencies as $name => $needs) {
+            if (! is_string($name) || ! is_array($needs)) {
+                continue;
+            }
+
+            $normalised[$name] = array_values(array_filter($needs, is_string(...)));
+        }
+
+        return $normalised;
+    }
+
+    /**
+     * The given components plus everything they need, transitively.
+     *
+     * Sheaf's CLI resolves only what a config declares, so refit asking for the
+     * closure itself is the difference between a dropdown that renders and one
+     * that dies on `<x-ui.kbd>`. Cycles are fine: a name already seen is not
+     * walked twice.
+     *
+     * @param  list<string>  $components
+     * @return list<string>
+     */
+    public static function closure(array $components): array
+    {
+        $dependencies = self::dependencies();
+        $resolved = [];
+        $pending = $components;
+
+        while ($pending !== []) {
+            $name = array_shift($pending);
+
+            if (isset($resolved[$name])) {
+                continue;
+            }
+
+            $resolved[$name] = true;
+
+            foreach ($dependencies[$name] ?? [] as $need) {
+                $pending[] = $need;
+            }
+        }
+
+        $names = array_keys($resolved);
+
+        sort($names);
+
+        return $names;
+    }
+
+    /**
      * @return array<string, mixed>
      */
     private static function manifest(): array

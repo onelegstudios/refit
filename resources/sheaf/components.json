@@ -1,5 +1,5 @@
 {
-    "generated_at": "2026-08-15T11:48:55+00:00",
+    "generated_at": "2026-08-15T22:26:11+00:00",
     "source": "sheafui/components@master",
     "components": {
         "accordion": [
@@ -194,6 +194,98 @@
         "tooltip": [
             "",
             "content"
+        ]
+    },
+    "dependencies": {
+        "accordion": [
+            "icon"
+        ],
+        "alerts": [
+            "heading",
+            "icon"
+        ],
+        "autocomplete": [
+            "icon",
+            "input"
+        ],
+        "avatar": [
+            "button",
+            "icon"
+        ],
+        "badge": [
+            "button",
+            "icon"
+        ],
+        "breadcrumbs": [
+            "icon"
+        ],
+        "button": [
+            "icon"
+        ],
+        "checkbox": [
+            "icon"
+        ],
+        "combobox": [
+            "icon",
+            "text"
+        ],
+        "dropdown": [
+            "button",
+            "icon",
+            "kbd"
+        ],
+        "error": [
+            "icon"
+        ],
+        "input": [
+            "icon"
+        ],
+        "key-value": [
+            "button",
+            "icon"
+        ],
+        "modal": [
+            "button",
+            "icon"
+        ],
+        "navbar": [
+            "badge",
+            "button",
+            "icon"
+        ],
+        "navlist": [
+            "badge",
+            "button",
+            "icon"
+        ],
+        "otp": [
+            "separator"
+        ],
+        "radio": [
+            "icon"
+        ],
+        "select": [
+            "icon",
+            "text"
+        ],
+        "sidebar": [
+            "button",
+            "icon",
+            "navlist"
+        ],
+        "switch": [
+            "icon"
+        ],
+        "tabs": [
+            "button"
+        ],
+        "tags-input": [
+            "icon"
+        ],
+        "theme-switcher": [
+            "button",
+            "dropdown",
+            "icon"
         ]
     }
 }

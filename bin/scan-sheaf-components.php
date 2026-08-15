@@ -28,6 +28,17 @@ declare(strict_types=1);
 | Blade component name. `index` is the component's own tag, a single file named
 | after its directory likewise; anything else is a dotted part.
 |
+| The config also declares what a component needs:
+|
+|   dependencies:
+|     internal: [icon]
+|
+| but it under-declares. Sheaf's dropdown writes <x-ui.kbd> and <x-ui.button> and
+| names neither, so `sheaf:install dropdown` leaves a view that cannot render.
+| The recorder therefore reads each component's Blade source as well and unions
+| what it finds there with what the config claims, which is why it fetches files
+| rather than only configs. Refit installs the closure of that graph.
+|
 | Only names are recorded. None of Sheaf's source is copied here.
 |
 | Usage:
@@ -70,7 +81,7 @@ function main(array $argv): int
     $repo = $options['repo'] ?? DEFAULT_REPO;
 
     try {
-        [$components, $source] = isset($options['path'])
+        [$components, $dependencies, $source] = isset($options['path'])
             ? readLocal(rtrim($options['path'], '/'))
             : readRegistry($repo, $options['ref'] ?? null);
     } catch (RuntimeException $exception) {
@@ -86,6 +97,7 @@ function main(array $argv): int
     }
 
     ksort($components);
+    $dependencies = pruneDependencies($dependencies, $components);
 
     info(sprintf('%s %d component(s) from %s', $check ? 'Checked' : 'Recorded', count($components), $source));
 
@@ -102,14 +114,23 @@ function main(array $argv): int
         }
     }
 
-    foreach ([['new', $added], ['gone', $removed], ['changed', $changed]] as [$label, $names]) {
+    $rewired = [];
+    $wasDependencies = Components::dependencies();
+
+    foreach (array_keys($components + $wasDependencies) as $name) {
+        if (($wasDependencies[$name] ?? []) !== ($dependencies[$name] ?? [])) {
+            $rewired[] = (string) $name;
+        }
+    }
+
+    foreach ([['new', $added], ['gone', $removed], ['changed', $changed], ['needs', $rewired]] as [$label, $names]) {
         if ($names !== []) {
             info(sprintf('  %-8s %s', $label, implode(', ', $names)));
         }
     }
 
     $broken = reportBrokenMappings($components);
-    $drifted = $added !== [] || $removed !== [] || $changed !== [];
+    $drifted = $added !== [] || $removed !== [] || $changed !== [] || $rewired !== [];
 
     if ($check) {
         if ($broken !== []) {
@@ -141,6 +162,7 @@ function main(array $argv): int
         'generated_at' => gmdate('c'),
         'source' => $source,
         'components' => $components,
+        'dependencies' => $dependencies,
     ])) {
         return 1;
     }
@@ -151,12 +173,14 @@ function main(array $argv): int
 }
 
 /**
- * Read every component's config.yml straight out of the GitHub tree.
+ * Read every component's config.yml and Blade source out of the GitHub tree.
  *
- * One tree call plus one call per config, rather than cloning: the files are a
- * few hundred bytes each and this runs on a schedule, not in a hot path.
+ * One tree call plus one call per file, rather than cloning: the files are a few
+ * hundred bytes each and this runs on a schedule, not in a hot path. The Blade
+ * sources are fetched because the configs alone under-report what a component
+ * needs — see the header.
  *
- * @return array{array<string, list<string>>, string}
+ * @return array{array<string, list<string>>, array<string, list<string>>, string}
  */
 function readRegistry(string $repo, ?string $ref): array
 {
@@ -164,31 +188,47 @@ function readRegistry(string $repo, ?string $ref): array
     $tree = json(request("https://api.github.com/repos/{$repo}/git/trees/{$ref}?recursive=1"));
 
     $configs = [];
+    $sources = [];
 
     foreach ($tree['tree'] ?? [] as $entry) {
         $path = $entry['path'] ?? '';
 
-        if (($entry['type'] ?? '') === 'blob' && preg_match('#^components/([^/]+)/config\.yml$#', $path, $matches) === 1) {
+        if (($entry['type'] ?? '') !== 'blob') {
+            continue;
+        }
+
+        if (preg_match('#^components/([^/]+)/config\.yml$#', $path, $matches) === 1) {
             $configs[$matches[1]] = $path;
+        }
+
+        if (preg_match('#^components/([^/]+)/.+\.blade\.php$#', $path, $matches) === 1) {
+            $sources[$matches[1]][] = $path;
         }
     }
 
     $components = [];
+    $dependencies = [];
 
     foreach ($configs as $name => $path) {
         $body = request("https://raw.githubusercontent.com/{$repo}/{$ref}/{$path}");
         $parts = partsFrom($name, $body);
 
-        if ($parts !== []) {
-            $components[$name] = $parts;
+        if ($parts === []) {
+            continue;
         }
+
+        $components[$name] = $parts;
+        $dependencies[$name] = needsFrom($name, $body, array_map(
+            fn (string $file): string => request("https://raw.githubusercontent.com/{$repo}/{$ref}/{$file}"),
+            $sources[$name] ?? [],
+        ));
     }
 
-    return [$components, "{$repo}@{$ref}"];
+    return [$components, $dependencies, "{$repo}@{$ref}"];
 }
 
 /**
- * @return array{array<string, list<string>>, string}
+ * @return array{array<string, list<string>>, array<string, list<string>>, string}
  */
 function readLocal(string $path): array
 {
@@ -199,17 +239,49 @@ function readLocal(string $path): array
     }
 
     $components = [];
+    $dependencies = [];
 
     foreach ((array) glob($directory.'/*/config.yml') as $config) {
         $name = basename(dirname((string) $config));
-        $parts = partsFrom($name, (string) file_get_contents((string) $config));
+        $body = (string) file_get_contents((string) $config);
+        $parts = partsFrom($name, $body);
 
-        if ($parts !== []) {
-            $components[$name] = $parts;
+        if ($parts === []) {
+            continue;
+        }
+
+        $components[$name] = $parts;
+        $dependencies[$name] = needsFrom($name, $body, array_map(
+            fn (string $file): string => (string) file_get_contents($file),
+            bladesUnder($directory.'/'.$name),
+        ));
+    }
+
+    return [$components, $dependencies, $path];
+}
+
+/**
+ * Every Blade file beneath a component's directory, at any depth.
+ *
+ * `navlist` nests its group variants two levels down, so a flat glob would miss
+ * whatever those reach for.
+ *
+ * @return list<string>
+ */
+function bladesUnder(string $directory): array
+{
+    $files = [];
+    $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($directory, FilesystemIterator::SKIP_DOTS));
+
+    foreach ($iterator as $file) {
+        if ($file instanceof SplFileInfo && $file->isFile() && str_ends_with($file->getFilename(), '.blade.php')) {
+            $files[] = $file->getPathname();
         }
     }
 
-    return [$components, $path];
+    sort($files);
+
+    return $files;
 }
 
 /**
@@ -265,6 +337,121 @@ function partsFrom(string $component, string $yaml): array
     sort($names);
 
     return $names;
+}
+
+/**
+ * The other components one component cannot render without.
+ *
+ * Two sources, unioned, because neither is complete on its own. The config's
+ * `dependencies.internal` names things the source does not always write out —
+ * `sidebar` declares `button` without a `<x-ui.button>` anywhere in it — while
+ * the source writes tags the config never declares, which is the failure that
+ * put this function here: `dropdown/item.blade.php` renders `<x-ui.kbd>` and the
+ * config lists only `icon`.
+ *
+ * @param  list<string>  $sources  Blade source of every file the component ships.
+ * @return list<string>
+ */
+function needsFrom(string $component, string $yaml, array $sources): array
+{
+    $needs = [];
+
+    foreach (declaredDependencies($yaml) as $name) {
+        $needs[$name] = true;
+    }
+
+    foreach ($sources as $source) {
+        preg_match_all('/<'.preg_quote(ComponentMap::PREFIX, '/').'([a-z0-9-]+)/i', $source, $matches);
+
+        foreach ($matches[1] as $name) {
+            $needs[strtolower($name)] = true;
+        }
+    }
+
+    // A component reaching for its own parts is not a dependency.
+    unset($needs[$component]);
+
+    $names = array_keys($needs);
+
+    sort($names);
+
+    return $names;
+}
+
+/**
+ * The `dependencies.internal` list a config declares, in either YAML spelling.
+ *
+ * Still not a YAML parser, for the reason {@see partsFrom} gives. Both an inline
+ * `[icon, button]` and a block sequence of `- icon` lines appear in the registry,
+ * so both are read; anything else falls through to the source scan.
+ *
+ * @return list<string>
+ */
+function declaredDependencies(string $yaml): array
+{
+    $names = [];
+    $inList = false;
+
+    foreach (preg_split('/\R/', $yaml) ?: [] as $line) {
+        if (preg_match('/^\s+internal:\s*(.*)$/', $line, $matches) === 1) {
+            $inline = trim($matches[1]);
+            $inList = $inline === '';
+
+            foreach (explode(',', trim($inline, '[] ')) as $name) {
+                $names[] = trim($name);
+            }
+
+            continue;
+        }
+
+        if ($inList && preg_match('/^\s+-\s*(\S+)\s*$/', $line, $matches) === 1) {
+            $names[] = $matches[1];
+
+            continue;
+        }
+
+        $inList = false;
+    }
+
+    return array_values(array_filter($names, fn (string $name): bool => $name !== ''));
+}
+
+/**
+ * Drop anything the graph names that the registry does not actually ship.
+ *
+ * A dependency refit cannot install is worse than one it never knew about: it
+ * would put a `sheaf:install` for a nonexistent component in the plan, and that
+ * step is required, so the run would stop before rewriting a thing.
+ *
+ * @param  array<string, list<string>>  $dependencies
+ * @param  array<string, list<string>>  $components
+ * @return array<string, list<string>>
+ */
+function pruneDependencies(array $dependencies, array $components): array
+{
+    $pruned = [];
+    $unknown = [];
+
+    ksort($dependencies);
+
+    foreach ($dependencies as $name => $needs) {
+        $known = array_values(array_filter($needs, fn (string $need): bool => isset($components[$need])));
+        $unknown = array_merge($unknown, array_diff($needs, $known));
+
+        if ($known !== []) {
+            $pruned[$name] = $known;
+        }
+    }
+
+    $unknown = array_values(array_unique($unknown));
+
+    if ($unknown !== []) {
+        // Not fatal — a tag that resolves to no component is Sheaf's problem to
+        // have, and refit has nothing it could install for it either way.
+        info('  unknown  '.implode(', ', $unknown));
+    }
+
+    return $pruned;
 }
 
 /**

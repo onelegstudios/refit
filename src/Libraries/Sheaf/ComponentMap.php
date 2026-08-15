@@ -179,11 +179,12 @@ final class ComponentMap
     }
 
     /**
-     * Every Sheaf component the map can produce, as install names.
+     * Every Sheaf component the map names directly, as install names.
      *
-     * `x-ui.navlist.item` needs the `navlist` component, and Sheaf's own
-     * dependency graph pulls in whatever that needs in turn — so refit only ever
-     * has to ask for the top-level names.
+     * `x-ui.navlist.item` needs the `navlist` component, so only the top-level
+     * name is returned. What each of those needs in turn is not this table's to
+     * know — {@see Components::closure()} works that out from the recorded
+     * registry, and refit installs the closure rather than this list.
      *
      * @return list<string>
      */

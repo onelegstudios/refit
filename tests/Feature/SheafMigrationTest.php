@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Onelegstudios\Refit\Blade\TagParser;
 use Onelegstudios\Refit\Icons\IconStrategy;
 use Onelegstudios\Refit\Libraries\Sheaf\ComponentMap;
+use Onelegstudios\Refit\Libraries\Sheaf\Components;
 use Onelegstudios\Refit\Libraries\SheafLibrary;
 use Onelegstudios\Refit\Plan\Plan;
 use Onelegstudios\Refit\Plan\Report;
@@ -34,7 +35,7 @@ function sheafKit(string $kit, bool $withComponents = true): string
     if ($withComponents) {
         // Stand in for what `sheaf:install` would have written, so the plan has
         // no work to do at the dependency stage and the test is about rewriting.
-        foreach (ComponentMap::components() as $component) {
+        foreach (Components::closure(ComponentMap::components()) as $component) {
             @mkdir($root.'/'.SheafLibrary::COMPONENT_DIRECTORY.'/'.$component, 0755, true);
         }
     }
@@ -139,6 +140,34 @@ it('plans a sheaf:install for every component it needs and does not have', funct
     expect($steps)->toContain('sheaf:install button')
         ->toContain('sheaf:install navlist');
 })->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+
+it('installs what a component needs as well as the component', function (): void {
+    $root = sheafKit('livewire', withComponents: false);
+    $steps = implode("\n", installSteps($root));
+
+    // The dropdown's own config declares `icon` and nothing else, but its item
+    // renders <x-ui.kbd>. Leaving that to Sheaf's resolver is what made the user
+    // menu throw "Unable to locate a class or view for component [ui.kbd]" on
+    // the first page load after a migration.
+    expect($steps)->toContain('sheaf:install dropdown')
+        ->toContain('sheaf:install kbd');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+
+it('installs something for every component tag the chrome stubs write', function (): void {
+    $installed = Components::closure(ComponentMap::components());
+    $written = [];
+
+    foreach ((array) glob(__DIR__.'/../../stubs/sheaf/*/*.blade.php.stub') as $stub) {
+        preg_match_all('/<'.preg_quote(ComponentMap::PREFIX, '/').'([a-z0-9-]+)/', (string) file_get_contents((string) $stub), $matches);
+
+        foreach ($matches[1] as $component) {
+            $written[$component] = true;
+        }
+    }
+
+    expect($written)->not->toBe([])
+        ->and(array_values(array_diff(array_keys($written), $installed)))->toBe([]);
+});
 
 it('leaves no Flux tag behind anywhere in the tree', function (string $kit): void {
     $root = sheafKit($kit);

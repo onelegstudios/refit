@@ -58,6 +58,13 @@ find them done and leave them alone — the same way it leaves alone any compone
 already sitting in `resources/views/components/ui`, so anything you have
 customised stays customised.
 
+The plan asks for more components than your views mention, by design. Sheaf's CLI
+resolves the dependencies a component's config declares, and some of those configs
+declare less than the component actually renders — the dropdown writes `<x-ui.kbd>`
+without naming `kbd` anywhere. Refit records what each component's source really
+reaches for and installs the whole graph by name, so `sheaf:install kbd` in the
+plan is refit closing a gap rather than refit being greedy.
+
 `sheaf:init` is a one-time setup, and refit passes the flags your answers imply:
 `--with-dark-mode`, because every layout the kit ships puts `class="dark"` on the
 `<html>` element, and `--with-phosphor` when you asked for

@@ -8,6 +8,7 @@ use Onelegstudios\Refit\Contracts\Library;
 use Onelegstudios\Refit\Icons\IconMap;
 use Onelegstudios\Refit\Icons\IconStrategy;
 use Onelegstudios\Refit\Libraries\Sheaf\ComponentMap;
+use Onelegstudios\Refit\Libraries\Sheaf\Components;
 use Onelegstudios\Refit\Libraries\Sheaf\LayoutStubs;
 use Onelegstudios\Refit\Plan\Actions\MapComponentTags;
 use Onelegstudios\Refit\Plan\Actions\PrefixIconNames;
@@ -240,9 +241,12 @@ final class SheafLibrary implements Library
     /**
      * Sheaf components this project needs and does not already have.
      *
-     * Only the top-level names: Sheaf's own dependency graph pulls in whatever
-     * each one needs in turn, so asking for `navlist` is enough to get `icon`,
-     * `badge` and `button` with it.
+     * The closure of what the map names, not just the map's own list. Sheaf's
+     * CLI resolves only the dependencies a component's config declares, and those
+     * configs under-declare: `dropdown` names `icon` alone, while its item writes
+     * `<x-ui.kbd>` and `<x-ui.button>`. Installing the dropdown and trusting the
+     * CLI therefore leaves a user menu that throws on the first render. Refit
+     * asks for every component in the graph by name instead.
      *
      * @return list<string>
      */
@@ -250,7 +254,7 @@ final class SheafLibrary implements Library
     {
         $needed = [];
 
-        foreach (ComponentMap::components() as $component) {
+        foreach (Components::closure(ComponentMap::components()) as $component) {
             if ($this->hasComponent($project, $component)) {
                 continue;
             }
