@@ -40,19 +40,35 @@ __TEAM_SWITCHER__
                     />
                 </x-ui.navlist>
 
-                <x-desktop-user-menu class="hidden lg:block" :name="auth()->user()->name" />
+                {{-- Every nav group above sits in a navlist's gutter of 2. The menu
+                     is the last row of the same column, so it sits in one too —
+                     without it the trigger runs edge to edge and the sidebar's
+                     rows no longer line up. --}}
+                <x-ui.navlist class="max-lg:hidden">
+                    <x-desktop-user-menu :name="auth()->user()->name" />
+                </x-ui.navlist>
             </x-ui.sidebar>
 
-            <x-ui.layout.main>
+            {{-- Sheaf's main is a plain block, so nothing inside it can size
+                 itself against the screen the main fills. The kit's dashboard
+                 does exactly that, and collapses to the height of its own borders.
+                 A column gives the page a height to grow into. --}}
+            <x-ui.layout.main class="flex flex-col">
                 <x-ui.layout.header class="lg:hidden">
-                    <x-ui.sidebar.toggle class="lg:hidden" icon="bars-2" />
+                    {{-- Sheaf's toggle draws its own glyph and takes no icon. --}}
+                    <x-ui.sidebar.toggle class="lg:hidden" />
 
                     <div class="flex-1"></div>
 
                     <x-desktop-user-menu :name="auth()->user()->name" />
                 </x-ui.layout.header>
 
-                {{ $slot }}
+                {{-- Sheaf pads main's children by 2 with a selector a plain utility
+                     loses to, so the 6/8 the kit's own main gave its pages comes
+                     back important. --}}
+                <div class="flex flex-1 flex-col p-6! lg:p-8!">
+                    {{ $slot }}
+                </div>
             </x-ui.layout.main>
         </x-ui.layout>
 __CREATE_TEAM_MODAL__

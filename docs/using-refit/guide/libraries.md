@@ -99,6 +99,18 @@ Because the stubs render the main themselves, refit also drops the `<flux:main>`
 the kit wraps the slot in inside `layouts/app.blade.php`. Two of them would put a
 full-height scrolling box inside a full-height scrolling box.
 
+The one the stubs render is not a bare `<x-ui.layout.main>`, and the extra classes
+on it are load-bearing. Sheaf's main is a plain block, so a page that sizes itself
+against it has nothing to measure — the kit's dashboard fills the screen, and
+without a column to grow into it collapses to the height of its own borders. Sheaf
+also pads the main's children itself, by 2, from a selector on the main that a
+plain utility loses to, so the `p-6 lg:p-8` the kit's pages were written against
+comes back marked important on a child of its own. In the header layout the main
+is sized to its grid row as well: Sheaf asks for a screen of height whichever
+variant it lands in, and there the grid has already spent a header on the row
+above, so a screen is a header too many and the layout clips the difference off
+the bottom of every page.
+
 **Dropdown triggers.** Flux takes a dropdown's trigger as its first child; Sheaf
 takes it as `<x-slot:button>`. Refit wraps it.
 

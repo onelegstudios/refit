@@ -3,8 +3,87 @@
     <head>
         @include('partials.head')
     </head>
-    <body class="min-h-screen bg-white dark:bg-zinc-800">
+    {{-- Sheaf's header-sidebar grid always reserves a column for the sidebar. This
+         layout keeps its sidebar for mobile only, so the column is collapsed at
+         the width the sidebar hides at. --}}
+    <body class="min-h-screen bg-white dark:bg-zinc-800 [&_[data-slot=layout]]:lg:grid-cols-1 [&_[data-slot=layout]]:lg:[grid-template-areas:'header'_'main']">
         <x-ui.layout variant="header-sidebar">
+            <x-ui.layout.header class="border-b border-zinc-200 bg-zinc-50 p-0! dark:border-zinc-700 dark:bg-zinc-900">
+                {{-- The kit centred the bar on a container rather than letting it
+                     run the width of the screen. Sheaf's header is the whole grid
+                     row, so the container is a child of it — and the header hands
+                     over its own padding of 2, because the gutter belongs to the
+                     container and the kit measured it from the edge. --}}
+                <div class="mx-auto flex h-full w-full max-w-7xl items-center px-6 lg:px-8">
+                    {{-- Sheaf's toggle draws its own glyph and takes no icon. --}}
+                    <x-ui.sidebar.toggle class="lg:hidden mr-2" />
+
+                    <x-app-logo href="{{ route('dashboard') }}" wire:navigate />
+
+                    <x-ui.navbar class="-mb-px max-lg:hidden">
+                        <x-ui.navbar.item
+                            icon="squares-2x2"
+                            :label="__('Dashboard')"
+                            :href="route('dashboard')"
+                            :current="request()->routeIs('dashboard')"
+                            wire:navigate
+                        />
+                    </x-ui.navbar>
+
+                    <div class="flex-1"></div>
+
+                    {{-- The kit's navbar item drew its label from slot content, and
+                         these three were given none: they are icons on the bar, and
+                         the name they answer to is a tooltip. Sheaf's item always
+                         draws its label, so the span is taken out of the row and the
+                         name moves to where the kit kept it. --}}
+                    <x-ui.navbar class="me-1.5 space-x-0.5 rtl:space-x-reverse py-0!">
+                        <x-ui.tooltip placement="bottom">
+                            <x-slot:trigger>
+                                <x-ui.navbar.item
+                                    class="h-10 [&>span]:hidden"
+                                    icon="magnifying-glass"
+                                    href="#"
+                                    :aria-label="__('Search')"
+                                />
+                            </x-slot:trigger>
+
+                            <x-ui.tooltip.content>{{ __('Search') }}</x-ui.tooltip.content>
+                        </x-ui.tooltip>
+
+                        <x-ui.tooltip placement="bottom" class="max-lg:hidden">
+                            <x-slot:trigger>
+                                <x-ui.navbar.item
+                                    class="h-10 [&>span]:hidden"
+                                    icon="folder"
+                                    href="https://github.com/laravel/livewire-starter-kit"
+                                    target="_blank"
+                                    :aria-label="__('Repository')"
+                                />
+                            </x-slot:trigger>
+
+                            <x-ui.tooltip.content>{{ __('Repository') }}</x-ui.tooltip.content>
+                        </x-ui.tooltip>
+
+                        <x-ui.tooltip placement="bottom" class="max-lg:hidden">
+                            <x-slot:trigger>
+                                <x-ui.navbar.item
+                                    class="h-10 [&>span]:hidden"
+                                    icon="book-open"
+                                    href="https://laravel.com/docs/starter-kits#livewire"
+                                    target="_blank"
+                                    :aria-label="__('Documentation')"
+                                />
+                            </x-slot:trigger>
+
+                            <x-ui.tooltip.content>{{ __('Documentation') }}</x-ui.tooltip.content>
+                        </x-ui.tooltip>
+                    </x-ui.navbar>
+
+                    <x-desktop-user-menu />
+                </div>
+            </x-ui.layout.header>
+
             <x-ui.sidebar collapsible="mobile" sticky class="lg:hidden border-e border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
                 <x-slot:brand>
                     <x-app-logo :sidebar="true" href="{{ route('dashboard') }}" wire:navigate />
@@ -41,51 +120,18 @@ __TEAM_SWITCHER__
                 </x-ui.navlist>
             </x-ui.sidebar>
 
-            <x-ui.layout.main>
-                <x-ui.layout.header class="border-b border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
-                    <x-ui.sidebar.toggle class="lg:hidden mr-2" icon="bars-2" />
-
-                    <x-app-logo href="{{ route('dashboard') }}" wire:navigate />
-
-                    <x-ui.navbar class="-mb-px max-lg:hidden">
-                        <x-ui.navbar.item
-                            icon="squares-2x2"
-                            :label="__('Dashboard')"
-                            :href="route('dashboard')"
-                            :current="request()->routeIs('dashboard')"
-                            wire:navigate
-                        />
-                    </x-ui.navbar>
-
-                    <div class="flex-1"></div>
-
-                    <x-ui.navbar class="me-1.5 space-x-0.5 rtl:space-x-reverse py-0!">
-                        <x-ui.navbar.item
-                            class="!h-10 [&>div>svg]:size-5"
-                            icon="magnifying-glass"
-                            href="#"
-                            :label="__('Search')"
-                        />
-                        <x-ui.navbar.item
-                            class="h-10 max-lg:hidden [&>div>svg]:size-5"
-                            icon="folder"
-                            href="https://github.com/laravel/livewire-starter-kit"
-                            target="_blank"
-                            :label="__('Repository')"
-                        />
-                        <x-ui.navbar.item
-                            class="h-10 max-lg:hidden [&>div>svg]:size-5"
-                            icon="book-open"
-                            href="https://laravel.com/docs/starter-kits#livewire"
-                            target="_blank"
-                            :label="__('Documentation')"
-                        />
-                    </x-ui.navbar>
-
-                    <x-desktop-user-menu />
-                </x-ui.layout.header>
-
-                {{ $slot }}
+            {{-- Sheaf's main asks for a screen of height, which is a screen too
+                 much in this variant: the grid already spent a header on the row
+                 above, and the layout clips what does not fit. Sized to its own
+                 row instead, and made a column so a page that sizes itself
+                 against the viewport — the kit's dashboard does — has a height to
+                 measure. The child is where the 6/8 the kit's own main gave its
+                 pages comes back; Sheaf pads main's children by 2 with a selector
+                 a plain utility loses to, hence the important. --}}
+            <x-ui.layout.main class="flex flex-col min-h-0! max-h-full!">
+                <div class="flex flex-1 flex-col p-6! lg:p-8!">
+                    {{ $slot }}
+                </div>
             </x-ui.layout.main>
         </x-ui.layout>
 __CREATE_TEAM_MODAL__
