@@ -84,7 +84,10 @@
                 </div>
             </x-ui.layout.header>
 
-            <x-ui.sidebar collapsible="mobile" sticky class="lg:hidden border-e border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
+            {{-- Sheaf's own surface, for the reason the sidebar layout gives at
+                 more length: the tint would reach the panel and not the sticky
+                 brand row, which is the white band behind the logo. --}}
+            <x-ui.sidebar class="lg:hidden">
                 <x-slot:brand>
                     <x-app-logo :sidebar="true" href="{{ route('dashboard') }}" wire:navigate />
                 </x-slot:brand>

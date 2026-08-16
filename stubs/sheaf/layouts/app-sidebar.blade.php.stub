@@ -5,7 +5,14 @@
     </head>
     <body class="min-h-screen bg-white dark:bg-zinc-800">
         <x-ui.layout>
-            <x-ui.sidebar sticky collapsible="mobile" class="border-e border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
+            {{-- No border and no tint restated here. Sheaf's sidebar paints its
+                 own surface twice — the panel, and the sticky brand row above it
+                 — and only the panel takes attributes, so the kit's zinc-50 lands
+                 on one of the two and leaves the row white behind the logo. Flux's
+                 `sticky` and `collapsible` go with them: Sheaf spells those
+                 `sticky-header` and `collapsable`, so both were rendering as
+                 literal attributes on the div. --}}
+            <x-ui.sidebar>
                 <x-slot:brand>
                     <x-app-logo :sidebar="true" href="{{ route('dashboard') }}" wire:navigate />
                 </x-slot:brand>

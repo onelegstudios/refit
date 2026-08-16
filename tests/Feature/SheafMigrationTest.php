@@ -425,6 +425,33 @@ it('composes the header layout the way Sheaf\'s grid reads it', function (): voi
         ->toContain('{{ $slot }}');
 })->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
 
+it('leaves Sheaf\'s sidebar the one surface Sheaf paints', function (string $fixture, string $layout): void {
+    $root = sheafKit($fixture);
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'library' => 'sheaf',
+            'icons' => 'heroicons',
+            'tasks' => ['remove-flux'],
+        ]),
+    ])->assertSuccessful();
+
+    $sidebar = (new ProjectDetector)->detect($root)->get($layout);
+
+    // Sheaf's sidebar paints itself twice — the panel, and the sticky brand row
+    // above it — and only the panel takes attributes. Restating the kit's tint
+    // therefore reaches one of the two, and the row stays white behind the logo.
+    expect($sidebar)->not->toContain('bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900')
+        // Flux's spellings, which Sheaf takes as `sticky-header` and `collapsable`
+        // — left alone they render as literal attributes on the div.
+        ->not->toContain('<x-ui.sidebar sticky')
+        ->not->toContain('collapsible="mobile"');
+})->with([
+    'sidebar' => ['livewire', 'resources/views/layouts/app/sidebar.blade.php'],
+    'header' => ['livewire', 'resources/views/layouts/app/header.blade.php'],
+])->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+
 it('gives the page inside Sheaf\'s main the height and padding the kit\'s had', function (string $fixture, string $layout): void {
     $root = sheafKit($fixture);
 
