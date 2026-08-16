@@ -137,8 +137,9 @@ Inside `Stage::Reconcile`, and it matters:
 2. **`MapComponentTags`** — the dotted icon form is folded into an attribute while
    the suffix is still there to read, then tag names, then attributes and values.
 3. **`RestructureBrandLogo`**, **`PlaceDropdownChildren`**,
-   **`PreserveTextAlignment`** and **`PromoteContentsToLabel`** — after the
-   rename, because all four read the tags the rename produced.
+   **`PreserveTextAlignment`**, **`PromoteContentsToLabel`** and
+   **`ShapeSegmentedGroups`** — after the rename, because all five read the tags
+   the rename produced.
 4. **`RebindAppearanceToTheme`** — anywhere, in practice. It reads Alpine
    expressions rather than tags, so the rename neither helps it nor hurts it.
 5. **The icon sweeps** — last, so they run against the tags the migration
@@ -223,6 +224,30 @@ heading's own class wins.
 
 A tag that already says something about alignment, or whose classes are bound, is
 left alone, and so is anything under Sheaf's own component directory.
+
+### A shared word is not a shared meaning
+
+`variant="segmented"` is the same attribute with the same value in both
+libraries, which is exactly what makes it easy to miss: `MapComponentTags` has
+nothing to do, and the tag comes out looking finished.
+
+Flux reads "segmented" as a complete description of the control. Sheaf reads it as
+one class list — `bg-neutral-200 rounded-box w-fit p-1`, the pill — and takes the
+rest from two props that default the other way. `direction` is `vertical`, which
+adds `space-y-2`; `indicator` is `true`, which draws the radio dot in every
+segment. Renamed and no more, the appearance page renders three dotted rows
+stacked down a narrow grey column.
+
+`ShapeSegmentedGroups` writes `direction="horizontal"` and `:indicator="false"`
+onto a segmented group that has not named them. Both spellings count as naming
+one, and a bound `:variant` is not a value the sweep can read, so it is not a
+group the sweep touches.
+
+Worth knowing when reading Sheaf's radio: the item takes `variant` and
+`indicator` through `@aware`, which reads the parent's *attributes* and not its
+prop defaults. Saying these explicitly on the group is therefore the only way the
+item hears them at all — which is also why the group's computed `name` default
+never reaches the item, and every input renders `name=""`.
 
 ### Some of the kit is not a component at all
 

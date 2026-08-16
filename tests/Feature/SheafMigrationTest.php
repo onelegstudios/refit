@@ -764,3 +764,46 @@ it('says so when Flux\'s appearance script is left running alongside Sheaf\'s', 
 
     expect((new ProjectDetector)->detect($root)->get('REFIT-NOTES.md'))->not->toContain('@fluxAppearance');
 })->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+
+it('gives a segmented group the row and the bare segments Flux implied', function (): void {
+    $root = sheafKit('livewire');
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'library' => 'sheaf',
+            'icons' => 'heroicons',
+            'tasks' => ['remove-flux'],
+        ]),
+    ])->assertSuccessful();
+
+    // Flux reads "segmented" as the whole shape. Sheaf reads it as the pill
+    // background, and defaults the rest the other way: `direction` vertical puts
+    // `space-y-2` on the group, `indicator` true draws a radio dot in every
+    // segment. The appearance control came out as a grey column of dotted rows.
+    expect((new ProjectDetector)->detect($root)->get('resources/views/pages/settings/⚡appearance.blade.php'))
+        ->toContain('<x-ui.radio.group direction="horizontal" :indicator="false" x-data variant="segmented"');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+
+it('leaves a segmented group that has already decided its own shape', function (): void {
+    $root = sheafKit('livewire');
+
+    file_put_contents($root.'/resources/views/dashboard.blade.php', <<<'BLADE'
+        <x-ui.radio.group variant="segmented" direction="vertical" :indicator="true" />
+        <x-ui.radio.group :variant="$variant" />
+        BLADE);
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'library' => 'sheaf',
+            'icons' => 'heroicons',
+            'tasks' => ['remove-flux'],
+        ]),
+    ])->assertSuccessful();
+
+    // Said for itself, and a bound variant is not a value to read at all.
+    expect((new ProjectDetector)->detect($root)->get('resources/views/dashboard.blade.php'))
+        ->toContain('<x-ui.radio.group variant="segmented" direction="vertical" :indicator="true" />')
+        ->toContain('<x-ui.radio.group :variant="$variant" />');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');

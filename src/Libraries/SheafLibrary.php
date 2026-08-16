@@ -21,6 +21,7 @@ use Onelegstudios\Refit\Plan\Actions\RestructureBrandLogo;
 use Onelegstudios\Refit\Plan\Actions\RestructureOverlays;
 use Onelegstudios\Refit\Plan\Actions\RewriteIconNames;
 use Onelegstudios\Refit\Plan\Actions\RunProcess;
+use Onelegstudios\Refit\Plan\Actions\ShapeSegmentedGroups;
 use Onelegstudios\Refit\Plan\Plan;
 use Onelegstudios\Refit\Plan\Report;
 use Onelegstudios\Refit\Plan\Stage;
@@ -194,6 +195,7 @@ final class SheafLibrary implements Library
         $plan->add(Stage::Reconcile, new PlaceDropdownChildren);
         $plan->add(Stage::Reconcile, new PreserveTextAlignment);
         $plan->add(Stage::Reconcile, new PromoteContentsToLabel);
+        $plan->add(Stage::Reconcile, new ShapeSegmentedGroups);
 
         // Independent of all of the above: light/dark is the one part of the kit
         // that lives in JavaScript, so it survives the rename untouched and

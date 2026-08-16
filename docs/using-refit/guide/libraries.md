@@ -166,6 +166,14 @@ the appearance page's segmented control loses its three words. A slot holding mo
 than a label is left alone and reported instead: Sheaf's item draws an icon, a
 label and a badge, and has nowhere to put markup.
 
+**Segmented controls.** Both libraries spell one `variant="segmented"`, so the
+attribute survives the rename looking like the whole answer. Flux reads it as a
+complete description — a row of flush segments, no radio dots — while Sheaf reads
+it as the pill background alone and leaves the rest to `direction`, which defaults
+to `vertical`, and `indicator`, which defaults to `true`. Refit says both out
+loud, so the appearance control renders as a row rather than a narrow grey column
+of three dotted rows. A group that names either prop itself is left alone.
+
 **Light and dark.** The kit switches appearance through Flux's `$flux` Alpine
 magic, not through a component, so the rename leaves it pointing at something the
 package took with it. Sheaf writes the same feature as a `$theme` magic in
