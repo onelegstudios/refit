@@ -15,6 +15,7 @@ use Onelegstudios\Refit\Plan\Actions\OrderThemeImport;
 use Onelegstudios\Refit\Plan\Actions\PlaceDropdownChildren;
 use Onelegstudios\Refit\Plan\Actions\PrefixIconNames;
 use Onelegstudios\Refit\Plan\Actions\PreserveTextAlignment;
+use Onelegstudios\Refit\Plan\Actions\PromoteContentsToLabel;
 use Onelegstudios\Refit\Plan\Actions\RestructureBrandLogo;
 use Onelegstudios\Refit\Plan\Actions\RestructureOverlays;
 use Onelegstudios\Refit\Plan\Actions\RewriteIconNames;
@@ -191,6 +192,7 @@ final class SheafLibrary implements Library
         $plan->add(Stage::Reconcile, new RestructureBrandLogo);
         $plan->add(Stage::Reconcile, new PlaceDropdownChildren);
         $plan->add(Stage::Reconcile, new PreserveTextAlignment);
+        $plan->add(Stage::Reconcile, new PromoteContentsToLabel);
     }
 
     /**

@@ -95,7 +95,7 @@ scratch each time, so the steps that did work are simply skipped.
 
 ### The parts that move rather than rename
 
-Most of a Flux view is a rename away from a Sheaf one. Six things are not, and
+Most of a Flux view is a rename away from a Sheaf one. Seven things are not, and
 they are worth knowing about because they are where a diff will look surprising.
 
 **The chrome.** Flux's sidebar is a root element. Sheaf's is a grid area of an
@@ -155,6 +155,16 @@ behind it, which reads as no logo at all.
 **Text alignment.** The kit centres its auth headings by putting `text-center` on
 a wrapping div. Sheaf's heading and text declare `text-start` themselves, so refit
 restates the alignment on the tag as `text-center!`.
+
+**Item labels.** Flux reads a nav item's text out of its slot; Sheaf's
+`navlist.item`, `navbar.item` and `radio.item` render `{{ $label }}` and never
+touch the slot. So refit moves the contents onto the tag — a single Blade echo
+becomes `:label`, keeping `__()` where the kit put it, and plain text becomes a
+literal `label` — and closes the tag behind them. Left alone the settings
+sub-navigation is three links with a href, a hover state and no text at all, and
+the appearance page's segmented control loses its three words. A slot holding more
+than a label is left alone and reported instead: Sheaf's item draws an icon, a
+label and a badge, and has nowhere to put markup.
 
 ### What Sheaf has no answer for
 

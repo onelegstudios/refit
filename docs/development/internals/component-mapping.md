@@ -136,9 +136,9 @@ Inside `Stage::Reconcile`, and it matters:
    trigger, and what a modal close button wraps.
 2. **`MapComponentTags`** — the dotted icon form is folded into an attribute while
    the suffix is still there to read, then tag names, then attributes and values.
-3. **`RestructureBrandLogo`**, **`PlaceDropdownChildren`** and
-   **`PreserveTextAlignment`** — after the rename, because all three read the tags
-   the rename produced.
+3. **`RestructureBrandLogo`**, **`PlaceDropdownChildren`**,
+   **`PreserveTextAlignment`** and **`PromoteContentsToLabel`** — after the
+   rename, because all four read the tags the rename produced.
 4. **The icon sweeps** — last, so they run against the tags the migration
    produced. This is why `planMigration()` is called before `planIcons()` in
    `RefitCommand::build()`.
@@ -159,6 +159,25 @@ sidebar, black on a black one.
 inside it — the same element Flux was rendering, written where Sheaf will keep it.
 The classes themselves are copied verbatim, so a project that restyled its tile
 keeps the tile it wrote.
+
+### A slot is not always read
+
+The same shape, one component along. Flux's nav items take their text as slot
+content; Sheaf's `navlist.item`, `navbar.item` and `radio.item` render
+`{{ $label }}` into a span and never reference `$slot` at all. A rename therefore
+produces a valid, clickable, invisible item — which is what the settings
+sub-navigation and the appearance page's segmented control were reduced to.
+
+`PromoteContentsToLabel` moves the contents onto the tag and closes it behind
+them. A lone `{{ ... }}` becomes `:label="..."` so `__()` survives as a call
+rather than being flattened; text with nothing Blade about it becomes a literal
+`label`. Two echoes, markup, or a value carrying a double quote — which the tag
+parser cannot read back — are all left as they were and collected into one
+warning, because Sheaf's item has an icon, a label and a badge and nowhere to put
+anything else.
+
+The other Sheaf components taking a `label` render their slot as well, so a slot
+label still shows and none of them are targets.
 
 ### A menu is a grid
 

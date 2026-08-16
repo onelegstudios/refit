@@ -433,6 +433,37 @@ it('composes the header layout the way Sheaf\'s grid reads it', function (): voi
         ->toContain('{{ $slot }}');
 })->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
 
+it('labels the items Sheaf would otherwise render empty', function (): void {
+    $root = sheafKit('livewire');
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'library' => 'sheaf',
+            'icons' => 'heroicons',
+            'tasks' => ['remove-flux'],
+        ]),
+    ])->assertSuccessful();
+
+    $project = (new ProjectDetector)->detect($root);
+
+    // Flux read a nav item's text out of its slot. Sheaf's renders `{{ $label }}`
+    // and never touches the slot, so the settings sub-navigation came out as three
+    // links with a href, a hover state and no text at all.
+    expect($project->get('resources/views/pages/settings/layout.blade.php'))
+        ->toContain('<x-ui.navlist.item :href="route(\'profile.edit\')" wire:navigate :label="__(\'Profile\')" />')
+        ->toContain('<x-ui.navlist.item :href="route(\'security.edit\')" wire:navigate :label="__(\'Security\')" />')
+        ->toContain('<x-ui.navlist.item :href="route(\'appearance.edit\')" wire:navigate :label="__(\'Appearance\')" />')
+        ->not->toContain('</x-ui.navlist.item>');
+
+    // And the appearance page's segmented control loses its three words the same
+    // way, through `x-ui.radio.item`.
+    expect($project->get('resources/views/pages/settings/⚡appearance.blade.php'))
+        ->toContain(':label="__(\'Light\')" />')
+        ->toContain(':label="__(\'Dark\')" />')
+        ->toContain(':label="__(\'System\')" />');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+
 it('keeps Tailwind\'s import ahead of Sheaf\'s so the theme stays layered', function (): void {
     $root = sheafKit('livewire');
 
