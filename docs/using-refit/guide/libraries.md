@@ -48,7 +48,7 @@ reimplementing it — including the parts that put it there in the first place.
 | Stage | What happens |
 |---|---|
 | Dependencies | `composer require sheaf/cli`, then `php artisan sheaf:init`, then `php artisan sheaf:install <component>` — each one skipped if it has already been done |
-| Write | The chrome files, rewritten from refit's Sheaf stubs |
+| Write | The chrome files, rewritten from refit's Sheaf stubs, and `app.css`'s imports put back in order |
 | Reconcile | The overlays are reshaped, then every remaining tag and attribute is mapped |
 | Format | `pint --dirty`, as always |
 
@@ -69,6 +69,19 @@ plan is refit closing a gap rather than refit being greedy.
 `--with-dark-mode`, because every layout the kit ships puts `class="dark"` on the
 `<html>` element, and `--with-phosphor` when you asked for
 [Phosphor icons](/docs/using-refit/guide/icons).
+
+It leaves one thing behind that refit puts right. `sheaf:init` prepends its
+`@import './theme.css';` to the *top* of `resources/css/app.css`, above
+`@import 'tailwindcss'`, and from there it moves the point at which Tailwind can
+open `@layer theme` — the `:root` block holding every theme variable is emitted
+ahead of the layer, unlayered. Unlayered declarations beat layered ones whatever
+the order, so every `.dark { --color-* }` override written into `@layer theme`
+quietly stops applying: the kit's `--color-accent`, `--color-accent-content` and
+`--color-accent-foreground`, and Sheaf's own `--color-primary` trio with them. The
+logo is where you see it — the kit's mark is `dark:text-black` on a tile that is
+only white in dark mode because of one of those overrides, so it goes black on a
+tile that stayed dark. Refit moves the import below Tailwind's, which is the whole
+fix, and skips the step when your stylesheet already has them in that order.
 
 ### If a dependency step fails
 

@@ -11,6 +11,7 @@ use Onelegstudios\Refit\Libraries\Sheaf\ComponentMap;
 use Onelegstudios\Refit\Libraries\Sheaf\Components;
 use Onelegstudios\Refit\Libraries\Sheaf\LayoutStubs;
 use Onelegstudios\Refit\Plan\Actions\MapComponentTags;
+use Onelegstudios\Refit\Plan\Actions\OrderThemeImport;
 use Onelegstudios\Refit\Plan\Actions\PlaceDropdownChildren;
 use Onelegstudios\Refit\Plan\Actions\PrefixIconNames;
 use Onelegstudios\Refit\Plan\Actions\PreserveTextAlignment;
@@ -219,6 +220,18 @@ final class SheafLibrary implements Library
                 'Initialising Sheaf',
                 required: true,
             ));
+        }
+
+        // `sheaf:init` writes its import above Tailwind's, which is far enough up
+        // the file to push Tailwind's theme variables out of `@layer theme` — and
+        // an unlayered `:root` beats the `.dark` overrides that make the accent
+        // and primary colours flip. Planned blind when refit is the one running
+        // the init, because the line it moves does not exist yet.
+        $ordered = $project->exists(OrderThemeImport::STYLESHEET)
+            && ! OrderThemeImport::misordered($project->get(OrderThemeImport::STYLESHEET));
+
+        if (! $project->exists(self::THEME_STYLESHEET) || ! $ordered) {
+            $plan->add(Stage::Write, new OrderThemeImport);
         }
 
         foreach ($this->missingComponents($project) as $component) {

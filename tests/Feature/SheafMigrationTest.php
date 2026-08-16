@@ -8,6 +8,7 @@ use Onelegstudios\Refit\Icons\IconStrategy;
 use Onelegstudios\Refit\Libraries\Sheaf\ComponentMap;
 use Onelegstudios\Refit\Libraries\Sheaf\Components;
 use Onelegstudios\Refit\Libraries\SheafLibrary;
+use Onelegstudios\Refit\Plan\Actions\OrderThemeImport;
 use Onelegstudios\Refit\Plan\Plan;
 use Onelegstudios\Refit\Plan\Report;
 use Onelegstudios\Refit\Plan\Stage;
@@ -32,6 +33,13 @@ function sheafKit(string $kit, bool $withComponents = true): string
     file_put_contents($root.'/composer.json', (string) json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
 
     file_put_contents($root.'/'.SheafLibrary::THEME_STYLESHEET, ":root { --color-accent: #000; }\n");
+
+    // And `sheaf:init` does not only write that file — it prepends the import for
+    // it to the top of the stylesheet, above Tailwind's own.
+    file_put_contents(
+        $root.'/'.OrderThemeImport::STYLESHEET,
+        "@import './theme.css'; /* By Sheaf.dev */\n".file_get_contents($root.'/'.OrderThemeImport::STYLESHEET),
+    );
 
     if ($withComponents) {
         // Stand in for what `sheaf:install` would have written, so the plan has
@@ -423,6 +431,34 @@ it('composes the header layout the way Sheaf\'s grid reads it', function (): voi
     expect($project->get('resources/views/layouts/app.blade.php'))
         ->not->toContain('layout.main')
         ->toContain('{{ $slot }}');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+
+it('keeps Tailwind\'s import ahead of Sheaf\'s so the theme stays layered', function (): void {
+    $root = sheafKit('livewire');
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'library' => 'sheaf',
+            'icons' => 'heroicons',
+            'tasks' => ['remove-flux'],
+        ]),
+    ])->assertSuccessful();
+
+    $stylesheet = (new ProjectDetector)->detect($root)->get(OrderThemeImport::STYLESHEET);
+    $lines = preg_split('/\R/', $stylesheet) ?: [];
+
+    $tailwind = array_search("@import 'tailwindcss';", $lines, true);
+    $theme = array_search("@import './theme.css'; /* By Sheaf.dev */", $lines, true);
+
+    // Above Tailwind's import, Sheaf's pushes the `:root` block holding every
+    // theme variable out of `@layer theme`, and an unlayered declaration beats the
+    // `.dark` overrides that flip the accent and primary colours. The kit's logo
+    // is the visible half of that: a `dark:text-black` mark on a tile that never
+    // turns white.
+    expect($tailwind)->toBeInt()
+        ->and($theme)->toBeInt()
+        ->and($theme)->toBeGreaterThan($tailwind);
 })->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
 
 it('leaves Sheaf\'s sidebar the one surface Sheaf paints', function (string $fixture, string $layout): void {
