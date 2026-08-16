@@ -15,7 +15,7 @@
     </x-slot:button>
 
     <x-slot:menu>
-        <div class="flex items-center gap-2 px-1 py-1.5 text-start text-sm">
+        <div class="col-span-full flex items-center gap-2 px-1 py-1.5 text-start text-sm">
             <x-ui.avatar
                 :name="auth()->user()->name"
                 :initials="auth()->user()->initials()"
@@ -34,7 +34,7 @@
 
         <x-ui.dropdown.separator />
 
-        <form method="POST" action="{{ route('logout') }}" class="w-full">
+        <form method="POST" action="{{ route('logout') }}" class="contents">
             @csrf
             <x-ui.dropdown.item
                 as="button"

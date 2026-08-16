@@ -308,3 +308,28 @@ it('keeps the logo tile Sheaf\'s brand would have dropped', function (): void {
         ->toContain('<div class="flex aspect-square size-8 items-center justify-center rounded-md bg-accent-content text-accent-foreground">')
         ->not->toContain('<x-slot name="logo" class=');
 })->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+
+it('gives everything in a dropdown menu a place in Sheaf\'s grid', function (): void {
+    $root = sheafKit('livewire-teams');
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'library' => 'sheaf',
+            'icons' => 'heroicons',
+            'tasks' => ['remove-flux'],
+        ]),
+    ])->assertSuccessful();
+
+    $project = (new ProjectDetector)->detect($root);
+    $menu = $project->get('resources/views/components/desktop-user-menu.blade.php');
+
+    // The panel is a three-column grid: the profile block spans it, and the form
+    // steps out of the way so its item is the grid child.
+    expect($menu)->toContain('<div class="col-span-full flex items-center')
+        ->toContain('<form method="POST" action="{{ route(\'logout\') }}" class="contents">');
+
+    // Sheaf renders the modal trigger's outer element, so it is wrapped instead.
+    expect($project->get('resources/views/components/⚡team-switcher.blade.php'))
+        ->toContain('<div class="col-span-full">');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire-teams')), 'Run `composer fixtures`.');

@@ -101,6 +101,13 @@ takes it as `<x-slot:button>`. Refit wraps it.
 child closes the modal". Sheaf's modal listens for a `close-modal` event, so the
 wrapper becomes an element that dispatches it.
 
+**Dropdown menu contents.** Sheaf renders a menu panel as a three-column grid,
+and only the parts it ships declare a place in it. Refit places everything else:
+`contents` on a wrapper such as the log out form, `col-span-full` on a block such
+as the profile header, and a spanning div around a component such as a modal
+trigger. Left alone, those rows render in the first column at a fraction of the
+panel's width.
+
 **The logo tile.** The kit gives its logo slot the classes that draw the accent
 tile behind the mark, and Flux's brand renders them onto a wrapper. Sheaf's brand
 renders the slot bare, so refit moves those classes onto an element inside the

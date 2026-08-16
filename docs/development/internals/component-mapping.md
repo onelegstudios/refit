@@ -157,6 +157,31 @@ inside it — the same element Flux was rendering, written where Sheaf will keep
 The classes themselves are copied verbatim, so a project that restyled its tile
 keeps the tile it wrote.
 
+### A menu is a grid
+
+Flux renders a menu as a stack of blocks, so the kit puts what it likes in one: a
+plain div of avatar, name and email at the top, a `<form>` around the log out
+item, a modal trigger around "New team". Sheaf renders the panel as
+`grid grid-cols-[auto_1fr_auto]`, where every part it ships declares its place —
+an item is `col-span-2`, a separator `col-span-full`, a group `contents`.
+
+Anything else lands in the first column. The log out row shows it best: the item
+inside the form still asks for `col-span-2`, but the form is the actual grid
+child, so the span applies to nothing and the row renders half the width of the
+one above it.
+
+`PlaceDropdownChildren` places each direct child of a menu — `contents` for a
+wrapper that holds a menu part, `col-span-full` for anything else, and a
+spanning div around a component, whose outermost element Sheaf renders rather
+than the view. Children that already say where they sit are left alone.
+
+Finding the direct children means knowing what encloses what, which is what
+`Nesting` answers — opening tags paired with their closing tags, per name, on a
+stack, alongside the rest of the
+[Blade rewriting](/docs/development/internals/blade-rewriting) tools.
+`PreserveTextAlignment` uses the same pairing to find the wrapper an element
+inherited its alignment from.
+
 ## Adding a library
 
 1. Implement `Library`. Put anything specific to it under `src/Libraries/<Name>/`.
