@@ -101,6 +101,12 @@ takes it as `<x-slot:button>`. Refit wraps it.
 child closes the modal". Sheaf's modal listens for a `close-modal` event, so the
 wrapper becomes an element that dispatches it.
 
+**The logo tile.** The kit gives its logo slot the classes that draw the accent
+tile behind the mark, and Flux's brand renders them onto a wrapper. Sheaf's brand
+renders the slot bare, so refit moves those classes onto an element inside the
+slot. Left alone the mark keeps its `text-white dark:text-black` with nothing
+behind it, which reads as no logo at all.
+
 ### What Sheaf has no answer for
 
 Refit never guesses. A tag with no Sheaf equivalent is left exactly as it was and

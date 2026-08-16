@@ -285,3 +285,26 @@ it('prefixes every icon name when Phosphor is asked for', function (): void {
         expect($name)->toStartWith('ps:');
     }
 })->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+
+it('keeps the logo tile Sheaf\'s brand would have dropped', function (): void {
+    $root = sheafKit('livewire');
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'library' => 'sheaf',
+            'icons' => 'heroicons',
+            'tasks' => ['remove-flux'],
+        ]),
+    ])->assertSuccessful();
+
+    $project = (new ProjectDetector)->detect($root);
+    $logo = $project->get('resources/views/components/app-logo.blade.php');
+
+    // Sheaf's brand renders {{ $logo }} and nothing else, so the accent tile has
+    // to be an element rather than attributes on the slot. Without it the mark is
+    // white on a white sidebar and black on a black one.
+    expect($logo)->toContain('<x-slot name="logo">')
+        ->toContain('<div class="flex aspect-square size-8 items-center justify-center rounded-md bg-accent-content text-accent-foreground">')
+        ->not->toContain('<x-slot name="logo" class=');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');

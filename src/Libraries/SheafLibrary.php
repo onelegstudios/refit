@@ -12,6 +12,7 @@ use Onelegstudios\Refit\Libraries\Sheaf\Components;
 use Onelegstudios\Refit\Libraries\Sheaf\LayoutStubs;
 use Onelegstudios\Refit\Plan\Actions\MapComponentTags;
 use Onelegstudios\Refit\Plan\Actions\PrefixIconNames;
+use Onelegstudios\Refit\Plan\Actions\RestructureBrandLogo;
 use Onelegstudios\Refit\Plan\Actions\RestructureOverlays;
 use Onelegstudios\Refit\Plan\Actions\RewriteIconNames;
 use Onelegstudios\Refit\Plan\Actions\RunProcess;
@@ -178,6 +179,8 @@ final class SheafLibrary implements Library
         // close button wraps.
         $plan->add(Stage::Reconcile, new RestructureOverlays);
         $plan->add(Stage::Reconcile, new MapComponentTags);
+
+        $plan->add(Stage::Reconcile, new RestructureBrandLogo);
     }
 
     /**

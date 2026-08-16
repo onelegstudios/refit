@@ -143,6 +143,20 @@ Inside `Stage::Reconcile`, and it matters:
 Every one of these is a [`BladeSweep`](/docs/development/internals/blade-rewriting),
 so each is one traversal, and each file is checked by `BladeGuard` individually.
 
+### A slot is not only a slot
+
+The kit hands its logo to the brand as a slot carrying classes, and Flux renders
+that slot as `<div {{ $logo->attributes->class(...) }}>` — which is what turns
+those classes into the accent tile the mark sits on. Sheaf's brand renders
+`{{ $logo }}` and nothing else, so the attributes go nowhere. The mark is
+`text-white dark:text-black`, so losing the tile loses the logo: white on a white
+sidebar, black on a black one.
+
+`RestructureBrandLogo` takes the classes off the slot and puts them on an element
+inside it — the same element Flux was rendering, written where Sheaf will keep it.
+The classes themselves are copied verbatim, so a project that restyled its tile
+keeps the tile it wrote.
+
 ## Adding a library
 
 1. Implement `Library`. Put anything specific to it under `src/Libraries/<Name>/`.
