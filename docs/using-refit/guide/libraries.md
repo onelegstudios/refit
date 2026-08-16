@@ -166,6 +166,20 @@ the appearance page's segmented control loses its three words. A slot holding mo
 than a label is left alone and reported instead: Sheaf's item draws an icon, a
 label and a badge, and has nowhere to put markup.
 
+**Light and dark.** The kit switches appearance through Flux's `$flux` Alpine
+magic, not through a component, so the rename leaves it pointing at something the
+package took with it. Sheaf writes the same feature as a `$theme` magic in
+`resources/js/globals/theme.js`, so refit moves the bindings across:
+`$flux.appearance` reads as `$theme.storedTheme`, `$flux.dark` as
+`$theme.isResolvedToDark`, and the appearance page's segmented control gets a
+`change` listener calling `$theme.setTheme()` — the only call that persists the
+choice and repaints the page. Left alone, the three buttons render, highlight, and
+change nothing.
+
+Anything else that names `$flux` — your own `$flux.appearance = …`, a toast, a
+modal — is left verbatim and named in `REFIT-NOTES.md`, because each has its own
+Sheaf answer and refit will not guess which.
+
 ### What Sheaf has no answer for
 
 Refit never guesses. A tag with no Sheaf equivalent is left exactly as it was and

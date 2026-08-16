@@ -647,3 +647,120 @@ it('sizes the header layout\'s main to the row the grid left it', function (): v
     expect((new ProjectDetector)->detect($root)->get('resources/views/layouts/app/sidebar.blade.php'))
         ->not->toContain('min-h-0!');
 })->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+
+it('drives the appearance control with Sheaf\'s theme runtime, not Flux\'s magic', function (): void {
+    $root = sheafKit('livewire');
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'library' => 'sheaf',
+            'icons' => 'heroicons',
+            'tasks' => ['remove-flux'],
+        ]),
+    ])->assertSuccessful();
+
+    $project = (new ProjectDetector)->detect($root);
+    $appearance = $project->get('resources/views/pages/settings/⚡appearance.blade.php');
+
+    // The segmented control was bound to `$flux.appearance`, which is gone with
+    // the package: the buttons rendered, moved, and changed nothing.
+    expect($appearance)->not->toContain('$flux')
+        ->toContain('x-model="$theme.storedTheme"')
+        // Reading `storedTheme` selects the right button; only `setTheme()`
+        // persists the choice and puts `.dark` on the document.
+        ->toContain('x-on:change="$theme.setTheme($event.target.value)"');
+
+    // The QR code inverts itself in dark mode by asking what the appearance
+    // currently resolves to, which is one property on Sheaf's side.
+    expect($project->get('resources/views/pages/settings/⚡two-factor-setup-modal.blade.php'))
+        ->not->toContain('$flux')
+        ->toContain('$theme.storedTheme')
+        ->toContain('$theme.isResolvedToDark');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+
+it('leaves no Flux Alpine magic anywhere in the tree', function (string $kit): void {
+    $root = sheafKit($kit);
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'library' => 'sheaf',
+            'icons' => 'heroicons',
+            'tasks' => ['remove-flux'],
+        ]),
+    ])->assertSuccessful();
+
+    $project = (new ProjectDetector)->detect($root);
+    $found = [];
+
+    foreach ($project->blades() as $path) {
+        if (str_contains($project->get($path), '$flux')) {
+            $found[] = $path;
+        }
+    }
+
+    expect($found)->toBe([]);
+})->with(['livewire', 'livewire-class-components', 'livewire-teams', 'livewire-workos', 'livewire-workos-teams'])
+    ->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+
+it('refuses to guess at a hand-written write to Flux\'s appearance', function (): void {
+    $root = sheafKit('livewire');
+
+    file_put_contents(
+        $root.'/resources/views/dashboard.blade.php',
+        '<div x-data><button x-on:click="$flux.appearance = \'dark\'">Dark</button></div>'."\n",
+    );
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'library' => 'sheaf',
+            'icons' => 'heroicons',
+            'tasks' => ['remove-flux'],
+        ]),
+    ])->assertSuccessful();
+
+    $project = (new ProjectDetector)->detect($root);
+
+    // A write is not a rename: assigning to `$theme.storedTheme` moves the
+    // reactive value and persists nothing, so refit says so rather than
+    // producing a button that looks right and does half the job.
+    expect($project->get('resources/views/dashboard.blade.php'))
+        ->toContain('$flux.appearance = \'dark\'')
+        ->and($project->get('REFIT-NOTES.md'))
+        ->toContain('resources/views/dashboard.blade.php')
+        ->toContain('$theme.setTheme(value)');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+
+it('says so when Flux\'s appearance script is left running alongside Sheaf\'s', function (): void {
+    $root = sheafKit('livewire');
+
+    // Migrating to Sheaf without the cleanup task, which is what the task list
+    // lets you do: `remove-flux` is opt-in and nothing preselects it.
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode(['library' => 'sheaf', 'icons' => 'heroicons']),
+    ])->assertSuccessful();
+
+    $project = (new ProjectDetector)->detect($root);
+
+    expect($project->get('resources/views/partials/head.blade.php'))->toContain('@fluxAppearance')
+        ->and($project->get('REFIT-NOTES.md'))
+        ->toContain('@fluxAppearance')
+        ->toContain('resources/views/partials/head.blade.php');
+
+    // And with the task, there is nothing to say.
+    $root = sheafKit('livewire');
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'library' => 'sheaf',
+            'icons' => 'heroicons',
+            'tasks' => ['remove-flux'],
+        ]),
+    ])->assertSuccessful();
+
+    expect((new ProjectDetector)->detect($root)->get('REFIT-NOTES.md'))->not->toContain('@fluxAppearance');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');

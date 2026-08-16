@@ -139,7 +139,9 @@ Inside `Stage::Reconcile`, and it matters:
 3. **`RestructureBrandLogo`**, **`PlaceDropdownChildren`**,
    **`PreserveTextAlignment`** and **`PromoteContentsToLabel`** — after the
    rename, because all four read the tags the rename produced.
-4. **The icon sweeps** — last, so they run against the tags the migration
+4. **`RebindAppearanceToTheme`** — anywhere, in practice. It reads Alpine
+   expressions rather than tags, so the rename neither helps it nor hurts it.
+5. **The icon sweeps** — last, so they run against the tags the migration
    produced. This is why `planMigration()` is called before `planIcons()` in
    `RefitCommand::build()`.
 
@@ -221,6 +223,41 @@ heading's own class wins.
 
 A tag that already says something about alignment, or whose classes are bound, is
 left alone, and so is anything under Sheaf's own component directory.
+
+### Some of the kit is not a component at all
+
+Light and dark is the one feature the kit takes from its library in JavaScript
+rather than in markup, so no amount of tag mapping reaches it. Flux registers a
+`$flux` Alpine magic and the kit binds to it directly — `x-model="$flux.appearance"`
+on the segmented control, and `$flux.dark` in the expression that inverts the
+two-factor QR code. Rename the tags and those bindings survive, aimed at a magic
+that `remove-flux` is about to take away.
+
+`sheaf:init --with-dark-mode` writes the same feature into
+`resources/js/globals/theme.js` as a `$theme` magic, and the two line up property
+for property:
+
+| Flux | Sheaf | |
+|---|---|---|
+| `$flux.appearance` | `$theme.storedTheme` | the `light \| dark \| system` preference |
+| `$flux.dark` | `$theme.isResolvedToDark` | what that preference currently resolves to |
+| `$flux.appearance = …` | `$theme.setTheme(…)` | the only write that persists and repaints |
+
+`RebindAppearanceToTheme` substitutes the two reads. The write is the part that is
+not a substitution: assigning to `$theme.storedTheme` moves the reactive value and
+neither writes localStorage nor puts `.dark` on the document, so the control would
+slide and the page would stay the colour it was.
+
+The one write the sweep does translate is the kit's own, because `x-model` makes
+its shape knowable. The model keeps reading `storedTheme`, so the right segment
+starts selected, and a `change` listener alongside it puts the click through
+`setTheme()`. The getter/setter pair that would be neater has nowhere to live:
+Sheaf's radio group declares an `x-data` of its own, and a second one passed in is
+a duplicate attribute the HTML parser drops.
+
+Every other `$flux` — a hand-written assignment, a toast, a modal — is left
+verbatim and reported. Each has its own Sheaf answer, and none of them is this
+one.
 
 ## Adding a library
 
