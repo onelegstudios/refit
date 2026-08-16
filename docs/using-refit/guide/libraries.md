@@ -85,14 +85,19 @@ scratch each time, so the steps that did work are simply skipped.
 Most of a Flux view is a rename away from a Sheaf one. Six things are not, and
 they are worth knowing about because they are where a diff will look surprising.
 
-**The chrome.** Flux's sidebar is a root element. Sheaf's sits inside an
-`<x-ui.layout>` next to an `<x-ui.layout.main>`, and the header the kit renders as
-a sibling belongs inside that main. No sequence of renames produces that nesting,
-so `layouts/app/sidebar.blade.php`, `layouts/app/header.blade.php` and
-`components/desktop-user-menu.blade.php` are written from stubs instead. The stubs
-are built entirely from components Sheaf ships. **Anything you had customised in
-those three files is in your git history rather than in the new ones** — which is
-the main reason refit insists on a clean tree.
+**The chrome.** Flux's sidebar is a root element. Sheaf's is a grid area of an
+`<x-ui.layout>`, and the variant decides where its siblings go: the sidebar layout
+puts the mobile header inside the main, the header layout puts the header
+alongside it, in the row the grid keeps for one. No sequence of renames produces
+either nesting, so `layouts/app/sidebar.blade.php`, `layouts/app/header.blade.php`
+and `components/desktop-user-menu.blade.php` are written from stubs instead. The
+stubs are built entirely from components Sheaf ships. **Anything you had
+customised in those three files is in your git history rather than in the new
+ones** — which is the main reason refit insists on a clean tree.
+
+Because the stubs render the main themselves, refit also drops the `<flux:main>`
+the kit wraps the slot in inside `layouts/app.blade.php`. Two of them would put a
+full-height scrolling box inside a full-height scrolling box.
 
 **Dropdown triggers.** Flux takes a dropdown's trigger as its first child; Sheaf
 takes it as `<x-slot:button>`. Refit wraps it.

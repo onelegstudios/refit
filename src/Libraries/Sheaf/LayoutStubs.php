@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Onelegstudios\Refit\Libraries\Sheaf;
 
 use Onelegstudios\Refit\Plan\Actions\MapComponentTags;
+use Onelegstudios\Refit\Plan\Actions\UnwrapElement;
 use Onelegstudios\Refit\Plan\Actions\WriteFile;
 use Onelegstudios\Refit\Plan\Plan;
 use Onelegstudios\Refit\Plan\Report;
@@ -20,9 +21,11 @@ use RuntimeException;
  * {@see MapComponentTags} handles it. The
  * chrome is the exception, and not because the components are missing — Sheaf
  * ships every one of them — but because they compose differently. Flux's sidebar
- * is a root element; Sheaf's sits inside an `<x-ui.layout>` alongside an
- * `<x-ui.layout.main>`, and the header the kit renders as a sibling belongs
- * inside that main. No sequence of tag renames produces that nesting.
+ * is a root element; Sheaf's is a grid area of an `<x-ui.layout>`, which decides
+ * where its siblings go from the variant it was given: the sidebar layout puts
+ * the mobile header inside the main, and the header layout puts the header
+ * alongside it, in the row the grid keeps for one. No sequence of tag renames
+ * produces either nesting.
  *
  * So these few files are written from stubs. The stubs are composed entirely of
  * components Sheaf ships — this authors application layout, never a component —
@@ -34,6 +37,12 @@ final class LayoutStubs
     private const string TEAM_SWITCHER = '__TEAM_SWITCHER__';
 
     private const string CREATE_TEAM_MODAL = '__CREATE_TEAM_MODAL__';
+
+    /** The kit file that renders one of the layout variants beside it. */
+    private const string DELEGATING_LAYOUT = 'resources/views/layouts/app.blade.php';
+
+    /** What that file wraps the slot in, and the stubs now render themselves. */
+    private const string MAIN = 'flux:main';
 
     /**
      * Stub file mapped to the project-relative path it replaces.
@@ -75,11 +84,41 @@ final class LayoutStubs
             return;
         }
 
+        $this->unwrapMain($plan, $project);
+
         $report->note(
             'Rewrote the app chrome from refit\'s Sheaf stubs — Sheaf nests its sidebar and main inside '
             .'<x-ui.layout>, which no rename can produce. Check the diff: anything you had customised in '
             .'those files is in the git history rather than in the new ones.',
         );
+    }
+
+    /**
+     * Take the kit's `<flux:main>` out of the delegating layout.
+     *
+     * The kit splits the shell in two: `layouts/app.blade.php` renders the main,
+     * and `layouts/app/<variant>.blade.php` renders everything around it. Sheaf
+     * cannot be composed that way — its main is a grid area of `<x-ui.layout>`,
+     * so the stub has to render it — and a second one wrapping the slot puts a
+     * full-height scrolling box inside a full-height scrolling box.
+     *
+     * Runs before the tag rename, so the tag to look for is still Flux's.
+     */
+    private function unwrapMain(Plan $plan, Project $project): void
+    {
+        if (! str_contains($project->get(self::DELEGATING_LAYOUT), '<'.self::MAIN)) {
+            return;
+        }
+
+        $plan->add(Stage::Write, new UnwrapElement(
+            self::DELEGATING_LAYOUT,
+            self::MAIN,
+            sprintf(
+                'edit   %s — drop <%s>, which the Sheaf layout now renders itself',
+                self::DELEGATING_LAYOUT,
+                self::MAIN,
+            ),
+        ));
     }
 
     /**
