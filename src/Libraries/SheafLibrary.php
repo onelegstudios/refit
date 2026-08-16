@@ -13,6 +13,7 @@ use Onelegstudios\Refit\Libraries\Sheaf\LayoutStubs;
 use Onelegstudios\Refit\Plan\Actions\MapComponentTags;
 use Onelegstudios\Refit\Plan\Actions\PlaceDropdownChildren;
 use Onelegstudios\Refit\Plan\Actions\PrefixIconNames;
+use Onelegstudios\Refit\Plan\Actions\PreserveTextAlignment;
 use Onelegstudios\Refit\Plan\Actions\RestructureBrandLogo;
 use Onelegstudios\Refit\Plan\Actions\RestructureOverlays;
 use Onelegstudios\Refit\Plan\Actions\RewriteIconNames;
@@ -181,8 +182,14 @@ final class SheafLibrary implements Library
         $plan->add(Stage::Reconcile, new RestructureOverlays);
         $plan->add(Stage::Reconcile, new MapComponentTags);
 
+        // All three read the tags the rename produced, so all three come after it.
+        // Each is a place where Sheaf's component renders what Flux's rendered,
+        // but styles it differently enough that a rename alone leaves the view
+        // looking broken: a logo slot whose classes are dropped, a menu panel that
+        // is a grid, and text that no longer inherits its alignment.
         $plan->add(Stage::Reconcile, new RestructureBrandLogo);
         $plan->add(Stage::Reconcile, new PlaceDropdownChildren);
+        $plan->add(Stage::Reconcile, new PreserveTextAlignment);
     }
 
     /**

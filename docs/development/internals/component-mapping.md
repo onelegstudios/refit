@@ -136,7 +136,10 @@ Inside `Stage::Reconcile`, and it matters:
    trigger, and what a modal close button wraps.
 2. **`MapComponentTags`** — the dotted icon form is folded into an attribute while
    the suffix is still there to read, then tag names, then attributes and values.
-3. **The icon sweeps** — last, so they run against the tags the migration
+3. **`RestructureBrandLogo`**, **`PlaceDropdownChildren`** and
+   **`PreserveTextAlignment`** — after the rename, because all three read the tags
+   the rename produced.
+4. **The icon sweeps** — last, so they run against the tags the migration
    produced. This is why `planMigration()` is called before `planIcons()` in
    `RefitCommand::build()`.
 
@@ -181,6 +184,24 @@ stack, alongside the rest of the
 [Blade rewriting](/docs/development/internals/blade-rewriting) tools.
 `PreserveTextAlignment` uses the same pairing to find the wrapper an element
 inherited its alignment from.
+
+### Alignment is not only a rename
+
+Flux's heading and text inherit their alignment, so the kit centres an auth
+header by putting `text-center` on the wrapping div. Sheaf's components declare
+`text-align` themselves — `text-start` in the heading's own class list, and a
+`[:where(&)]:text-start` default in its text — and a declared value beats an
+inherited one however faint it is. A pure rename therefore leaves every auth page
+left-aligned.
+
+`PreserveTextAlignment` restates the alignment on the tag: it reads the nearest
+enclosing `div` that sets one, and adds `text-center!` when that differs from what
+Sheaf already does. The `!` is load-bearing — Tailwind emits `.text-start` after
+`.text-center`, so a plain `text-center` on the tag is a specificity tie the
+heading's own class wins.
+
+A tag that already says something about alignment, or whose classes are bound, is
+left alone, and so is anything under Sheaf's own component directory.
 
 ## Adding a library
 

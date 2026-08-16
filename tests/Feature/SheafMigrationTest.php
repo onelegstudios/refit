@@ -286,6 +286,28 @@ it('prefixes every icon name when Phosphor is asked for', function (): void {
     }
 })->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
 
+it('keeps the auth pages centred once Sheaf owns their alignment', function (): void {
+    $root = sheafKit('livewire');
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'library' => 'sheaf',
+            'icons' => 'heroicons',
+            'tasks' => ['remove-flux'],
+        ]),
+    ])->assertSuccessful();
+
+    $project = (new ProjectDetector)->detect($root);
+    $header = $project->get('resources/views/components/auth-header.blade.php');
+
+    // The wrapper still says text-center, but Sheaf's heading declares text-start
+    // of its own and its text defaults to it, so neither inherits any more.
+    expect($header)->toContain('text-center')
+        ->toContain('<x-ui.heading class="text-center!"')
+        ->toContain('<x-ui.text class="text-center!"');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+
 it('keeps the logo tile Sheaf\'s brand would have dropped', function (): void {
     $root = sheafKit('livewire');
 

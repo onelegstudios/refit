@@ -82,7 +82,7 @@ scratch each time, so the steps that did work are simply skipped.
 
 ### The parts that move rather than rename
 
-Most of a Flux view is a rename away from a Sheaf one. Three things are not, and
+Most of a Flux view is a rename away from a Sheaf one. Six things are not, and
 they are worth knowing about because they are where a diff will look surprising.
 
 **The chrome.** Flux's sidebar is a root element. Sheaf's sits inside an
@@ -114,6 +114,10 @@ renders the slot bare, so refit moves those classes onto an element inside the
 slot. Left alone the mark keeps its `text-white dark:text-black` with nothing
 behind it, which reads as no logo at all.
 
+**Text alignment.** The kit centres its auth headings by putting `text-center` on
+a wrapping div. Sheaf's heading and text declare `text-start` themselves, so refit
+restates the alignment on the tag as `text-center!`.
+
 ### What Sheaf has no answer for
 
 Refit never guesses. A tag with no Sheaf equivalent is left exactly as it was and
@@ -137,6 +141,10 @@ markup somewhere unusual:
 composer remove livewire/flux
 npm run build
 ```
+
+The build is not optional. The migration writes utilities the old stylesheet has
+never seen — `text-center!` on the auth headings among them — so a stale build
+renders the new markup with half its classes missing.
 
 Then walk the app. Login, register, the two-factor setup modal, settings, and the
 sidebar both collapsed and on mobile — that is where the mapping is most likely to
