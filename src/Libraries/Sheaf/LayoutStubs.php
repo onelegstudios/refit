@@ -62,6 +62,20 @@ final class LayoutStubs
         private readonly string $stubDirectory = __DIR__.'/../../../stubs/sheaf',
     ) {}
 
+    /**
+     * Kit components the stubs render directly inside `<x-ui.sidebar>`.
+     *
+     * The user menu is not among them: refit authors that one from a stub and
+     * writes it already lifted. These are the views refit only rewrites, so
+     * something else has to make their dropdowns survive the sidebar.
+     *
+     * @return list<string>
+     */
+    public function sidebarComponents(Project $project): array
+    {
+        return $project->has(Feature::Teams) ? ['team-switcher'] : [];
+    }
+
     public function contribute(Plan $plan, Project $project, Report $report): void
     {
         $written = 0;

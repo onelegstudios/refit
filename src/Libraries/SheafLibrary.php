@@ -16,6 +16,7 @@ use Onelegstudios\Refit\Plan\Actions\PlaceDropdownChildren;
 use Onelegstudios\Refit\Plan\Actions\PrefixIconNames;
 use Onelegstudios\Refit\Plan\Actions\PreserveTextAlignment;
 use Onelegstudios\Refit\Plan\Actions\PromoteContentsToLabel;
+use Onelegstudios\Refit\Plan\Actions\RaiseSidebarDropdowns;
 use Onelegstudios\Refit\Plan\Actions\RebindAppearanceToTheme;
 use Onelegstudios\Refit\Plan\Actions\RestructureBrandLogo;
 use Onelegstudios\Refit\Plan\Actions\RestructureOverlays;
@@ -178,7 +179,9 @@ final class SheafLibrary implements Library
     {
         $this->planInstall($plan, $project, $strategy);
 
-        (new LayoutStubs)->contribute($plan, $project, $report);
+        $stubs = new LayoutStubs;
+
+        $stubs->contribute($plan, $project, $report);
 
         // Ahead of the rename, because both of its rewrites read Flux's own
         // arrangement — where a dropdown keeps its trigger, and what a modal
@@ -196,6 +199,14 @@ final class SheafLibrary implements Library
         $plan->add(Stage::Reconcile, new PreserveTextAlignment);
         $plan->add(Stage::Reconcile, new PromoteContentsToLabel);
         $plan->add(Stage::Reconcile, new ShapeSegmentedGroups);
+
+        // Also after the rename — it reads `x-ui.dropdown`, which does not exist
+        // until MapComponentTags has run. The chrome refit writes lands in the
+        // sidebar already lifted; the kit components it merely puts there have to
+        // be lifted where they live.
+        if (($sidebar = $stubs->sidebarComponents($project)) !== []) {
+            $plan->add(Stage::Reconcile, new RaiseSidebarDropdowns($sidebar));
+        }
 
         // Independent of all of the above: light/dark is the one part of the kit
         // that lives in JavaScript, so it survives the rename untouched and

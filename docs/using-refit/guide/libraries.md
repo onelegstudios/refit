@@ -166,6 +166,17 @@ the appearance page's segmented control loses its three words. A slot holding mo
 than a label is left alone and reported instead: Sheaf's item draws an icon, a
 label and a badge, and has nowhere to put markup.
 
+**Dropdowns in the sidebar.** Sheaf's sidebar is `scrollable` by default, and an
+`overflow-y` of `auto` makes the `overflow-x: visible` beside it compute to `auto`
+too — so the sidebar clips on both axes at its 256px, and a menu panel anchored
+inside it comes out with its right-hand edge sliced off. Sheaf's answer is
+`portal`, which teleports the panel to the body; on its own that trades the bug
+for a worse one, because at the body the panel stops outranking the sidebar by
+position and starts losing to the inline `z-index:99` the sidebar carries, so the
+whole menu paints behind it and the trigger reads as dead. Refit writes both — the
+`portal` and a `z-[100]!` on the panel — into the user menu it renders from a
+stub, and into the team switcher it puts in the sidebar beside it.
+
 **Segmented controls.** Both libraries spell one `variant="segmented"`, so the
 attribute survives the rename looking like the whole answer. Flux reads it as a
 complete description — a row of flush segments, no radio dots — while Sheaf reads

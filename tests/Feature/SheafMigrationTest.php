@@ -396,7 +396,7 @@ it('gives the user menu the row a Sheaf nav item would have had', function (): v
         ->toContain('[&>[data-slot=left-icon]]:ms-auto')
         // The panel opens no narrower than the row it belongs to. A minimum
         // rather than a width, so it still grows for a long address.
-        ->toContain('<x-slot:menu class="min-w-60">');
+        ->toContain('<x-slot:menu class="z-[100]! min-w-60">');
 })->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
 
 it('composes the header layout the way Sheaf\'s grid reads it', function (): void {
@@ -806,4 +806,71 @@ it('leaves a segmented group that has already decided its own shape', function (
     expect((new ProjectDetector)->detect($root)->get('resources/views/dashboard.blade.php'))
         ->toContain('<x-ui.radio.group variant="segmented" direction="vertical" :indicator="true" />')
         ->toContain('<x-ui.radio.group :variant="$variant" />');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+
+it('teleports the user menu out of the sidebar\'s stacking context', function (): void {
+    $root = sheafKit('livewire');
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'library' => 'sheaf',
+            'icons' => 'heroicons',
+            'tasks' => ['remove-flux'],
+        ]),
+    ])->assertSuccessful();
+
+    $menu = (new ProjectDetector)->detect($root)->get('resources/views/components/desktop-user-menu.blade.php');
+
+    // Sheaf's sidebar is scrollable by default, and an `overflow-y` of auto makes
+    // the `overflow-x: visible` beside it compute to auto too, so the sidebar
+    // clips on both axes. This panel grows past the sidebar's 256px for a long
+    // address, and in place it came out with its right-hand side sliced off.
+    expect($menu)->toContain('<x-ui.dropdown position="bottom-start" portal');
+
+    // But teleporting alone trades one bug for a worse one: at the body the panel
+    // is no longer a descendant of the sidebar, and Sheaf's `z-50` panel loses to
+    // the inline `z-index:99` the sidebar carries. The whole menu paints behind
+    // the sidebar, which reads as a trigger that does nothing at all.
+    expect($menu)->toContain('<x-slot:menu class="z-[100]! min-w-60">');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+
+it('raises the team switcher clear of the sidebar that clips it', function (string $kit): void {
+    $root = sheafKit($kit);
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'library' => 'sheaf',
+            'icons' => 'heroicons',
+            'tasks' => ['remove-flux'],
+        ]),
+    ])->assertSuccessful();
+
+    // The switcher is the other dropdown refit puts inside Sheaf's sidebar, and
+    // it is a kit file rather than a stub. Measured at 265px against the 256px
+    // sidebar, whose `overflow-y: auto` makes the `overflow-x: visible` beside it
+    // compute to auto too: the right-hand edge of the menu was cut off.
+    expect((new ProjectDetector)->detect($root)->get('resources/views/components/⚡team-switcher.blade.php'))
+        ->toContain('<x-ui.dropdown portal position="bottom" align="start">')
+        // And teleporting alone drops it below the sidebar's inline z-index 99.
+        ->toContain('<x-slot:menu class="z-[100]! min-w-56">');
+})->with(['livewire-teams', 'livewire-workos-teams'])
+    ->skip(fn (): bool => ! is_dir(fixturePath('livewire-teams')), 'Run `composer fixtures`.');
+
+it('leaves the kits without teams without a switcher to raise', function (): void {
+    $root = sheafKit('livewire');
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'library' => 'sheaf',
+            'icons' => 'heroicons',
+            'tasks' => ['remove-flux'],
+        ]),
+    ])->assertSuccessful();
+
+    // Nothing to do, and nothing done: the page dropdowns a project writes for
+    // itself are not refit's to move around.
+    expect((new ProjectDetector)->detect($root)->exists('resources/views/components/⚡team-switcher.blade.php'))->toBeFalse();
 })->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');

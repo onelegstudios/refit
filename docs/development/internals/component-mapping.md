@@ -137,9 +137,9 @@ Inside `Stage::Reconcile`, and it matters:
 2. **`MapComponentTags`** — the dotted icon form is folded into an attribute while
    the suffix is still there to read, then tag names, then attributes and values.
 3. **`RestructureBrandLogo`**, **`PlaceDropdownChildren`**,
-   **`PreserveTextAlignment`**, **`PromoteContentsToLabel`** and
-   **`ShapeSegmentedGroups`** — after the rename, because all five read the tags
-   the rename produced.
+   **`PreserveTextAlignment`**, **`PromoteContentsToLabel`**,
+   **`ShapeSegmentedGroups`** and **`RaiseSidebarDropdowns`** — after the rename,
+   because all six read the tags the rename produced.
 4. **`RebindAppearanceToTheme`** — anywhere, in practice. It reads Alpine
    expressions rather than tags, so the rename neither helps it nor hurts it.
 5. **The icon sweeps** — last, so they run against the tags the migration
@@ -224,6 +224,36 @@ heading's own class wins.
 
 A tag that already says something about alignment, or whose classes are bound, is
 left alone, and so is anything under Sheaf's own component directory.
+
+### An overlay has to clear what it opens over
+
+Sheaf's sidebar clips and Sheaf's sidebar covers, and a dropdown anchored inside
+it runs into one or the other whichever way you place it.
+
+Clipping first: the sidebar is `scrollable` by default, and CSS computes an
+`overflow-x` of `visible` to `auto` whenever the other axis is not visible, so the
+sidebar clips both ways at its 256px. A panel has a floor of `min-w-56` and grows
+to its contents — the team switcher measures 265px — and the overflow takes the
+difference off the right-hand edge.
+
+`portal` is Sheaf's answer, and by itself it is a worse bug. Teleported to the
+body the panel is no longer a descendant of the sidebar, so it stops winning on
+position and starts losing on z-index: the panel is `z-50` and the sidebar carries
+an inline `style="z-index:99"`, which beats every class including Sheaf's own
+`md:[&_[data-slot=sidebar]]:z-auto`. The sidebar paints over the entire menu, and
+a trigger whose menu is invisible is a trigger that looks broken.
+
+So the two go together — `portal` on the dropdown, `z-[100]!` on the panel — and
+refit writes them in two places for one reason each. The user menu is a stub refit
+authors, so the pair is simply in the stub. The team switcher is a kit file refit
+only rewrites, so `RaiseSidebarDropdowns` puts them there, reading the component
+list off `LayoutStubs::sidebarComponents()` — the same class that decided to put
+it in the sidebar in the first place. It runs after `MapComponentTags`, because
+`x-ui.dropdown` does not exist until then.
+
+Dropdowns a project writes for itself are not touched. The kit's other one is a
+per-member role menu on the teams edit page, which sits in main and has neither
+problem.
 
 ### A shared word is not a shared meaning
 

@@ -2,7 +2,13 @@
     'name' => null,
 ])
 
-<x-ui.dropdown position="bottom-start" {{ $attributes }}>
+{{-- Sheaf's sidebar is `scrollable` by default, and an `overflow-y` of auto makes
+     the `overflow-x: visible` beside it compute to auto as well — so the sidebar
+     clips on both axes. A panel rendered in place is therefore cut off at the
+     sidebar's 256px, and this one is free to grow past that for a long address.
+     `portal` teleports it to the body, which is what Sheaf's docs ask for whenever
+     a dropdown lives in a navlist. --}}
+<x-ui.dropdown position="bottom-start" portal {{ $attributes }}>
     <x-slot:button>
         {{-- Sheaf dresses a nav item the same way in a navlist and in a navbar:
              neutral text at normal weight, a box radius, a row of py-1, and a
@@ -46,8 +52,15 @@
          stock kit, and narrower still for a short name and address. The kit had
          the same habit from a floor of 48, so this is not restoring it: the floor
          moves up to the width of a sidebar row, and the panel is left free to
-         grow past it the way both would. --}}
-    <x-slot:menu class="min-w-60">
+         grow past it the way both would.
+
+         And once teleported the panel is a child of the body, where it no longer
+         outranks the sidebar the way a descendant did: Sheaf's panel is `z-50` and
+         Sheaf's sidebar carries an inline `z-index:99`, so the sidebar paints over
+         the whole menu and the trigger looks dead. The `!` is load-bearing —
+         `z-50` is on the panel's own class list, and a plain utility here is only
+         a specificity tie. --}}
+    <x-slot:menu class="z-[100]! min-w-60">
         <div class="col-span-full flex items-center gap-2 px-1 py-1.5 text-start text-sm">
             <x-ui.avatar
                 :name="auth()->user()->name"
