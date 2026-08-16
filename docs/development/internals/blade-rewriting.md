@@ -34,6 +34,24 @@ Two details matter:
 `Attribute` carries its own offsets, plus `isBound()` (a leading `:`, so the
 value is an expression) and `isBoolean()` (present with no value).
 
+## Nesting
+
+`TagParser` answers "where are the tags". `Nesting` answers "what does each one
+contain", which is what a rewrite needs whenever the markup *around* a tag decides
+its meaning — a wrapper that centres its contents, a panel whose direct children
+have to declare a place in a grid.
+
+```php
+$elements = (new Nesting)->elements($source, ['div', 'form', 'x-ui.']);
+```
+
+Each `Element` is an opening tag paired with the closing tag that ends it, so it
+can answer `holds($offset)` and `encloses($other)`. Pairing is per name and
+stack-based, so nesting of the same element works and every other element is
+ignored. An opening tag that never closes, and a closing tag with nothing open,
+are both dropped — a Blade branch can legitimately write either, and neither
+describes a span of source.
+
 ## Edits
 
 Rewrites are collected as offset-based replacements and applied back-to-front in
