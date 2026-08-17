@@ -69,10 +69,18 @@ it('keeps the colon on a bound attribute it renames', function (): void {
 });
 
 it('translates variant values per component', function (): void {
-    expect(mapTags('<flux:button variant="primary" />'))
-        ->toBe('<x-ui.button variant="solid" />')
+    expect(mapTags('<flux:button variant="filled" />'))
+        ->toBe('<x-ui.button variant="soft" />')
         ->and(mapTags('<flux:button variant="subtle" />'))
         ->toBe('<x-ui.button variant="ghost" />');
+});
+
+it('leaves the prominent button prominent', function (): void {
+    // `primary` means the same thing in both libraries — and in Sheaf it is also
+    // the button's default. Sheaf's `solid` is a 5% neutral wash, the quiet one
+    // of the set, so translating the word demotes every submit in the kit.
+    expect(mapTags('<flux:button variant="primary" type="submit" />'))
+        ->toBe('<x-ui.button variant="primary" type="submit" />');
 });
 
 it('leaves a variant it has no opinion about alone', function (): void {

@@ -136,12 +136,19 @@ final class ComponentMap
      * is left alone, because Sheaf passes unknown variants through to classes
      * rather than throwing.
      *
+     * `primary` is one of those, and deliberately: the word means the same thing
+     * in both libraries. It is the prominent button — every submit in the kit's
+     * auth pages, and the one Sheaf's component falls back to when no variant is
+     * given at all. Translating it to `solid` reads as a synonym and is not one:
+     * Sheaf's `solid` is a 5% neutral wash, the quiet secondary of the set, so
+     * the rename left "Log in" and "Register" looking like the button beside
+     * them rather than the one to press.
+     *
      * @var array<string, array<string, array<string, string>>>
      */
     public const array VALUES = [
         'flux:button' => [
             'variant' => [
-                'primary' => 'solid',
                 'filled' => 'soft',
                 'subtle' => 'ghost',
                 'danger' => 'danger',

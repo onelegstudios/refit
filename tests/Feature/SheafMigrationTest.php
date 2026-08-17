@@ -311,6 +311,35 @@ it('keeps the auth pages centred once Sheaf owns their alignment', function (): 
         ->toContain('<x-ui.text class="text-center!"');
 })->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
 
+it('leaves the auth pages a button worth pressing', function (): void {
+    $root = sheafKit('livewire');
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'library' => 'sheaf',
+            'icons' => 'heroicons',
+        ]),
+    ])->assertSuccessful();
+
+    $project = (new ProjectDetector)->detect($root);
+
+    // Sheaf's `solid` is a 5% neutral wash — the quiet one of its set — so
+    // translating Flux's `primary` into it demoted every submit in the kit to the
+    // look of the link beside it. The word means the same thing in both, and in
+    // Sheaf it is what the component falls back to with no variant at all.
+    foreach (['login', 'register', 'forgot-password', 'reset-password', 'confirm-password', 'verify-email'] as $page) {
+        expect($project->get("resources/views/pages/auth/{$page}.blade.php"))
+            ->toContain('variant="primary"')
+            ->not->toContain('variant="solid"');
+    }
+
+    // The settings pages write the same button for the same reason, so they move
+    // with the auth ones rather than ending up a second visual language.
+    expect($project->get('resources/views/pages/settings/⚡profile.blade.php'))
+        ->toContain('<x-ui.button variant="primary" type="submit" class="w-full" data-test="update-profile-button">');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+
 it('keeps the logo tile Sheaf\'s brand would have dropped', function (): void {
     $root = sheafKit('livewire');
 
