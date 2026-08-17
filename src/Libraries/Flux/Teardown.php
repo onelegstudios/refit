@@ -2,12 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Onelegstudios\Refit\Tasks;
+namespace Onelegstudios\Refit\Libraries\Flux;
 
 use FilesystemIterator;
-use Onelegstudios\Refit\Contracts\Task;
-use Onelegstudios\Refit\Libraries\FluxLibrary;
 use Onelegstudios\Refit\Plan\Actions\DeleteFile;
+use Onelegstudios\Refit\Plan\Actions\RemoveBladeDirectives;
 use Onelegstudios\Refit\Plan\Actions\RemoveDirectoryIfEmpty;
 use Onelegstudios\Refit\Plan\Actions\RemoveLinesContaining;
 use Onelegstudios\Refit\Plan\Plan;
@@ -20,18 +19,28 @@ use RecursiveIteratorIterator;
 /**
  * Take Flux's remaining traces out of a project that has moved off it.
  *
- * The component tags are gone by the time this runs — that is the migration's
- * job — but three things outlive them: the two Tailwind `@source` lines pointing
- * into Flux's vendor stubs, the `@fluxAppearance` and `@fluxScripts` directives
- * in the head and layouts, and `resources/views/flux`, a directory that exists
- * only to intercept Flux's own resolution. The kit puts four icons and a navlist
- * override in there; whatever a project has added is just as dead.
+ * The component tags are gone by the time this runs — that is the target's
+ * migration doing its job — but three things outlive them: the two Tailwind
+ * `@source` lines pointing into Flux's vendor stubs, the `@fluxAppearance` and
+ * `@fluxScripts` directives in the head and layouts, and `resources/views/flux`,
+ * a directory that exists only to intercept Flux's own resolution. The kit puts
+ * four icons and a navlist override in there; whatever a project has added is
+ * just as dead.
  *
- * The Composer package itself is not removed here. Refit prints the line rather
- * than running it, the same way it does for its own uninstall: dropping a
- * dependency is a decision worth taking deliberately, and it is one command.
+ * None of it is specific to where the project is going, which is the whole
+ * argument for it living here rather than in the target: Sheaf does not need to
+ * know what a `@fluxAppearance` is, and neither will the library after it.
+ *
+ * The directives are the one part that cannot be planned file by file. This runs
+ * after the target has contributed, but *before* the target has written anything,
+ * and a target may well rewrite the very files the directives are in — so which
+ * files those are is a question only the apply stage can answer.
+ *
+ * The Composer package itself is not removed. Refit prints the line rather than
+ * running it, the same way it does for its own uninstall: dropping a dependency
+ * is a decision worth taking deliberately, and it is one command.
  */
-final class RemoveFlux implements Task
+final class Teardown
 {
     private const string STYLESHEET = 'resources/css/app.css';
 
@@ -44,53 +53,28 @@ final class RemoveFlux implements Task
      */
     private const array DIRECTIVES = ['@fluxAppearance', '@fluxScripts'];
 
-    public function key(): string
-    {
-        return 'remove-flux';
-    }
-
-    public function group(): TaskGroup
-    {
-        return TaskGroup::Cleanup;
-    }
-
-    public function label(): string
-    {
-        return 'Remove what is left of Flux';
-    }
-
-    public function hint(): string
-    {
-        return 'The @source lines, the Blade directives, and the view overrides';
-    }
-
-    public function appliesTo(Project $project): bool
-    {
-        return $project->target !== null && ! $project->targets(FluxLibrary::KEY);
-    }
+    /**
+     * The stylesheet's Flux lines, both the import and the two `@source` globs.
+     *
+     * One file that no target rewrites, so this one can still be planned by name.
+     */
+    private const string STYLESHEET_NEEDLE = 'livewire/flux';
 
     public function contribute(Plan $plan, Project $project, Report $report): void
     {
-        if ($project->exists(self::STYLESHEET) && str_contains($project->get(self::STYLESHEET), 'livewire/flux')) {
+        if ($project->exists(self::STYLESHEET) && str_contains($project->get(self::STYLESHEET), self::STYLESHEET_NEEDLE)) {
             $plan->add(Stage::Write, new RemoveLinesContaining(
                 self::STYLESHEET,
-                'livewire/flux',
+                self::STYLESHEET_NEEDLE,
                 'edit   '.self::STYLESHEET.' — drop the Flux @source lines',
             ));
         }
 
-        foreach (self::DIRECTIVES as $directive) {
-            foreach ($project->blades() as $path) {
-                if (! str_contains($project->get($path), $directive)) {
-                    continue;
-                }
-
-                $plan->add(Stage::Write, new RemoveLinesContaining(
-                    $path,
-                    $directive,
-                    sprintf('edit   %s — drop %s', $path, $directive),
-                ));
-            }
+        // Swept rather than planned file by file: the target rewrites the chrome
+        // from its own stubs in this same stage, so the list of files carrying a
+        // directive is only true until it runs. See RemoveBladeDirectives.
+        if ($this->directivesUsed($project)) {
+            $plan->add(Stage::Write, new RemoveBladeDirectives(self::DIRECTIVES));
         }
 
         // The overrides only ever existed to intercept Flux's own resolution, so
@@ -108,6 +92,27 @@ final class RemoveFlux implements Task
         }
 
         $report->note('Flux is no longer referenced. Run `composer remove livewire/flux` to drop the package itself.');
+    }
+
+    /**
+     * Whether any view still names one of the directives.
+     *
+     * A read, not a promise: it decides whether the sweep is worth a line in the
+     * plan at all, and the sweep itself works out which files by the time it runs.
+     */
+    private function directivesUsed(Project $project): bool
+    {
+        foreach ($project->blades() as $path) {
+            $source = $project->get($path);
+
+            foreach (self::DIRECTIVES as $directive) {
+                if (str_contains($source, $directive)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /**

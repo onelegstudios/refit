@@ -19,7 +19,6 @@ something that would do nothing.
 | Structure | Show toasts at the top of the screen | `toasts-at-top` |
 | Cleanup | Delete the layouts the kit does not render | `single-layout` |
 | Cleanup | Remove the Flux Pro `@source` line from `app.css` | `remove-flux-pro-source` |
-| Cleanup | Remove what is left of Flux | `remove-flux` |
 
 The keys are what [`--answers`](/docs/using-refit/guide/the-refit-command#running-without-prompts)
 takes.
@@ -267,29 +266,16 @@ broken.
 
 It is also only offered while the project is
 [staying on Flux](/docs/using-refit/guide/libraries). A project that is leaving
-loses both `@source` lines to the task below, and being asked to trim one line off
-a file that is about to lose two would only be confusing.
+loses the whole stylesheet reference on its way out, and being asked to trim one
+line off a file that is about to lose several would only be confusing.
 
-## Remove what is left of Flux
+## What is not a task
 
-Offered only when the target is a library other than Flux. The component tags are
-already gone by the time it runs — that is the migration's job — but three things
-outlive them:
-
-- the Tailwind `@source` lines in `resources/css/app.css` pointing into Flux's
-  vendor stubs;
-- the `@fluxAppearance` and `@fluxScripts` directives, which fatal once the
-  package is gone;
-- `resources/views/flux`, a directory that exists only to intercept Flux's own
-  resolution. The kit puts four icon overrides and a `navlist/group` override in
-  there; whatever you have added is just as dead.
-
-The Composer package itself is not removed. Refit prints the line instead, the
-same way it does for its own uninstall:
-
-```bash
-composer remove livewire/flux
-```
+Removing Flux is not on this list. Choosing a target other than Flux is already
+the decision, so the leftovers — the `@source` lines, the Blade directives, the
+`resources/views/flux` overrides — come out as part of that run rather than as
+something to tick separately. See
+[Leaving a library](/docs/using-refit/guide/libraries).
 
 ## Adding tasks of your own
 

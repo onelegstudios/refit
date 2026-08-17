@@ -186,7 +186,6 @@ it('leaves no Flux tag behind anywhere in the tree', function (string $kit): voi
         '--answers' => json_encode([
             'library' => 'sheaf',
             'icons' => 'heroicons',
-            'tasks' => ['remove-flux'],
         ]),
     ])->assertSuccessful();
 
@@ -204,7 +203,6 @@ it('only ever produces components Sheaf actually ships', function (string $kit):
         '--answers' => json_encode([
             'library' => 'sheaf',
             'icons' => 'heroicons',
-            'tasks' => ['remove-flux'],
         ]),
     ])->assertSuccessful();
 
@@ -237,7 +235,6 @@ it('takes the Flux directives and overrides out with it', function (): void {
         '--answers' => json_encode([
             'library' => 'sheaf',
             'icons' => 'heroicons',
-            'tasks' => ['remove-flux'],
         ]),
     ])->assertSuccessful();
 
@@ -260,7 +257,6 @@ it('points the kit\'s vendored Lucide names back at Heroicons', function (): voi
         '--answers' => json_encode([
             'library' => 'sheaf',
             'icons' => 'heroicons',
-            'tasks' => ['remove-flux'],
         ]),
     ])->assertSuccessful();
 
@@ -282,7 +278,6 @@ it('prefixes every icon name when Phosphor is asked for', function (): void {
         '--answers' => json_encode([
             'library' => 'sheaf',
             'icons' => 'phosphor',
-            'tasks' => ['remove-flux'],
         ]),
     ])->assertSuccessful();
 
@@ -303,7 +298,6 @@ it('keeps the auth pages centred once Sheaf owns their alignment', function (): 
         '--answers' => json_encode([
             'library' => 'sheaf',
             'icons' => 'heroicons',
-            'tasks' => ['remove-flux'],
         ]),
     ])->assertSuccessful();
 
@@ -325,7 +319,6 @@ it('keeps the logo tile Sheaf\'s brand would have dropped', function (): void {
         '--answers' => json_encode([
             'library' => 'sheaf',
             'icons' => 'heroicons',
-            'tasks' => ['remove-flux'],
         ]),
     ])->assertSuccessful();
 
@@ -348,7 +341,6 @@ it('gives everything in a dropdown menu a place in Sheaf\'s grid', function (): 
         '--answers' => json_encode([
             'library' => 'sheaf',
             'icons' => 'heroicons',
-            'tasks' => ['remove-flux'],
         ]),
     ])->assertSuccessful();
 
@@ -373,7 +365,6 @@ it('gives the user menu the row a Sheaf nav item would have had', function (): v
         '--answers' => json_encode([
             'library' => 'sheaf',
             'icons' => 'heroicons',
-            'tasks' => ['remove-flux'],
         ]),
     ])->assertSuccessful();
 
@@ -407,7 +398,6 @@ it('composes the header layout the way Sheaf\'s grid reads it', function (): voi
         '--answers' => json_encode([
             'library' => 'sheaf',
             'icons' => 'heroicons',
-            'tasks' => ['remove-flux'],
         ]),
     ])->assertSuccessful();
 
@@ -441,7 +431,6 @@ it('labels the items Sheaf would otherwise render empty', function (): void {
         '--answers' => json_encode([
             'library' => 'sheaf',
             'icons' => 'heroicons',
-            'tasks' => ['remove-flux'],
         ]),
     ])->assertSuccessful();
 
@@ -472,7 +461,6 @@ it('keeps Tailwind\'s import ahead of Sheaf\'s so the theme stays layered', func
         '--answers' => json_encode([
             'library' => 'sheaf',
             'icons' => 'heroicons',
-            'tasks' => ['remove-flux'],
         ]),
     ])->assertSuccessful();
 
@@ -500,7 +488,6 @@ it('leaves Sheaf\'s sidebar the one surface Sheaf paints', function (string $fix
         '--answers' => json_encode([
             'library' => 'sheaf',
             'icons' => 'heroicons',
-            'tasks' => ['remove-flux'],
         ]),
     ])->assertSuccessful();
 
@@ -527,7 +514,6 @@ it('gives the page inside Sheaf\'s main the height and padding the kit\'s had', 
         '--answers' => json_encode([
             'library' => 'sheaf',
             'icons' => 'heroicons',
-            'tasks' => ['remove-flux'],
         ]),
     ])->assertSuccessful();
 
@@ -554,7 +540,6 @@ it('names only icons refit\'s own table knows in the chrome it writes', function
         '--answers' => json_encode([
             'library' => 'sheaf',
             'icons' => 'heroicons',
-            'tasks' => ['remove-flux'],
         ]),
     ])->assertSuccessful();
 
@@ -600,7 +585,6 @@ it('keeps the header\'s utility links down to the icons the kit showed', functio
         '--answers' => json_encode([
             'library' => 'sheaf',
             'icons' => 'heroicons',
-            'tasks' => ['remove-flux'],
         ]),
     ])->assertSuccessful();
 
@@ -631,7 +615,6 @@ it('sizes the header layout\'s main to the row the grid left it', function (): v
         '--answers' => json_encode([
             'library' => 'sheaf',
             'icons' => 'heroicons',
-            'tasks' => ['remove-flux'],
         ]),
     ])->assertSuccessful();
 
@@ -656,7 +639,6 @@ it('drives the appearance control with Sheaf\'s theme runtime, not Flux\'s magic
         '--answers' => json_encode([
             'library' => 'sheaf',
             'icons' => 'heroicons',
-            'tasks' => ['remove-flux'],
         ]),
     ])->assertSuccessful();
 
@@ -687,7 +669,6 @@ it('leaves no Flux Alpine magic anywhere in the tree', function (string $kit): v
         '--answers' => json_encode([
             'library' => 'sheaf',
             'icons' => 'heroicons',
-            'tasks' => ['remove-flux'],
         ]),
     ])->assertSuccessful();
 
@@ -717,7 +698,6 @@ it('refuses to guess at a hand-written write to Flux\'s appearance', function ()
         '--answers' => json_encode([
             'library' => 'sheaf',
             'icons' => 'heroicons',
-            'tasks' => ['remove-flux'],
         ]),
     ])->assertSuccessful();
 
@@ -733,11 +713,11 @@ it('refuses to guess at a hand-written write to Flux\'s appearance', function ()
         ->toContain('$theme.setTheme(value)');
 })->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
 
-it('says so when Flux\'s appearance script is left running alongside Sheaf\'s', function (): void {
+it('takes Flux out on the way to Sheaf without being asked to', function (): void {
     $root = sheafKit('livewire');
 
-    // Migrating to Sheaf without the cleanup task, which is what the task list
-    // lets you do: `remove-flux` is opt-in and nothing preselects it.
+    // No `tasks` in the answers at all: the teardown belongs to the library being
+    // left, so choosing to leave it is the whole instruction.
     $this->artisan('refit', [
         '--force' => true,
         '--answers' => json_encode(['library' => 'sheaf', 'icons' => 'heroicons']),
@@ -745,24 +725,38 @@ it('says so when Flux\'s appearance script is left running alongside Sheaf\'s', 
 
     $project = (new ProjectDetector)->detect($root);
 
-    expect($project->get('resources/views/partials/head.blade.php'))->toContain('@fluxAppearance')
-        ->and($project->get('REFIT-NOTES.md'))
-        ->toContain('@fluxAppearance')
-        ->toContain('resources/views/partials/head.blade.php');
+    expect($project->get('resources/views/partials/head.blade.php'))
+        ->not->toContain('@fluxAppearance')
+        ->not->toContain('@fluxScripts')
+        ->and($project->get('resources/css/app.css'))->not->toContain('livewire/flux')
+        // The override directory only ever existed to intercept Flux's own
+        // resolution, so it goes with the icons that were in it.
+        ->and($project->exists('resources/views/flux'))->toBeFalse();
 
-    // And with the task, there is nothing to say.
+    foreach ($project->blades() as $path) {
+        expect($project->get($path))->not->toContain('@fluxScripts');
+    }
+
+    // And nothing to report about any of it. The chrome files the layout stubs
+    // overwrite never carried a directive by the time the sweep ran, so the run
+    // must not claim it went looking in them and came back empty-handed.
+    expect($project->get('REFIT-NOTES.md'))
+        ->not->toContain('@fluxAppearance')
+        ->not->toContain('Nothing in');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+
+it('leaves Flux alone when Flux is where the project is staying', function (): void {
     $root = sheafKit('livewire');
 
     $this->artisan('refit', [
         '--force' => true,
-        '--answers' => json_encode([
-            'library' => 'sheaf',
-            'icons' => 'heroicons',
-            'tasks' => ['remove-flux'],
-        ]),
+        '--answers' => json_encode(['library' => 'flux', 'icons' => 'keep']),
     ])->assertSuccessful();
 
-    expect((new ProjectDetector)->detect($root)->get('REFIT-NOTES.md'))->not->toContain('@fluxAppearance');
+    $project = (new ProjectDetector)->detect($root);
+
+    expect($project->get('resources/views/partials/head.blade.php'))->toContain('@fluxAppearance')
+        ->and($project->exists('resources/views/flux'))->toBeTrue();
 })->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
 
 it('gives a segmented group the row and the bare segments Flux implied', function (): void {
@@ -773,7 +767,6 @@ it('gives a segmented group the row and the bare segments Flux implied', functio
         '--answers' => json_encode([
             'library' => 'sheaf',
             'icons' => 'heroicons',
-            'tasks' => ['remove-flux'],
         ]),
     ])->assertSuccessful();
 
@@ -798,7 +791,6 @@ it('leaves a segmented group that has already decided its own shape', function (
         '--answers' => json_encode([
             'library' => 'sheaf',
             'icons' => 'heroicons',
-            'tasks' => ['remove-flux'],
         ]),
     ])->assertSuccessful();
 
@@ -816,7 +808,6 @@ it('teleports the user menu out of the sidebar\'s stacking context', function ()
         '--answers' => json_encode([
             'library' => 'sheaf',
             'icons' => 'heroicons',
-            'tasks' => ['remove-flux'],
         ]),
     ])->assertSuccessful();
 
@@ -843,7 +834,6 @@ it('raises the team switcher clear of the sidebar that clips it', function (stri
         '--answers' => json_encode([
             'library' => 'sheaf',
             'icons' => 'heroicons',
-            'tasks' => ['remove-flux'],
         ]),
     ])->assertSuccessful();
 
@@ -866,7 +856,6 @@ it('leaves the kits without teams without a switcher to raise', function (): voi
         '--answers' => json_encode([
             'library' => 'sheaf',
             'icons' => 'heroicons',
-            'tasks' => ['remove-flux'],
         ]),
     ])->assertSuccessful();
 

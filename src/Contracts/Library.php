@@ -84,4 +84,24 @@ interface Library
      * one-time `sheaf:init`, and there is no second chance to pass it.
      */
     public function planMigration(Plan $plan, Project $project, IconStrategy $strategy, Report $report): void;
+
+    /**
+     * Everything needed to take this library back out of a project that is
+     * leaving it.
+     *
+     * The mirror of {@see planMigration()}: that one is asked of the target, this
+     * one of every library the project has installed and is not ending on. Called
+     * after the migration, because what it removes is only dead once the tags
+     * have moved.
+     *
+     * A library's leftovers are its own business, not the next one's — the
+     * stylesheet lines it asked for, the Blade directives it registers, the view
+     * directory it resolves through. Putting them here is what stops the second
+     * and third target from each carrying a copy of how to uninstall Flux.
+     *
+     * Not every library has anything to do here. One distributed by copying
+     * source into the application leaves behind files that belong to the user,
+     * and refit does not delete what it did not write.
+     */
+    public function planTeardown(Plan $plan, Project $project, Report $report): void;
 }

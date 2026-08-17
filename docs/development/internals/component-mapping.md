@@ -58,12 +58,43 @@ interface Library
 
     public function planIcons(Plan $plan, Project $project, IconStrategy $strategy, Report $report): void;
     public function planMigration(Plan $plan, Project $project, Report $report): void;
+    public function planTeardown(Plan $plan, Project $project, Report $report): void;
 }
 ```
 
 `preflight()` runs *after* the target is chosen rather than filtering the menu
 before it. A library the project is not set up for is still offered, and then
 tells the user what to run — which is more use than the option quietly missing.
+
+## The two directions
+
+`planMigration()` is asked of the target. `planTeardown()` is asked of every
+library the project has installed and is not ending on, after the migration has
+run — because a `@source` line is only dead once the tags that needed it have
+moved.
+
+Splitting them that way is what stops the second and third target from carrying a
+copy of how to uninstall Flux. Nothing in Flux's teardown is about where the
+project is going: the stylesheet lines, the `@fluxAppearance` and `@fluxScripts`
+directives, and the `resources/views/flux` override directory are Flux's own
+footprint, and `Libraries\Flux\Teardown` is the only place that knows they exist.
+`SheafLibrary::planTeardown()` is empty for a reason worth stating — Sheaf's
+components are copied into the application and belong to the user from that
+moment, so there is nothing refit may take back.
+
+The command resolves it off detection rather than off a constant:
+
+```php
+foreach ($project->libraries as $install) {
+    if ($install->key !== $target->key()) {
+        $refit->resolveLibrary($install->key)?->planTeardown($plan, $project, $report);
+    }
+}
+```
+
+In practice that is always Flux, because Flux is what the kit ships. But nothing
+in `RefitCommand` names it, so a project that has already been through refit once
+is torn down from whatever it actually has.
 
 ## Vocabulary
 
@@ -286,7 +317,7 @@ rather than in markup, so no amount of tag mapping reaches it. Flux registers a
 `$flux` Alpine magic and the kit binds to it directly — `x-model="$flux.appearance"`
 on the segmented control, and `$flux.dark` in the expression that inverts the
 two-factor QR code. Rename the tags and those bindings survive, aimed at a magic
-that `remove-flux` is about to take away.
+that Flux's teardown is about to take away.
 
 `sheaf:init --with-dark-mode` writes the same feature into
 `resources/js/globals/theme.js` as a `$theme` magic, and the two line up property

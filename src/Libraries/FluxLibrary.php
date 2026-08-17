@@ -9,6 +9,7 @@ use Onelegstudios\Refit\Icons\IconScanner;
 use Onelegstudios\Refit\Icons\IconStrategy;
 use Onelegstudios\Refit\Libraries\Flux\IconPlanner;
 use Onelegstudios\Refit\Libraries\Flux\OverrideGenerator;
+use Onelegstudios\Refit\Libraries\Flux\Teardown;
 use Onelegstudios\Refit\Plan\Plan;
 use Onelegstudios\Refit\Plan\Report;
 use Onelegstudios\Refit\Project\LibraryInstall;
@@ -114,5 +115,16 @@ final class FluxLibrary implements Library
     public function planMigration(Plan $plan, Project $project, IconStrategy $strategy, Report $report): void
     {
         //
+    }
+
+    /**
+     * The one direction that is not the identity case.
+     *
+     * Flux is what the kit ships, so it is the library every migration leaves,
+     * and this runs whenever the target is something else.
+     */
+    public function planTeardown(Plan $plan, Project $project, Report $report): void
+    {
+        (new Teardown)->contribute($plan, $project, $report);
     }
 }

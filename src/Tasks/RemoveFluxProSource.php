@@ -49,7 +49,7 @@ final class RemoveFluxProSource implements Task
     public function appliesTo(Project $project): bool
     {
         // Only worth offering to a project staying on Flux. One that is leaving
-        // takes both @source lines out with RemoveFlux, and offering to remove
+        // takes both @source lines out in Flux's teardown, and offering to remove
         // half of something you are about to remove entirely is just confusing.
         return $project->targets(FluxLibrary::KEY)
             && $project->library(FluxLibrary::KEY)?->pro !== true

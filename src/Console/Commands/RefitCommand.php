@@ -81,7 +81,7 @@ class RefitCommand extends Command
         $tasks = $this->askTasks($refit, $project, $answers);
 
         $report = new Report;
-        $plan = $this->build($project, $target, $strategy, $tasks, $report);
+        $plan = $this->build($refit, $project, $target, $strategy, $tasks, $report);
 
         if ($plan->isEmpty()) {
             $this->components->info('Nothing to do — the choices you made leave the project as it is.');
@@ -309,7 +309,7 @@ class RefitCommand extends Command
     /**
      * @param  list<Task>  $tasks
      */
-    private function build(Project $project, Library $target, IconStrategy $strategy, array $tasks, Report $report): Plan
+    private function build(Refit $refit, Project $project, Library $target, IconStrategy $strategy, array $tasks, Report $report): Plan
     {
         $plan = new Plan;
 
@@ -318,6 +318,12 @@ class RefitCommand extends Command
         // Flux ones it replaced.
         $target->planMigration($plan, $project, $strategy, $report);
         $target->planIcons($plan, $project, $strategy, $report);
+
+        // Then the libraries being left clean up after themselves, which they can
+        // only do once the tags that used them are gone.
+        foreach ($this->leaving($refit, $project, $target) as $library) {
+            $library->planTeardown($plan, $project, $report);
+        }
 
         foreach ($tasks as $task) {
             $task->contribute($plan, $project, $report);
@@ -331,6 +337,36 @@ class RefitCommand extends Command
         }
 
         return $plan;
+    }
+
+    /**
+     * The installed libraries this run is leaving behind.
+     *
+     * Detection records what is on disk; the target is what the user chose. Every
+     * library that is one but not the other is being left, and gets to say what
+     * that means for the project. In practice that is Flux, because Flux is what
+     * the kit ships — but nothing here names it, so the next target is a
+     * migration and no cleanup at all.
+     *
+     * @return list<Library>
+     */
+    private function leaving(Refit $refit, Project $project, Library $target): array
+    {
+        $leaving = [];
+
+        foreach ($project->libraries as $install) {
+            if ($install->key === $target->key()) {
+                continue;
+            }
+
+            $library = $refit->resolveLibrary($install->key);
+
+            if ($library instanceof Library) {
+                $leaving[] = $library;
+            }
+        }
+
+        return $leaving;
     }
 
     private function preview(Plan $plan): void

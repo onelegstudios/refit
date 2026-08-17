@@ -63,6 +63,22 @@ list; `resolve()` maps `--answers` keys back to instances.
 Tasks are an interface on day one because they are the open-ended half of the
 tool: a package can register a task refit knows nothing about.
 
+## Who contributes to a plan
+
+`RefitCommand::build()` asks four things, in this order:
+
+1. the target's `planMigration()`, then its `planIcons()` — the icon sweeps rewrite
+   tags, so they have to run against the ones the migration produced rather than
+   the Flux ones it replaced;
+2. `planTeardown()` on every installed library the run is *not* ending on, which
+   is how Flux comes out without any target having to know how to remove it;
+3. each chosen `Task`;
+4. `pint --dirty`, unless the plan is empty.
+
+That order is contribution order, not execution order — `Stage` decides the
+second. It matters only where two contributors touch the same file in the same
+stage.
+
 ## Plan, stages, actions
 
 A `Plan` is a bag of `Action`s keyed by `Stage`. Stages exist so contributors do

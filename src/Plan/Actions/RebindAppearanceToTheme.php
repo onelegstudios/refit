@@ -46,6 +46,10 @@ use Onelegstudios\Refit\Project\Project;
  * Left alone and reported: anything that assigns to `$flux.appearance` by hand,
  * and every other `$flux` magic, because a toast or a modal opened through Flux
  * is a different question with a different Sheaf answer.
+ *
+ * `@fluxAppearance` is the same feature in a Blade directive, and it is not this
+ * sweep's to worry about: it belongs to Flux's teardown, which strips it in the
+ * write stage — before anything here reads a file.
  */
 final class RebindAppearanceToTheme extends BladeSweep
 {
@@ -73,27 +77,12 @@ final class RebindAppearanceToTheme extends BladeSweep
     private const string LEFTOVER = '/\$flux\b(\.[A-Za-z_][A-Za-z0-9_]*)?/';
 
     /**
-     * The other half of Flux's appearance feature, which is a Blade directive
-     * rather than a magic and so belongs to `RemoveFlux` rather than to this
-     * sweep. Worth noticing here anyway: it is the same feature, and by the time
-     * the reconcile stage reads a file, `RemoveFlux` has already had its turn.
-     */
-    private const string DIRECTIVE = '@fluxAppearance';
-
-    /**
      * Files that still name `$flux`, with the magics they name, for one warning
      * at the end rather than one per file.
      *
      * @var array<string, list<string>>
      */
     private array $left = [];
-
-    /**
-     * Files still carrying the directive, same reason.
-     *
-     * @var list<string>
-     */
-    private array $scripted = [];
 
     public function describe(): string
     {
@@ -105,10 +94,6 @@ final class RebindAppearanceToTheme extends BladeSweep
         // Sheaf's own components are Sheaf's, and never named Flux to begin with.
         if (str_starts_with($path, SheafLibrary::COMPONENT_DIRECTORY.'/')) {
             return $source;
-        }
-
-        if (str_contains($source, self::DIRECTIVE)) {
-            $this->scripted[] = $path;
         }
 
         if (! str_contains($source, '$flux')) {
@@ -149,18 +134,7 @@ final class RebindAppearanceToTheme extends BladeSweep
             ));
         }
 
-        if ($this->scripted !== []) {
-            $report->warn(sprintf(
-                '`%s` is still in %s. Flux\'s appearance script and Sheaf\'s `$theme` runtime both put '
-                .'the `dark` class on the document, from different localStorage keys, so which one a page '
-                .'loads with is a race. The "Remove what is left of Flux" task takes the directive out.',
-                self::DIRECTIVE,
-                implode(', ', $this->scripted),
-            ));
-        }
-
         $this->left = [];
-        $this->scripted = [];
     }
 
     /**

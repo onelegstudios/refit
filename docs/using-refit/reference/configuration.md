@@ -33,7 +33,6 @@ return [
         MoveToastsToTop::class,
         KeepOneLayout::class,
         RemoveFluxProSource::class,
-        RemoveFlux::class,
     ],
 
     'notes' => 'REFIT-NOTES.md',
@@ -51,6 +50,11 @@ than a special case.
 Resolved from the container, like tasks. Drop `SheafLibrary` to stop offering it;
 with only one entry left refit stops asking the question at all. See
 [Libraries](/docs/using-refit/guide/libraries).
+
+A library is also what knows how to take itself back out, so a project leaving
+Flux cleans up after it whether or not any task is chosen. Removing an entry here
+removes both halves — a library refit no longer knows about is one it can no
+longer tear down either.
 
 ### `tasks`
 

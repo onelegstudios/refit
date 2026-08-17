@@ -15,8 +15,8 @@ The first thing refit asks is where you want to end up:
 ```
 
 It is asked first because it decides what everything after it means. The icon
-question is different for each library, and two of the cleanup tasks only make
-sense for one of them.
+question is different for each library, and one of the cleanup tasks only makes
+sense if you are staying put.
 
 The starter kit ships Flux, so Flux is always the *source*. A library is somewhere
 a project can end up, and each one carries its own translation from Flux — which
@@ -231,10 +231,38 @@ Then walk the app. Login, register, the two-factor setup modal, settings, and th
 sidebar both collapsed and on mobile — that is where the mapping is most likely to
 show a seam.
 
+## Leaving a library
+
+Choosing a target other than Flux is choosing to remove Flux. It is not a separate
+question and there is no task to tick — the component tags are gone by the time
+the migration finishes, and what outlives them comes out in the same run:
+
+- the Tailwind `@source` lines in `resources/css/app.css` pointing into Flux's
+  vendor stubs, and the `flux.css` import above them;
+- the `@fluxAppearance` and `@fluxScripts` directives, which fatal once the
+  package is gone;
+- `resources/views/flux`, a directory that exists only to intercept Flux's own
+  resolution. The kit puts four icon overrides and a `navlist/group` override in
+  there; whatever you have added is just as dead.
+
+All of it is listed in the plan you confirm, like everything else.
+
+The Composer package itself is not removed. Refit prints the line instead, the
+same way it does for its own uninstall:
+
+```bash
+composer remove livewire/flux
+```
+
+This is the library's own business rather than the target's — Sheaf does not know
+what a `@fluxAppearance` is, and neither will the library after it. A `Library`
+says how to take *itself* out, and refit calls that on whatever the project is
+installed with and not ending on.
+
 ## Running without prompts
 
 ```bash
-php artisan refit --answers='{"library":"sheaf","icons":"heroicons","tasks":["remove-flux"]}'
+php artisan refit --answers='{"library":"sheaf","icons":"heroicons"}'
 ```
 
 An unknown library key fails the run and lists the registered ones rather than

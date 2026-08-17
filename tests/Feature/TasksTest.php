@@ -50,7 +50,6 @@ it('registers the configured tasks', function (): void {
             'toasts-at-top',
             'single-layout',
             'remove-flux-pro-source',
-            'remove-flux',
         ]);
 });
 
@@ -60,22 +59,19 @@ it('only offers tasks that fit the detected kit', function (): void {
     $keys = array_map(fn (Task $task): string => $task->key(), $refit->tasksFor($project));
 
     expect($keys)->toContain('partials-to-components')
-        ->and($keys)->toContain('remove-flux-pro-source')
-        // Nothing is being removed while the project stays on Flux.
-        ->and($keys)->not->toContain('remove-flux');
+        ->and($keys)->toContain('remove-flux-pro-source');
 });
 
-it('swaps the two Flux cleanups over when the target changes', function (): void {
+it('stops offering the Flux Pro cleanup once the project is leaving Flux', function (): void {
     $refit = app(Refit::class);
     $sheaf = array_map(
         fn (Task $task): string => $task->key(),
         $refit->tasksFor(detectFixture('livewire')->targeting(new SheafLibrary)),
     );
 
-    expect($sheaf)->toContain('remove-flux')
-        // Trimming one @source line off a stylesheet that is losing both would
-        // only be confusing.
-        ->and($sheaf)->not->toContain('remove-flux-pro-source');
+    // The whole stylesheet reference goes in Flux's teardown, and trimming one
+    // @source line off a file that is losing both would only be confusing.
+    expect($sheaf)->not->toContain('remove-flux-pro-source');
 });
 
 it('turns partials into components and rewrites the includes', function (): void {

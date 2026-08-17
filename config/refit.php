@@ -10,7 +10,6 @@ use Onelegstudios\Refit\Tasks\MoveComponentsOutOfPages;
 use Onelegstudios\Refit\Tasks\MoveToastsToTop;
 use Onelegstudios\Refit\Tasks\NamespaceComponents;
 use Onelegstudios\Refit\Tasks\PromotePartialsToComponents;
-use Onelegstudios\Refit\Tasks\RemoveFlux;
 use Onelegstudios\Refit\Tasks\RemoveFluxProSource;
 
 return [
@@ -59,7 +58,6 @@ return [
         MoveToastsToTop::class,
         KeepOneLayout::class,
         RemoveFluxProSource::class,
-        RemoveFlux::class,
     ],
 
     /*

@@ -215,6 +215,25 @@ final class SheafLibrary implements Library
     }
 
     /**
+     * Nothing to take out.
+     *
+     * Sheaf's components are copied into `resources/views/components/ui` and are
+     * the user's own files from that moment on, so a project leaving Sheaf is not
+     * a project refit should be deleting application Blade from. There is no
+     * override directory to unwind and no Blade directive to strip; `sheaf/cli`
+     * and `theme.css` are a dependency decision, and refit says rather than does
+     * those — the same line it draws around `composer remove livewire/flux`.
+     *
+     * Reachable only from a Sheaf project targeting something else, which refit
+     * has no migration for yet. Empty because there is nothing to do, not because
+     * it is waiting to be filled in.
+     */
+    public function planTeardown(Plan $plan, Project $project, Report $report): void
+    {
+        //
+    }
+
+    /**
      * Put Sheaf in the project, to whatever extent it is not there already.
      *
      * Three steps, in the only order they work in, and each skipped when it has
