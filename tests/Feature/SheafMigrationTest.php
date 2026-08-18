@@ -195,6 +195,49 @@ it('leaves no Flux tag behind anywhere in the tree', function (string $kit): voi
     'Run `composer fixtures`.',
 );
 
+it('gives the kit\'s toasts something that is listening for them', function (string $kit): void {
+    $root = sheafKit($kit);
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'library' => 'sheaf',
+            'icons' => 'heroicons',
+        ]),
+    ])->assertSuccessful();
+
+    $project = (new ProjectDetector)->detect($root);
+    $raised = [];
+
+    foreach ([...$project->blades(), ...$project->livewireClasses()] as $path) {
+        $source = $project->get($path);
+
+        // The container is only half of it. A Flux::toast() left behind still
+        // runs and still succeeds — it just dispatches an event that nothing on
+        // the page answers any more, which is a form that saves in silence.
+        expect($source)->not->toContain('Flux::toast')
+            ->not->toContain('use Flux\\Flux;');
+
+        if (str_contains($source, "dispatch('notify'")) {
+            $raised[] = $path;
+        }
+    }
+
+    expect($raised)->not->toBeEmpty();
+
+    // And the thing they are dispatched at is in the layout.
+    $layouts = array_values(array_filter(
+        $project->blades(),
+        fn (string $path): bool => str_starts_with($path, 'resources/views/layouts/'),
+    ));
+
+    expect(array_filter($layouts, fn (string $path): bool => str_contains($project->get($path), '<x-ui.toast')))
+        ->not->toBeEmpty();
+})->with(starterKits())->skip(
+    fn (): bool => ! is_dir(fixturePath('livewire')),
+    'Run `composer fixtures`.',
+);
+
 it('only ever produces components Sheaf actually ships', function (string $kit): void {
     $root = sheafKit($kit);
 

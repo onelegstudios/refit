@@ -98,8 +98,9 @@ scratch each time, so the steps that did work are simply skipped.
 
 ### The parts that move rather than rename
 
-Most of a Flux view is a rename away from a Sheaf one. Seven things are not, and
-they are worth knowing about because they are where a diff will look surprising.
+Most of a Flux view is a rename away from a Sheaf one. Several things are not,
+and they are worth knowing about because they are where a diff will look
+surprising.
 
 **The chrome.** Flux's sidebar is a root element. Sheaf's is a grid area of an
 `<x-ui.layout>`, and the variant decides where its siblings go: the sidebar layout
@@ -222,6 +223,57 @@ to `vertical`, and `indicator`, which defaults to `true`. Refit says both out
 loud, so the appearance control renders as a row rather than a narrow grey column
 of three dotted rows. A group that names either prop itself is left alone.
 
+**Toasts.** A toast has two halves, and only one of them is markup. The rename
+gets the container right on its own — `<flux:toast.group>` is Sheaf's bare
+`<x-ui.toast>`, and the chrome stubs render one — but the kit raises its toasts
+from PHP, through Flux's facade:
+
+```php
+Flux::toast(variant: 'success', text: __('Profile updated.'));
+```
+
+That dispatches a Livewire event only Flux's own component answers. Sheaf's toast
+listens for a browser `notify` event instead, so left alone the call still runs,
+still succeeds, and nothing appears — a form that saves in silence, with nothing
+in the log to notice. Refit rewrites each one as the event Sheaf is listening for:
+
+```php
+$this->dispatch('notify', type: 'success', content: __('Profile updated.'));
+```
+
+`variant` becomes `type`, `text` becomes `content`, and `duration` carries across
+unchanged because both libraries count in milliseconds. Flux's `danger` is Sheaf's
+`error`; the other two variants share a name. A toast with no variant is left
+without a `type`, which is Sheaf's `info` — Flux has no such variant, so nothing
+is being invented there. The `use Flux\Flux;` import goes once the file has
+stopped naming the class, which matters the moment you run the `composer remove`
+below.
+
+Where a call lives is half of what refit decides, because `$this->dispatch()` is a
+promise about the class it lands in. Volt keeps a component's PHP inside the view
+and `app/Livewire` holds the rest, so both are rewritten — this is the only thing
+in refit that reads application PHP outside `resources/views`. A `Flux::toast()`
+anywhere else, in a controller or an action class, has no `$this` to dispatch
+from; refit names the file in `REFIT-NOTES.md` and leaves it, and the fix there is
+Sheaf's flashed form:
+
+```php
+session()->flash('notify', ['type' => 'success', 'content' => 'Signed out.']);
+```
+
+Three things Sheaf's toast has no room for are dropped and named in the notes: a
+`heading`, because Sheaf shows a single line; a `link`, because Sheaf's toast is
+not clickable; and a `position`, because Sheaf positions every toast once, on
+`<x-ui.toast>`. And a call refit cannot read with confidence is left exactly as it
+was rather than rewritten into something that says the wrong thing — a variant
+held in a variable, or more arguments than `Flux::toast()` has parameters.
+
+Positional calls are read against the signature, `toast($text, $heading,
+$duration, $variant, $position, $link)`, which is worth naming because Flux's own
+documentation lists those six in a different order — heading before text. The
+signature is the one refit follows, so `Flux::toast('Saved.')` becomes a message
+rather than a heading Sheaf would then drop.
+
 **Light and dark.** The kit switches appearance through Flux's `$flux` Alpine
 magic, not through a component, so the rename leaves it pointing at something the
 package took with it. Sheaf writes the same feature as a `$theme` magic in
@@ -232,9 +284,10 @@ package took with it. Sheaf writes the same feature as a `$theme` magic in
 choice and repaints the page. Left alone, the three buttons render, highlight, and
 change nothing.
 
-Anything else that names `$flux` — your own `$flux.appearance = …`, a toast, a
-modal — is left verbatim and named in `REFIT-NOTES.md`, because each has its own
-Sheaf answer and refit will not guess which.
+Anything else that names `$flux` — your own `$flux.appearance = …`, an Alpine
+`$flux.toast()`, a modal — is left verbatim and named in `REFIT-NOTES.md`, because
+each has its own Sheaf answer and refit will not guess which. The PHP
+`Flux::toast()` is the exception, and is rewritten; see **Toasts** above.
 
 That is only half the feature, and the other half is why refit writes a small
 script into your head. Every layout the kit ships hardcodes `<html class="dark">`

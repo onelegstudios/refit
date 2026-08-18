@@ -432,9 +432,10 @@ starts selected, and a `change` listener alongside it puts the click through
 Sheaf's radio group declares an `x-data` of its own, and a second one passed in is
 a duplicate attribute the HTML parser drops.
 
-Every other `$flux` — a hand-written assignment, a toast, a modal — is left
-verbatim and reported. Each has its own Sheaf answer, and none of them is this
-one.
+Every other `$flux` — a hand-written assignment, an Alpine `$flux.toast()`, a
+modal — is left verbatim and reported. Each has its own Sheaf answer, and none of
+them is this one. The PHP `Flux::toast()` is not one of these: it is not `$flux`
+magic at all, and `RewriteToastCalls` rewrites it.
 
 ## Adding a library
 

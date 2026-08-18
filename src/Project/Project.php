@@ -134,6 +134,52 @@ final class Project
     }
 
     /**
+     * Every Livewire component class in the application, as project-relative paths.
+     *
+     * The other half of where a component's PHP lives. Volt keeps it inside the
+     * view, so {@see blades()} already covers four of the five kits; the
+     * class-components kit puts it in `app/Livewire` instead, which nothing else
+     * in refit has ever needed to read.
+     *
+     * Deliberately only `app/Livewire`, not all of `app`. Everything that rewrites
+     * PHP here rewrites it into `$this->dispatch(...)`, which is a promise about
+     * the class it lands in — and `app/Livewire` is the one directory where
+     * Laravel guarantees that promise holds. A `Flux::toast()` in a controller is
+     * reported rather than rewritten, because there is no `$this` there to
+     * dispatch from.
+     *
+     * Scanned live, for the same reason as {@see blades()}.
+     *
+     * @return list<string>
+     */
+    public function livewireClasses(): array
+    {
+        $directory = $this->path('app/Livewire');
+
+        if (! is_dir($directory)) {
+            return [];
+        }
+
+        $finder = Finder::create()
+            ->files()
+            ->in($directory)
+            ->name('*.php')
+            ->sortByName();
+
+        $paths = [];
+
+        foreach ($finder as $file) {
+            $paths[] = 'app/Livewire/'.str_replace(
+                DIRECTORY_SEPARATOR,
+                '/',
+                $file->getRelativePathname(),
+            );
+        }
+
+        return $paths;
+    }
+
+    /**
      * Loose anonymous components, as bare names.
      *
      * Top level only: anything already in a subfolder is namespaced. Read live

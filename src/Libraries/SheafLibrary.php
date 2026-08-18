@@ -22,6 +22,7 @@ use Onelegstudios\Refit\Plan\Actions\RebindAppearanceToTheme;
 use Onelegstudios\Refit\Plan\Actions\RestructureBrandLogo;
 use Onelegstudios\Refit\Plan\Actions\RestructureOverlays;
 use Onelegstudios\Refit\Plan\Actions\RewriteIconNames;
+use Onelegstudios\Refit\Plan\Actions\RewriteToastCalls;
 use Onelegstudios\Refit\Plan\Actions\RunProcess;
 use Onelegstudios\Refit\Plan\Actions\ShapeSegmentedGroups;
 use Onelegstudios\Refit\Plan\Actions\WrapControlsInFields;
@@ -210,6 +211,13 @@ final class SheafLibrary implements Library
         // be lifted where they live.
         if (($sidebar = $stubs->sidebarComponents($project)) !== []) {
             $plan->add(Stage::Reconcile, new RaiseSidebarDropdowns($sidebar));
+        }
+
+        // The other half of a toast. The rename gets the container right on its
+        // own, and would leave every call that fills it raising a Flux event
+        // nothing answers any more — a form that saves and says nothing.
+        if (RewriteToastCalls::used($project)) {
+            $plan->add(Stage::Reconcile, new RewriteToastCalls);
         }
 
         // Independent of all of the above: light/dark is the one part of the kit
