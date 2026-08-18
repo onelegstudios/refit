@@ -115,7 +115,7 @@ final class RestructureBrandLogo extends BladeSweep
         $edits->replace(
             $start,
             $closes - $start,
-            $this->tile(substr($source, $start, $closes - $start), $class->value, $this->indent($source, $slot)),
+            $this->tile(substr($source, $start, $closes - $start), $class->value, $this->indent($source, $slot->offset)),
         );
     }
 
@@ -162,19 +162,6 @@ final class RestructureBrandLogo extends BladeSweep
             $indent,
             $indent,
         );
-    }
-
-    /**
-     * The whitespace in front of the tag on its own line, so the wrapper lands
-     * where a person would have typed it.
-     */
-    private function indent(string $source, Tag $tag): string
-    {
-        $line = strrpos(substr($source, 0, $tag->offset), "\n");
-        $start = $line === false ? 0 : $line + 1;
-        $indent = substr($source, $start, $tag->offset - $start);
-
-        return trim($indent) === '' ? $indent : '';
     }
 
     /**

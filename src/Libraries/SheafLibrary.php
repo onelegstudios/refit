@@ -10,8 +10,10 @@ use Onelegstudios\Refit\Icons\IconStrategy;
 use Onelegstudios\Refit\Libraries\Sheaf\ComponentMap;
 use Onelegstudios\Refit\Libraries\Sheaf\Components;
 use Onelegstudios\Refit\Libraries\Sheaf\LayoutStubs;
+use Onelegstudios\Refit\Plan\Actions\AcceptOtpAutofill;
 use Onelegstudios\Refit\Plan\Actions\ApplyThemeBeforePaint;
 use Onelegstudios\Refit\Plan\Actions\BindModalState;
+use Onelegstudios\Refit\Plan\Actions\CarryOtpValue;
 use Onelegstudios\Refit\Plan\Actions\ImportSheafGlobals;
 use Onelegstudios\Refit\Plan\Actions\MapComponentTags;
 use Onelegstudios\Refit\Plan\Actions\OrderThemeImport;
@@ -206,6 +208,20 @@ final class SheafLibrary implements Library
         $plan->add(Stage::Reconcile, new PromoteContentsToLabel);
         $plan->add(Stage::Reconcile, new WrapControlsInFields);
         $plan->add(Stage::Reconcile, new ShapeSegmentedGroups);
+
+        // After the field wrapping rather than beside it, because that sweep reads
+        // the OTP's `name` to key the error it writes and this one takes the same
+        // attribute off — Sheaf spends it on every digit box, so a form posts one
+        // digit under it and the challenge rejects every code.
+        $plan->add(Stage::Reconcile, new CarryOtpValue);
+
+        // And the other half of the same page. Sheaf's OTP is hostile to password
+        // managers in three ways Flux's was not, all of them inside the component
+        // `sheaf:install` has just copied into the project — so this is the one
+        // action that edits Sheaf's own source, until the fix lands upstream.
+        if (AcceptOtpAutofill::used($project)) {
+            $plan->add(Stage::Reconcile, new AcceptOtpAutofill);
+        }
 
         // The same list, one step further along: this one reads not just the
         // renamed tag but the `name` -> `id` pairing the rename performed, since

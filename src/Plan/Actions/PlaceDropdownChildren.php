@@ -251,7 +251,7 @@ final class PlaceDropdownChildren extends BladeSweep
             return;
         }
 
-        $indent = $this->indent($source, $child);
+        $indent = $this->indent($source, $child->open->offset);
 
         // The wrapped markup keeps the indentation it had, rather than being
         // re-flowed around a div that only exists for the grid.
@@ -262,17 +262,5 @@ final class PlaceDropdownChildren extends BladeSweep
         );
 
         $edits->replace($closes + 1, 0, "\n".$indent.'</div>');
-    }
-
-    /**
-     * The whitespace in front of the element on its own line.
-     */
-    private function indent(string $source, Element $child): string
-    {
-        $line = strrpos(substr($source, 0, $child->open->offset), "\n");
-        $start = $line === false ? 0 : $line + 1;
-        $indent = substr($source, $start, $child->open->offset - $start);
-
-        return trim($indent) === '' ? $indent : '';
     }
 }

@@ -73,6 +73,23 @@ function fluxTagsUnder(string $root): array
 }
 
 /**
+ * The Reconcile stage of a Sheaf plan, as described lines.
+ *
+ * @return list<string>
+ */
+function reconcileSteps(string $root, IconStrategy $strategy = IconStrategy::Heroicons): array
+{
+    $plan = new Plan;
+
+    (new SheafLibrary)->planMigration($plan, (new ProjectDetector)->detect($root), $strategy, new Report);
+
+    return array_map(
+        fn ($action): string => $action->describe(),
+        $plan->grouped()[Stage::Reconcile->name] ?? [],
+    );
+}
+
+/**
  * The Dependencies stage of a Sheaf plan, as described lines.
  *
  * @return list<string>
@@ -648,6 +665,82 @@ it('labels the form controls Sheaf renders bare, and says why they were rejected
         ->toContain('revealable')
         ->not->toContain('viewable');
 })->skip(fn (): bool => ! is_dir(fixturePath('livewire-teams')), 'Run `composer fixtures`.');
+
+it('posts the two-factor code Sheaf would have left out of the form', function (string $kit, string $challenge, string $setup): void {
+    $root = sheafKit($kit);
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'library' => 'sheaf',
+            'icons' => 'heroicons',
+        ]),
+    ])->assertSuccessful();
+
+    $project = (new ProjectDetector)->detect($root);
+
+    // Flux's <ui-otp> kept a hidden input holding the joined digits, so the
+    // challenge page's plain POST carried the whole code. Sheaf has no such
+    // input, and spends `name` on every digit box instead — six inputs called
+    // `code`, of which PHP keeps the last, so Fortify rejected every login.
+    expect($project->get($challenge))
+        ->toContain('<input type="hidden" name="code" x-bind:value="code" />')
+        ->not->toContain('<x-ui.otp name="code"')
+        // The error is still keyed, because the field wrapping reads the name
+        // before this sweep takes it off.
+        ->toContain('<x-ui.error name="code" />');
+
+    // Sheaf's digit boxes are unconditionally `required`, and the recovery form
+    // posts from the same <form> with the OTP merely x-show'd away — a hidden
+    // required control the browser refuses to submit past at all.
+    expect($project->get($challenge))
+        ->toContain('<fieldset class="contents" x-bind:disabled="showRecoveryInput">');
+
+    // The kit's other OTP binds through Livewire, which carries its own value and
+    // names the boxes after the binding on purpose. Nothing to fix there.
+    expect($project->get($setup))
+        ->toContain('wire:model="code"')
+        ->not->toContain('x-bind:value');
+})->with([
+    [
+        'livewire',
+        'resources/views/pages/auth/two-factor-challenge.blade.php',
+        'resources/views/pages/settings/⚡two-factor-setup-modal.blade.php',
+    ],
+    [
+        'livewire-teams',
+        'resources/views/pages/auth/two-factor-challenge.blade.php',
+        'resources/views/pages/settings/⚡two-factor-setup-modal.blade.php',
+    ],
+    [
+        'livewire-class-components',
+        'resources/views/livewire/auth/two-factor-challenge.blade.php',
+        'resources/views/livewire/settings/security.blade.php',
+    ],
+])->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+
+it('plans the OTP autofill patch only for a kit that has an OTP', function (): void {
+    // Sheaf's OTP is hostile to password managers in three ways Flux's was not,
+    // and all three live in the component `sheaf:install` copies into the project
+    // — so this is the one action that edits Sheaf's own source.
+    expect(implode("\n", reconcileSteps(sheafKit('livewire'))))
+        ->toContain('patch  Sheaf\'s OTP');
+
+    // A kit built without two-factor never installs the component, and there is
+    // nothing to patch.
+    $root = sheafKit('livewire');
+
+    foreach ((array) glob($root.'/resources/views/pages/**/*two-factor*.blade.php') as $path) {
+        @unlink((string) $path);
+    }
+
+    file_put_contents(
+        $root.'/resources/views/pages/settings/⚡two-factor-setup-modal.blade.php',
+        "<div>no otp here</div>\n",
+    );
+
+    expect(implode("\n", reconcileSteps($root)))->not->toContain('patch  Sheaf\'s OTP');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
 
 it('keeps Tailwind\'s import ahead of Sheaf\'s so the theme stays layered', function (): void {
     $root = sheafKit('livewire');

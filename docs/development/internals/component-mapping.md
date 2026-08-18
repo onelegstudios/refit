@@ -304,6 +304,102 @@ not props, so which components render a label is a reading of Sheaf's source.
 `checkbox` is deliberately absent — it renders its label through `checkbox.label`
 — and so are the items above, which are `PromoteContentsToLabel`'s.
 
+### A value is not always posted
+
+The same tag again, and the same silence, but this time it costs the login. Flux's
+`<flux:otp name="code">` renders a `<ui-otp>` custom element that keeps one hidden
+input holding the joined digits, so an ordinary `<form method="POST">` submits the
+whole code. Sheaf's `x-ui.otp` has no such input. Its `name` is a declared prop
+that `otp.input` reads back with `@aware`, so the name lands on *every* digit box
+instead — six inputs called `code`, of which PHP keeps the last.
+
+Sheaf's own answer is `wire:model`: the component entangles the property and
+Livewire carries it, which is what the kit's two-factor setup modal does and why
+that page survives the rename untouched. The two-factor challenge is not Livewire.
+It posts a plain form to `two-factor.login.store` with the digits held in Alpine
+through `x-model`, so after a rename alone it posts a single digit and Fortify
+answers every attempt with "The provided two factor authentication code was
+invalid."
+
+`CarryOtpValue` takes the name off the tag and posts the Alpine value the
+component already writes back:
+
+```blade
+<x-ui.otp x-model="code" length="6" class="mx-auto" />
+<input type="hidden" name="code" x-bind:value="code" />
+```
+
+Taking `name` off is half the fix rather than a tidy-up: left in place, its six
+namesakes outrank the hidden input and the last digit box is still what posts.
+
+The other half is that Sheaf's digit boxes are unconditionally `required`, which
+Flux's were not. The challenge page keeps its recovery-code field in the same
+`<form>` and swaps between the two with `x-show`, and a required control that is
+`display: none` is still validated — the browser refuses the submit outright and
+the button does nothing at all, which is the whole recovery path gone. The page
+already guards its own recovery input with `x-bind:required`, but nothing outside
+Sheaf can reach the boxes Sheaf generates, so the OTP is wrapped in the one
+element that disables its descendants from above:
+
+```blade
+<fieldset class="contents" x-bind:disabled="showRecoveryInput">
+```
+
+which does both jobs at once — a disabled fieldset is exempt from validation *and*
+submits nothing, so the recovery post carries `recovery_code` alone. The condition
+is the negation of the `x-show` the OTP is hidden behind, unwrapped rather than
+double-negated where that reads as a plain name.
+
+The sweep runs after `WrapControlsInFields`, which reads the same `name` to key the
+error it writes. An OTP bound with `wire:model`, written with its own digit boxes
+in a slot, or outside a form is left alone; one that posts a form but holds its
+value in neither `wire:model` nor `x-model` has nothing to carry, and is reported
+rather than quietened.
+
+### A box a password manager cannot fill
+
+The one place refit edits Sheaf's own source rather than the kit's, and the only
+change here that is a stopgap rather than a translation.
+
+Flux's `<ui-otp>` and Sheaf's `x-ui.otp` disagree on the three things that decide
+whether a password manager can fill a code, and Sheaf takes the losing side of
+each:
+
+| | Flux | Sheaf |
+| --- | --- | --- |
+| Which box claims the code | `one-time-code` on the first input, `off` on the rest | `one-time-code` on all six |
+| A multi-character value | distributed across the boxes | truncated to its last character |
+| How the caret is held | `tabindex` | every box ahead of it is `disabled` |
+
+A password manager sets `.value` and dispatches `input`, never `paste` — so
+Sheaf's `handlePaste`, the only code it has that spreads a code out, never runs.
+A filled `123456` reaches `handleInput`, which keeps the `6` and drops the rest;
+and a fill that goes box by box instead cannot write to boxes two through six at
+all, because a disabled input is one an extension cannot touch. Either way one
+digit lands. What follows looks like the keyboard locking up: `handleInput`
+enables and focuses the next box a frame later, `x-on:focus` re-selects it a frame
+after that, and the page goes on stealing focus every frame while the extension is
+still trying to drive the field.
+
+None of that is reachable from the page, so `AcceptOtpAutofill` patches the
+component `sheaf:install` copied into the project — giving `one-time-code` to the
+first box from `setupInputs()`, spreading a multi-character value through a new
+`fillFrom()` that `handlePaste` shares, and holding the caret with `tabIndex`
+rather than `disabled`. The three places that read the disabled flag back —
+`clear()`, `handleClick()` and the availability pass itself — change with it.
+
+Every edit is anchored on the lines it replaces, matched per line and trimmed so
+Sheaf's indentation inside the `x-data` attribute is not what decides whether it
+lands, and re-indented onto wherever it was found. A block refit no longer
+recognises is named in a warning rather than guessed at, and the rest still apply:
+a partial patch beats no patch and beats a wrong one.
+
+It is planned only for a project that writes an OTP, read before the rename while
+the tag is still `<flux:otp`. A later `sheaf:install otp` overwrites it, which is
+the point at which to check whether
+[sheafui/components](https://github.com/sheafui/components) has fixed this
+upstream and this action can go.
+
 ### A menu is a grid
 
 Flux renders a menu as a stack of blocks, so the kit puts what it likes in one: a
