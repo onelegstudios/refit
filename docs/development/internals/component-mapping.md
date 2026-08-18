@@ -171,14 +171,49 @@ Inside `Stage::Reconcile`, and it matters:
    **`PreserveTextAlignment`**, **`PromoteContentsToLabel`**,
    **`ShapeSegmentedGroups`** and **`RaiseSidebarDropdowns`** — after the rename,
    because all six read the tags the rename produced.
-4. **`RebindAppearanceToTheme`** — anywhere, in practice. It reads Alpine
-   expressions rather than tags, so the rename neither helps it nor hurts it.
+4. **`RebindAppearanceToTheme`** and **`ApplyThemeBeforePaint`** — anywhere, in
+   practice. Neither reads a tag: one rewrites Alpine expressions, the other
+   writes a script into the head. Both have to be in the reconcile stage rather
+   than the write stage, though, because the files they edit are still moving
+   until then.
 5. **The icon sweeps** — last, so they run against the tags the migration
    produced. This is why `planMigration()` is called before `planIcons()` in
    `RefitCommand::build()`.
 
 Every one of these is a [`BladeSweep`](/docs/development/internals/blade-rewriting),
 so each is one traversal, and each file is checked by `BladeGuard` individually.
+
+### Light and dark is two halves, and only one is a rewrite
+
+`RebindAppearanceToTheme` moves the bindings; `ApplyThemeBeforePaint` deals with
+*when* the theme lands. The kit's layouts all hardcode `<html class="dark">` and
+let JavaScript correct it, which Flux made safe with `@fluxAppearance` — an
+inline, synchronous script in the head. Flux's teardown strips it, and Sheaf
+offers no substitute: `theme.js` registers `$theme` inside `alpine:init` and is
+loaded by `@vite` as `type="module"`, deferred by spec. So the correction lands
+after the paint, and every page visibly snaps from dark to light.
+
+The script written back reads what `theme.js` reads — the `theme` key, the
+`system` default, `prefers-color-scheme`, `.dark` on `documentElement`. Anything
+else and the two disagree for exactly the one frame the script exists for.
+
+It also listens for `livewire:navigated`, and that half is not optional. Livewire's
+`replaceHtmlAttributes()` copies the incoming document's `<html>` attributes onto
+the live element, so the kit's hardcoded `class="dark"` is reapplied on every
+`wire:navigate`. Its `mergeNewHead()` only adds head children the page does not
+already have, and this script is byte-identical on every page, so it is never
+re-run to correct that. `alpine:init` does not fire twice either, so Sheaf's
+runtime never gets a second look. The symptom without the listener is a preference
+that works until you click a link and then reverts — and with a dark OS it hides
+completely behind `dark` and `system`, because those resolve to the colour the
+hardcoded class was asserting anyway.
+
+Finding the head is the fiddly part, and `@vite` alone does not do it: the kit
+calls `@vite('resources/js/passkeys.js')` inside `passkey-registration` and
+`passkey-verify`, and a theme script in either is a script in the body of a page
+whose head already has one. The discriminator is a stylesheet — CSS has to be in
+the head — with `<head` itself as a fallback for a project that imports its CSS
+from JavaScript and never names a `.css` in Blade.
 
 ### A slot is not only a slot
 

@@ -340,6 +340,69 @@ it('leaves the auth pages a button worth pressing', function (): void {
         ->toContain('<x-ui.button variant="primary" type="submit" class="w-full" data-test="update-profile-button">');
 })->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
 
+it('settles light or dark before the first paint', function (): void {
+    $root = sheafKit('livewire');
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'library' => 'sheaf',
+            'icons' => 'heroicons',
+        ]),
+    ])->assertSuccessful();
+
+    $project = (new ProjectDetector)->detect($root);
+    $head = $project->get('resources/views/partials/head.blade.php');
+
+    // Flux's @fluxAppearance did this synchronously in the head, and its teardown
+    // takes it away. Sheaf's replacement registers on `alpine:init` and arrives
+    // through a deferred module, so without a pre-paint script the hardcoded
+    // `dark` class is what the reader sees first and the correction is what they
+    // see next — the whole page snapping to light on every load.
+    expect($head)->not->toContain('@fluxAppearance')
+        ->toContain("localStorage.getItem('theme') ?? 'system'")
+        ->toContain("document.documentElement.classList.toggle('dark', dark)")
+        // And once more per navigation: wire:navigate writes the incoming
+        // document's <html> attributes onto the live one, so the hardcoded
+        // `class="dark"` comes back on every link the reader clicks, and Livewire
+        // re-runs no head script the page already has.
+        ->toContain("document.addEventListener('livewire:navigated', window.applyStoredTheme)");
+
+    // Ahead of the tags: @vite is a module either way, so the only thing that can
+    // beat the paint is an inline script above it.
+    expect(strpos($head, '<script>'))->toBeLessThan((int) strpos($head, '@vite'));
+
+    // One script, in the one file every layout includes.
+    $scripts = array_filter(
+        $project->blades(),
+        fn (string $path): bool => str_contains($project->get($path), 'classList.toggle(\'dark\''),
+    );
+
+    expect(array_values($scripts))->toBe(['resources/views/partials/head.blade.php']);
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+
+it('follows the head when a task turns it into a component', function (): void {
+    $root = sheafKit('livewire');
+
+    // The partials task moves partials/head.blade.php to components/head.blade.php
+    // in the move stage. This runs in the reconcile stage, over the settled tree,
+    // so it finds the head there rather than writing to a path that has gone.
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'library' => 'sheaf',
+            'icons' => 'heroicons',
+            'tasks' => ['partials-to-components'],
+        ]),
+    ])->assertSuccessful();
+
+    $project = (new ProjectDetector)->detect($root);
+
+    expect($project->exists('resources/views/partials/head.blade.php'))->toBeFalse()
+        ->and($project->get('resources/views/components/head.blade.php'))
+        ->toContain("localStorage.getItem('theme') ?? 'system'");
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+
 it('keeps the logo tile Sheaf\'s brand would have dropped', function (): void {
     $root = sheafKit('livewire');
 

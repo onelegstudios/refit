@@ -10,6 +10,7 @@ use Onelegstudios\Refit\Icons\IconStrategy;
 use Onelegstudios\Refit\Libraries\Sheaf\ComponentMap;
 use Onelegstudios\Refit\Libraries\Sheaf\Components;
 use Onelegstudios\Refit\Libraries\Sheaf\LayoutStubs;
+use Onelegstudios\Refit\Plan\Actions\ApplyThemeBeforePaint;
 use Onelegstudios\Refit\Plan\Actions\MapComponentTags;
 use Onelegstudios\Refit\Plan\Actions\OrderThemeImport;
 use Onelegstudios\Refit\Plan\Actions\PlaceDropdownChildren;
@@ -212,6 +213,12 @@ final class SheafLibrary implements Library
         // that lives in JavaScript, so it survives the rename untouched and
         // pointed at a magic that is about to stop existing.
         $plan->add(Stage::Reconcile, new RebindAppearanceToTheme);
+
+        // And the other half of the same feature. Sheaf's runtime only registers
+        // itself on `alpine:init`, which is a frame after the first paint, so
+        // without this the hardcoded `dark` class is what the reader sees first
+        // and the correction is what they see next.
+        $plan->add(Stage::Reconcile, new ApplyThemeBeforePaint);
     }
 
     /**

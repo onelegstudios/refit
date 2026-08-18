@@ -199,6 +199,36 @@ Anything else that names `$flux` — your own `$flux.appearance = …`, a toast,
 modal — is left verbatim and named in `REFIT-NOTES.md`, because each has its own
 Sheaf answer and refit will not guess which.
 
+That is only half the feature, and the other half is why refit writes a small
+script into your head. Every layout the kit ships hardcodes `<html class="dark">`
+and lets JavaScript correct it. Flux corrected it in time, with `@fluxAppearance`
+— an inline script in the head, synchronous, so the class was already right
+before anything was drawn. Its teardown takes that directive away, and Sheaf has
+nothing that stands in: `theme.js` registers `$theme` inside an `alpine:init`
+listener and arrives through `@vite`, which Vite emits as a deferred module. It
+runs *after* the first paint, so the page comes up dark and snaps to light on
+every load.
+
+So refit puts the pre-paint half back, above your `@vite` call, reading the same
+`theme` key with the same `system` default and the same media query as Sheaf's
+own runtime. If you change one, change both. It goes into whichever file writes
+your head, found when the tree has settled — so promoting `partials/head` to a
+component moves it along with everything else.
+
+It resolves the theme twice, and the second time is the one that matters most.
+`wire:navigate` copies the incoming document's `<html>` attributes onto the live
+one, so `class="dark"` is written back onto the page every time the reader clicks
+a link — and Livewire merges only the head children the page does not already
+have, so a script identical on every page is never re-run to undo it. Alpine does
+not boot a second time either, which leaves Sheaf's runtime out of it too. The
+script therefore listens for `livewire:navigated` as well; without that, choosing
+light survives exactly until you navigate.
+
+> Running `npm run dev` shows a second, unrelated flicker: the Vite dev server
+> injects CSS through JavaScript rather than as a blocking stylesheet, so every
+> load flashes unstyled first. That one is a dev-server property, not something a
+> migration can fix — `npm run build` is where you check the real thing.
+
 ### What Sheaf has no answer for
 
 Refit never guesses. A tag with no Sheaf equivalent is left exactly as it was and
