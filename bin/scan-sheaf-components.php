@@ -486,6 +486,14 @@ function reportBrokenMappings(array $components): array
         }
     }
 
+    // The components refit writes for itself are named nowhere in TAGS, so they
+    // need checking on their own account or a rename upstream goes unnoticed.
+    foreach (ComponentMap::SUPPORTING as $component) {
+        if (! isset($available[$component])) {
+            $broken[] = 'refit writes -> '.ComponentMap::PREFIX.$component;
+        }
+    }
+
     foreach ($broken as $line) {
         error('  no such component: '.$line);
     }

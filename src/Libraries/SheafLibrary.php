@@ -24,6 +24,7 @@ use Onelegstudios\Refit\Plan\Actions\RestructureOverlays;
 use Onelegstudios\Refit\Plan\Actions\RewriteIconNames;
 use Onelegstudios\Refit\Plan\Actions\RunProcess;
 use Onelegstudios\Refit\Plan\Actions\ShapeSegmentedGroups;
+use Onelegstudios\Refit\Plan\Actions\WrapControlsInFields;
 use Onelegstudios\Refit\Plan\Plan;
 use Onelegstudios\Refit\Plan\Report;
 use Onelegstudios\Refit\Plan\Stage;
@@ -190,15 +191,17 @@ final class SheafLibrary implements Library
         $plan->add(Stage::Reconcile, new RestructureOverlays);
         $plan->add(Stage::Reconcile, new MapComponentTags);
 
-        // All three read the tags the rename produced, so all three come after it.
-        // Each is a place where Sheaf's component renders what Flux's rendered,
-        // but styles it differently enough that a rename alone leaves the view
+        // All of these read the tags the rename produced, so all of them come
+        // after it. Each is a place where Sheaf's component renders what Flux's
+        // rendered, but differently enough that a rename alone leaves the view
         // looking broken: a logo slot whose classes are dropped, a menu panel that
-        // is a grid, and text that no longer inherits its alignment.
+        // is a grid, text that no longer inherits its alignment, and a label that
+        // has no prop to land in.
         $plan->add(Stage::Reconcile, new RestructureBrandLogo);
         $plan->add(Stage::Reconcile, new PlaceDropdownChildren);
         $plan->add(Stage::Reconcile, new PreserveTextAlignment);
         $plan->add(Stage::Reconcile, new PromoteContentsToLabel);
+        $plan->add(Stage::Reconcile, new WrapControlsInFields);
         $plan->add(Stage::Reconcile, new ShapeSegmentedGroups);
 
         // Also after the rename — it reads `x-ui.dropdown`, which does not exist

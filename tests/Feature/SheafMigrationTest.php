@@ -545,6 +545,67 @@ it('labels the items Sheaf would otherwise render empty', function (): void {
         ->toContain(':label="__(\'System\')" />');
 })->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
 
+it('labels the form controls Sheaf renders bare, and says why they were rejected', function (): void {
+    $root = sheafKit('livewire-teams');
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'library' => 'sheaf',
+            'icons' => 'heroicons',
+        ]),
+    ])->assertSuccessful();
+
+    $project = (new ProjectDetector)->detect($root);
+
+    // Flux's input was the label, the control and the space between them. Sheaf's
+    // is the control alone, and the label it was handed goes nowhere — so every
+    // field of every auth page arrived as an unlabelled box.
+    expect($project->get('resources/views/pages/auth/login.blade.php'))
+        ->toContain('<x-ui.label :text="__(\'Email address\')" />')
+        ->toContain('<x-ui.label :text="__(\'Password\')" />')
+        ->toContain('<x-ui.field>')
+        // The label came off the control rather than being copied onto a second
+        // tag — from there it renders nowhere.
+        ->not->toContain('<x-ui.input name="email" :label=');
+
+    // The select declares a `label` prop and then never renders it, which looks
+    // like the one case a rename would have got right and is not.
+    expect($project->get('resources/views/pages/teams/⚡invite-member-modal.blade.php'))
+        ->toContain('<x-ui.label :text="__(\'Role\')" />')
+        ->toContain('<x-ui.select wire:model="inviteRole" data-test="invite-role">');
+
+    // And the code field keeps its label hidden, the way `label:sr-only` had it.
+    expect($project->get('resources/views/pages/settings/⚡two-factor-setup-modal.blade.php'))
+        ->toContain('<x-ui.label class="sr-only" text="OTP Code" />')
+        ->not->toContain('label:sr-only');
+
+    // The checkbox is not a target: Sheaf's own renders the label it is given.
+    expect($project->get('resources/views/pages/auth/login.blade.php'))
+        ->toContain('<x-ui.checkbox name="remember" :label="__(\'Remember me\')"');
+
+    // Flux's input drew the validation message too, and the kit's auth pages have
+    // no @error block of their own — so a failed login said nothing at all.
+    expect($project->get('resources/views/pages/auth/login.blade.php'))
+        ->toContain('<x-ui.error name="email" />');
+
+    // Keyed off the Livewire property where the control has no name.
+    expect($project->get('resources/views/pages/settings/⚡security.blade.php'))
+        ->toContain('<x-ui.error name="current_password" />')
+        ->toContain('<x-ui.error name="password" />');
+
+    // The recovery code field is the one input the kit labels nowhere and errors
+    // itself, and it is left exactly as it was.
+    expect($project->get('resources/views/pages/auth/two-factor-challenge.blade.php'))
+        ->toContain('@error(\'recovery_code\')')
+        ->not->toContain('<x-ui.error name="recovery_code" />');
+
+    // And the password fields keep the eye Flux drew from `viewable`.
+    expect($project->get('resources/views/pages/auth/login.blade.php'))
+        ->toContain('revealable')
+        ->not->toContain('viewable');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire-teams')), 'Run `composer fixtures`.');
+
 it('keeps Tailwind\'s import ahead of Sheaf\'s so the theme stays layered', function (): void {
     $root = sheafKit('livewire');
 

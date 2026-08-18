@@ -130,17 +130,22 @@ Sheaf's translation table, and the same discipline as
 [`IconMap`](/docs/development/internals/icon-pipeline): curated, commented where a
 call was close, and reported rather than guessed at when there is no answer.
 
-Four kinds of entry:
+Five kinds of entry:
 
 - **`TAGS`** — `flux:callout` to `x-ui.alerts`, `flux:menu.item` to
   `x-ui.dropdown.item`, `flux:main` to `x-ui.layout.main`.
-- **`ATTRIBUTES`** — `icon-trailing` to `iconAfter`, matched by name alone so the
-  pass can run after the rename.
+- **`ATTRIBUTES`** — `icon-trailing` to `iconAfter`, `viewable` to `revealable`,
+  matched by name alone so the pass can run after the rename. A prop belongs to
+  the one component that declares it, so matching by name across every Sheaf tag
+  costs nothing as long as no two collide.
 - **`VALUES`** — keyed by the *Flux* tag, so the pass looks a Sheaf tag back up
   through the map. Only the variants the kit actually writes are listed; Sheaf
   passes an unknown variant through to classes rather than throwing, so guessing
   would be worse than doing nothing.
 - **`UNMAPPED`** — a tag with no counterpart, and the sentence explaining why.
+- **`SUPPORTING`** — the components refit writes itself, which no Flux tag becomes:
+  `field`, `label` and `error`. They are in the map because the install list is
+  built from it, not because anything renames into them.
 
 ### The manifest keeps it honest
 
@@ -151,7 +156,10 @@ install, and the install path *is* the Blade component name — so the registry 
 the authority on tag names rather than a reading of the docs.
 
 `composer sheaf:components:check` fails when a mapping points at a component Sheaf
-no longer ships, which is the same job `flux:internals:check` does for icons. Only
+no longer ships, which is the same job `flux:internals:check` does for icons. It
+checks `ComponentMap::SUPPORTING` as well — `field`, `label` and `error`, the three
+components refit writes for itself rather than renaming anything into, which no
+entry in `TAGS` would otherwise vouch for. Only
 names are recorded; none of Sheaf's source is copied into this repository, because
 its CLI is what puts components in a project and refit runs that CLI.
 
@@ -169,8 +177,9 @@ Inside `Stage::Reconcile`, and it matters:
    the suffix is still there to read, then tag names, then attributes and values.
 3. **`RestructureBrandLogo`**, **`PlaceDropdownChildren`**,
    **`PreserveTextAlignment`**, **`PromoteContentsToLabel`**,
-   **`ShapeSegmentedGroups`** and **`RaiseSidebarDropdowns`** — after the rename,
-   because all six read the tags the rename produced.
+   **`WrapControlsInFields`**, **`ShapeSegmentedGroups`** and
+   **`RaiseSidebarDropdowns`** — after the rename, because all seven read the tags
+   the rename produced.
 4. **`RebindAppearanceToTheme`** and **`ApplyThemeBeforePaint`** — anywhere, in
    practice. Neither reads a tag: one rewrites Alpine expressions, the other
    writes a script into the head. Both have to be in the reconcile stage rather
@@ -247,6 +256,53 @@ anything else.
 
 The other Sheaf components taking a `label` render their slot as well, so a slot
 label still shows and none of them are targets.
+
+### A label is not always a prop
+
+One tag further along, the same word fails in the opposite direction. Flux's input
+is the label, the control, the spacing and the validation message in a single tag;
+Sheaf splits those into four components — `field` around, `label` above, `error`
+below, `input` for the control alone — so a `label` handed to the control has
+nowhere to land and the message stops being rendered by anything. Nothing throws,
+which is the problem: `input` and `otp` have no such prop, so the label falls
+through to the attribute bag and renders as `label="…"` on the wrapper div, and
+`select` declares the prop and then never writes it out. Both are simply gone, in
+twenty controls across eleven files of the plainest kit — which are also the kit's
+whole authentication flow, rejecting people without saying why.
+
+`WrapControlsInFields` lifts the attribute out of the tag and writes both around
+the control, inside an `x-ui.field`:
+
+```blade
+<x-ui.field>
+    <x-ui.label :text="__('Email address')" />
+    <x-ui.input name="email" type="email" required />
+    <x-ui.error name="email" />
+</x-ui.field>
+```
+
+The label's value is spliced across as written — quote character, `{{ }}`, `__()`
+and all — so nothing is re-rendered and nothing is read as an expression. `:label`
+becomes `:text` and a literal stays literal. Flux's `label:sr-only` becomes
+`class="sr-only"` on the label, because hiding the words while leaving them to a
+screen reader was the point.
+
+The error is keyed the way Flux keyed it: the control's `name`, or the property a
+`wire:model` binds when there is no name — a Livewire property path is the key its
+messages come back under, so the two agree. A control bound only to Alpine has no
+key on either side and gets no error, because an `x-ui.error` with no name renders
+nothing on every page rather than something on the one that failed. The kit's only
+unlabelled input is the recovery code, which this sweep never reaches and which
+writes its own `@error` block, so nothing is rendered twice.
+
+A control already inside a field gets the label alone — a project that wrote its
+own field has said how it wants errors shown — and a control whose closing tag
+cannot be found is no span to wrap, so it keeps its label and is reported.
+
+The target list is hand-kept, like the map itself: the manifest records tag names,
+not props, so which components render a label is a reading of Sheaf's source.
+`checkbox` is deliberately absent — it renders its label through `checkbox.label`
+— and so are the items above, which are `PromoteContentsToLabel`'s.
 
 ### A menu is a grid
 

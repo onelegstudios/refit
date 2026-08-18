@@ -63,7 +63,10 @@ resolves the dependencies a component's config declares, and some of those confi
 declare less than the component actually renders — the dropdown writes `<x-ui.kbd>`
 without naming `kbd` anywhere. Refit records what each component's source really
 reaches for and installs the whole graph by name, so `sheaf:install kbd` in the
-plan is refit closing a gap rather than refit being greedy.
+plan is refit closing a gap rather than refit being greedy. `field`, `label` and
+`error` are there for the same reason from the other end: no Flux tag becomes any
+of them, but refit writes all three itself, around every control it
+[labels](#the-parts-that-move-rather-than-rename).
 
 `sheaf:init` is a one-time setup, and refit passes the flags your answers imply:
 `--with-dark-mode`, because every layout the kit ships puts `class="dark"` on the
@@ -165,6 +168,40 @@ sub-navigation is three links with a href, a hover state and no text at all, and
 the appearance page's segmented control loses its three words. A slot holding more
 than a label is left alone and reported instead: Sheaf's item draws an icon, a
 label and a badge, and has nowhere to put markup.
+
+**Form labels and errors.** Flux's input is the label, the control, the spacing
+and the validation message in one tag. Sheaf splits those apart — `x-ui.field` is
+the wrapper, `x-ui.label` the text, `x-ui.error` the message, `x-ui.input` only
+the control — and nothing complains when a label arrives on a control with no prop
+for it: `input` and `otp` pass it through to the wrapper div as an inert HTML
+attribute, and `select` declares the prop and never renders it. So refit lifts the
+label out of the tag and writes both around the control, in a field:
+
+```blade
+<x-ui.field>
+    <x-ui.label :text="__('Email address')" />
+    <x-ui.input name="email" type="email" required />
+    <x-ui.error name="email" />
+</x-ui.field>
+```
+
+The label's value moves verbatim, so `__()` stays a call. `label:sr-only`, which
+the two-factor pages use to label their code field without showing the words,
+becomes `class="sr-only"` on the label. The error is keyed the way Flux keyed it —
+the control's `name`, or the Livewire property it binds — and is left out entirely
+when the control has neither, since a message no bag can be asked for is worse
+than none.
+
+Left alone the plainest kit comes out with twenty unlabelled boxes across eleven
+files — every field of login, register, both password pages and the profile and
+security pages — rejecting you without saying why, because those pages had no
+`@error` block of their own to fall back on. A control you have already put in
+your own field gets the label alone, and the checkbox is not part of this at all:
+Sheaf's renders the label it is handed.
+
+**Password reveal.** Flux's `viewable` is Sheaf's `revealable`. It is only a
+rename, but without it the attribute lands on the wrapper div and all ten password
+fields in the kit lose their eye.
 
 **Dropdowns in the sidebar.** Sheaf's sidebar is `scrollable` by default, and an
 `overflow-y` of `auto` makes the `overflow-x: visible` beside it compute to `auto`

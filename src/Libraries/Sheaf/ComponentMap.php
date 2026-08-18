@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Onelegstudios\Refit\Libraries\Sheaf;
 
 use Onelegstudios\Refit\Icons\IconMap;
+use Onelegstudios\Refit\Plan\Actions\WrapControlsInFields;
 
 /**
  * Curated translations from Flux's components to Sheaf's.
@@ -117,7 +118,23 @@ final class ComponentMap
     ];
 
     /**
+     * Sheaf components refit writes itself, that no Flux tag maps to.
+     *
+     * The three parts of the wrapper {@see WrapControlsInFields} puts around a
+     * control Sheaf will neither label nor error. Nothing in the kit writes any
+     * of these tags before refit does, so nothing in TAGS asks for them and the
+     * install list has to name them here — `bin/scan-sheaf-components.php` checks
+     * these against the registry alongside the mapped ones.
+     *
+     * @var list<string>
+     */
+    public const array SUPPORTING = ['error', 'field', 'label'];
+
+    /**
      * Attributes Sheaf spells differently, keyed by the Flux name.
+     *
+     * Matched by name alone, across every Sheaf tag, because a prop belongs to
+     * the one component that declares it and no two here collide.
      *
      * @var array<string, string>
      */
@@ -126,6 +143,11 @@ final class ComponentMap
         'icon:trailing' => 'iconAfter',
         'icon-leading' => 'icon',
         'icon:leading' => 'icon',
+        // The eye on a password field. Both libraries draw it, so the rename is
+        // the whole of the fix — but `viewable` is not a Sheaf prop, so left
+        // alone it lands on the wrapper div and every password in the kit
+        // quietly loses its reveal button.
+        'viewable' => 'revealable',
     ];
 
     /**
@@ -186,7 +208,7 @@ final class ComponentMap
     }
 
     /**
-     * Every Sheaf component the map names directly, as install names.
+     * Every Sheaf component refit needs installed, as install names.
      *
      * `x-ui.navlist.item` needs the `navlist` component, so only the top-level
      * name is returned. What each of those needs in turn is not this table's to
@@ -197,7 +219,7 @@ final class ComponentMap
      */
     public static function components(): array
     {
-        $components = [];
+        $components = array_fill_keys(self::SUPPORTING, true);
 
         foreach (self::TAGS as $sheaf) {
             // `x-slot:menu` is Blade's own, not something the CLI can install.

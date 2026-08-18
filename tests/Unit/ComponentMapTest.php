@@ -58,6 +58,10 @@ it('closes a dotted icon tag the kit never balanced', function (): void {
 it('renames the attributes Sheaf spells differently', function (): void {
     expect(mapTags('<flux:button icon-trailing="chevron-down" />'))
         ->toBe('<x-ui.button iconAfter="chevron-down" />')
+        // Both libraries draw the eye on a password field; only the prop differs,
+        // and left alone it lands on the wrapper div instead.
+        ->and(mapTags('<flux:input type="password" viewable />'))
+        ->toBe('<x-ui.input type="password" revealable />')
         ->and(mapTags('<flux:sidebar.profile icon:trailing="chevrons-up-down" />'))
         // Unmapped tag, so the attribute pass never reaches it.
         ->toBe('<flux:sidebar.profile icon:trailing="chevrons-up-down" />');
