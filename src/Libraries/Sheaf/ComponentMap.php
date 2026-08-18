@@ -172,7 +172,12 @@ final class ComponentMap
      * @var array<string, array<string, string>>
      */
     public const array TAG_ATTRIBUTES = [
-        'x-ui.modal' => ['name' => 'id'],
+        // `focusable` rides along because it is the same story in miniature: Flux
+        // spells it `focusable`, Sheaf declares `autofocus`, and the word is only
+        // a modal's to claim. Sheaf already defaults it on, so this changes no
+        // behaviour — it just stops the prop landing on the wrapper div as a
+        // stray HTML attribute.
+        'x-ui.modal' => ['name' => 'id', 'focusable' => 'autofocus'],
         'x-ui.modal.trigger' => ['name' => 'id'],
     ];
 

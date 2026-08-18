@@ -11,6 +11,7 @@ use Onelegstudios\Refit\Libraries\Sheaf\ComponentMap;
 use Onelegstudios\Refit\Libraries\Sheaf\Components;
 use Onelegstudios\Refit\Libraries\Sheaf\LayoutStubs;
 use Onelegstudios\Refit\Plan\Actions\ApplyThemeBeforePaint;
+use Onelegstudios\Refit\Plan\Actions\BindModalState;
 use Onelegstudios\Refit\Plan\Actions\ImportSheafGlobals;
 use Onelegstudios\Refit\Plan\Actions\MapComponentTags;
 use Onelegstudios\Refit\Plan\Actions\OrderThemeImport;
@@ -205,6 +206,11 @@ final class SheafLibrary implements Library
         $plan->add(Stage::Reconcile, new PromoteContentsToLabel);
         $plan->add(Stage::Reconcile, new WrapControlsInFields);
         $plan->add(Stage::Reconcile, new ShapeSegmentedGroups);
+
+        // The same list, one step further along: this one reads not just the
+        // renamed tag but the `name` -> `id` pairing the rename performed, since
+        // an unpaired modal has no open state worth binding.
+        $plan->add(Stage::Reconcile, new BindModalState);
 
         // Also after the rename — it reads `x-ui.dropdown`, which does not exist
         // until MapComponentTags has run. The chrome refit writes lands in the
