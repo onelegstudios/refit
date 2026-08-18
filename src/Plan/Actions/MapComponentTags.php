@@ -18,9 +18,9 @@ use Onelegstudios\Refit\Project\Project;
  * Four rewrites, in an order that matters. The dotted icon form is folded down
  * first, while the tags still say `flux:icon.*` and the suffix is still there to
  * read. Tag names go next. Attribute names and values come last, over the
- * already-renamed tree — attributes are matched by name alone, and the value
- * table looks its tag back up through the map, so neither needs the Flux name to
- * still be on the tag.
+ * already-renamed tree — attributes are matched by name, or by tag and name for
+ * the few a single component claims, and the value table looks its tag back up
+ * through the map, so none of them needs the Flux name to still be on the tag.
  *
  * Anything the map has no answer for is left exactly as it was and reported. A
  * half-rewritten tag would be worse than an untouched one, and the diff is where
@@ -77,13 +77,17 @@ final class MapComponentTags extends BladeSweep
         $source = $this->rewriter->renameAttributes(
             $source,
             'x-ui.',
-            static function (Tag $_, Attribute $attribute): ?string {
+            static function (Tag $tag, Attribute $attribute): ?string {
                 // Bound attributes keep their colon: `:icon-trailing` names the
                 // same prop as `icon-trailing`, and only the value differs.
                 $bound = str_starts_with($attribute->name, ':');
                 $bare = $bound ? substr($attribute->name, 1) : $attribute->name;
 
-                $to = ComponentMap::attribute($bare);
+                // The tag's own table first: `name` means identity on a modal and
+                // something else on every other component, so it can only be
+                // renamed where the tag says so.
+                $to = ComponentMap::tagAttribute($tag->name, $bare)
+                    ?? ComponentMap::attribute($bare);
 
                 return $to === null ? null : ($bound ? ':'.$to : $to);
             },

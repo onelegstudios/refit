@@ -151,6 +151,32 @@ final class ComponentMap
     ];
 
     /**
+     * Attributes that only one component renames, keyed by the Sheaf tag.
+     *
+     * ATTRIBUTES cannot carry these, because it matches on the attribute name
+     * alone and `name` is the one word both libraries spend everywhere: it is the
+     * icon on `<x-ui.icon>`, the field on `<x-ui.input>`, the bag key on
+     * `<x-ui.error>`. Renaming it globally would rewrite all of those.
+     *
+     * A modal is the one place it means identity. Flux calls a modal and its
+     * trigger by `name`; Sheaf pairs them on `id`, and reads nothing from `name`
+     * — so the trigger opens `$modal.open(null)` and the modal sits waiting on a
+     * generated id that nothing will ever send. Both halves render, neither is
+     * wired to the other, and the button is simply dead: the kit's "Enable 2FA"
+     * and "Delete account" both land here.
+     *
+     * Keyed by the Sheaf name rather than the Flux one because this table is read
+     * after the tag rename, over a tree that already says `x-ui.` — the same
+     * vocabulary the tags it matches are in.
+     *
+     * @var array<string, array<string, string>>
+     */
+    public const array TAG_ATTRIBUTES = [
+        'x-ui.modal' => ['name' => 'id'],
+        'x-ui.modal.trigger' => ['name' => 'id'],
+    ];
+
+    /**
      * Attribute values Sheaf spells differently, keyed by tag then attribute.
      *
      * Flux's `filled` is Sheaf's `soft`, and Flux's `subtle` is Sheaf's `ghost`.
@@ -192,6 +218,14 @@ final class ComponentMap
     public static function attribute(string $flux): ?string
     {
         return self::ATTRIBUTES[$flux] ?? null;
+    }
+
+    /**
+     * The rename a single Sheaf tag asks for, or null when it asks for none.
+     */
+    public static function tagAttribute(string $tag, string $flux): ?string
+    {
+        return self::TAG_ATTRIBUTES[$tag][$flux] ?? null;
     }
 
     public static function value(string $tag, string $attribute, string $value): ?string

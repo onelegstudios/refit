@@ -72,6 +72,27 @@ it('keeps the colon on a bound attribute it renames', function (): void {
         ->toBe('<x-ui.button :iconAfter="$icon" />');
 });
 
+it('pairs a modal with its trigger on the prop Sheaf reads', function (): void {
+    // Flux calls both halves by `name`; Sheaf pairs them on `id` and reads
+    // nothing from `name`. Left alone the trigger fires `$modal.open(null)` and
+    // the modal waits on a generated id, so both render and neither is wired to
+    // the other — the kit's "Enable 2FA" button, doing nothing when clicked.
+    expect(mapTags('<flux:modal.trigger name="two-factor-setup-modal">'))
+        ->toBe('<x-ui.modal.trigger id="two-factor-setup-modal">')
+        ->and(mapTags('<flux:modal name="confirm-user-deletion" class="max-w-lg">'))
+        ->toBe('<x-ui.modal id="confirm-user-deletion" class="max-w-lg">');
+});
+
+it('leaves `name` alone on every component that is not a modal', function (): void {
+    // The reason the modal rename is scoped to its tag rather than added to the
+    // table matched by name alone: `name` is the artwork on an icon, the field on
+    // an input, and the bag key on an error.
+    expect(mapTags('<flux:icon name="qr-code" />'))
+        ->toBe('<x-ui.icon name="qr-code" />')
+        ->and(mapTags('<flux:input name="code" wire:model="code" />'))
+        ->toBe('<x-ui.input name="code" wire:model="code" />');
+});
+
 it('translates variant values per component', function (): void {
     expect(mapTags('<flux:button variant="filled" />'))
         ->toBe('<x-ui.button variant="soft" />')

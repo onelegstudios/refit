@@ -11,6 +11,7 @@ use Onelegstudios\Refit\Libraries\Sheaf\ComponentMap;
 use Onelegstudios\Refit\Libraries\Sheaf\Components;
 use Onelegstudios\Refit\Libraries\Sheaf\LayoutStubs;
 use Onelegstudios\Refit\Plan\Actions\ApplyThemeBeforePaint;
+use Onelegstudios\Refit\Plan\Actions\ImportSheafGlobals;
 use Onelegstudios\Refit\Plan\Actions\MapComponentTags;
 use Onelegstudios\Refit\Plan\Actions\OrderThemeImport;
 use Onelegstudios\Refit\Plan\Actions\PlaceDropdownChildren;
@@ -299,6 +300,12 @@ final class SheafLibrary implements Library
                 required: true,
             ));
         }
+
+        // After all of those, and unconditionally: the globals it has to import
+        // are files the installs above have not written yet, so there is nothing
+        // to inspect at planning time. The action is a no-op when they all turn
+        // out to be imported already.
+        $plan->add(Stage::Write, new ImportSheafGlobals);
     }
 
     /**
