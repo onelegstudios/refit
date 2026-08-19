@@ -53,6 +53,39 @@ it('puts the theme in front of the asset tags', function (): void {
     expect(strpos($rewritten, '<script>'))->toBeLessThan((int) strpos($rewritten, '@vite'));
 });
 
+it('tells the browser its own defaults are dark too', function (): void {
+    $head = <<<'BLADE'
+    @fonts
+
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    BLADE;
+
+    $rewritten = paintTheme($head);
+
+    // The other half of what `@fluxAppearance` emitted. Sheaf only ever reads
+    // `prefers-color-scheme` to pick a theme; nothing in a migrated project
+    // declares `color-scheme`, so the UA keeps its light defaults in dark mode and
+    // any text with no colour class of its own renders black on the dark
+    // background — in the kit, the recovery-code toggle under the two-factor form.
+    expect($rewritten)->toContain('color-scheme: dark;')
+        ->toContain(':root.dark {');
+
+    // In the head, ahead of the stylesheet it is correcting for.
+    expect(strpos($rewritten, 'color-scheme'))->toBeLessThan((int) strpos($rewritten, '@vite'));
+});
+
+it('adds no second colour-scheme rule to a head that has one', function (): void {
+    $head = <<<'BLADE'
+    @fonts
+
+    @vite(['resources/css/app.css'])
+    BLADE;
+
+    $once = paintTheme($head);
+
+    expect(substr_count(paintTheme($once), 'color-scheme: dark;'))->toBe(1);
+});
+
 it('sits at the depth the head is written at', function (): void {
     $head = "    <head>\n        @vite(['resources/js/app.js'])\n    </head>";
 

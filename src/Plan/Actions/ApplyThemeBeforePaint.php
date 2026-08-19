@@ -24,6 +24,16 @@ use Onelegstudios\Refit\Project\Project;
  * from the hardcoded class, Alpine boots, `.dark` comes off, and the whole thing
  * snaps to light in front of the user on every single load.
  *
+ * The directive emitted two things, and both went with it. The other is a single
+ * CSS rule — `:root.dark { color-scheme: dark }` — which is what tells the browser
+ * that its *own* defaults are dark: unstyled text, scrollbars, and native form
+ * chrome. Sheaf reads `prefers-color-scheme` to decide the theme and never
+ * declares `color-scheme` itself, so without it every piece of text carrying no
+ * colour class of its own stays black on the dark background. Most of the kit is
+ * safe because Sheaf's components colour themselves; what is left is the plain
+ * markup between them, and in the kit that is the recovery-code toggle at the foot
+ * of the two-factor challenge.
+ *
  * So this writes that script back, reading exactly what `theme.js` reads: the
  * `theme` key, defaulting to `system`, resolved against the same media query,
  * applied to the same element. Anything else and the two would disagree for the
@@ -101,6 +111,18 @@ final class ApplyThemeBeforePaint extends BladeSweep
     private const string BODY_MARKER = 'window.'.self::FUNCTION.'?.()';
 
     private const string SCRIPT = <<<'BLADE'
+        {{-- What Flux's appearance directive declared, and nothing in a Sheaf
+             project does.
+             `color-scheme` is the browser's own light/dark switch: without it the
+             UA keeps its light defaults in dark mode, so scrollbars and native form
+             chrome stay light and any text with no colour class of its own renders
+             black on the dark background. --}}
+        <style>
+            :root.dark {
+                color-scheme: dark;
+            }
+        </style>
+
         {{-- Sheaf resolves the theme from Alpine, which runs after the document has
              been painted — so the class it puts on <html> arrives a frame late and
              the page snaps from the hardcoded dark to light in front of the reader.

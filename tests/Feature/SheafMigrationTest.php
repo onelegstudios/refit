@@ -742,6 +742,34 @@ it('plans the OTP autofill patch only for a kit that has an OTP', function (): v
     expect(implode("\n", reconcileSteps($root)))->not->toContain('patch  Sheaf\'s OTP');
 })->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
 
+it('keeps the browser\'s own defaults dark once Flux stops declaring it', function (): void {
+    $root = sheafKit('livewire');
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode(['library' => 'sheaf', 'icons' => 'heroicons']),
+    ])->assertSuccessful();
+
+    $project = (new ProjectDetector)->detect($root);
+
+    // `@fluxAppearance` emitted a script and a stylesheet, and the teardown takes
+    // both. Sheaf reads `prefers-color-scheme` to choose a theme but never
+    // declares `color-scheme`, so without this the UA keeps its light defaults in
+    // dark mode: black text wherever nothing has coloured it.
+    expect($project->get('resources/views/partials/head.blade.php'))
+        ->toContain(':root.dark {')
+        ->toContain('color-scheme: dark;')
+        // The directive itself is gone — the only mention left is the comment
+        // explaining what took its place.
+        ->not->toMatch('/^\s*@fluxAppearance/m');
+
+    // The kit's own components colour themselves, so what this rescues is the
+    // plain markup between them — here, the toggle under the two-factor form,
+    // which carries opacity and an underline and no colour at all.
+    expect($project->get('resources/views/pages/auth/two-factor-challenge.blade.php'))
+        ->toContain('login using a recovery code');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+
 it('keeps Tailwind\'s import ahead of Sheaf\'s so the theme stays layered', function (): void {
     $root = sheafKit('livewire');
 

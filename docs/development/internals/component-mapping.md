@@ -356,6 +356,30 @@ in a slot, or outside a form is left alone; one that posts a form but holds its
 value in neither `wire:model` nor `x-model` has nothing to carry, and is reported
 rather than quietened.
 
+### The browser has a theme of its own
+
+`@fluxAppearance` emitted two things, and the teardown takes both. The script half
+is above; the other is one CSS rule:
+
+```css
+:root.dark { color-scheme: dark; }
+```
+
+`color-scheme` is what tells the browser that its *own* defaults are dark —
+unstyled text, scrollbars, native form chrome. Sheaf reads `prefers-color-scheme`
+to decide which theme to apply and never declares `color-scheme` itself, so
+without this rule the UA keeps its light defaults while the page renders dark.
+
+Most of the kit survives that, because Sheaf's components colour themselves. What
+does not is the plain markup between them, and there is one piece of it that
+matters: the "or you can — login using a recovery code" toggle under the two-factor
+challenge form, which carries an underline, an opacity and no colour at all. It
+comes out black on the layout's near-black gradient — measured at 1.06:1 contrast,
+against 19.8:1 with the rule in place.
+
+`ApplyThemeBeforePaint` writes it into the head alongside the script, since the two
+were one directive and are restored together.
+
 ### A box a password manager cannot fill
 
 The one place refit edits Sheaf's own source rather than the kit's, and the only
