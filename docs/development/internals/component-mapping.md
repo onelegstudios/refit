@@ -380,6 +380,25 @@ against 19.8:1 with the rule in place.
 `ApplyThemeBeforePaint` writes it into the head alongside the script, since the two
 were one directive and are restored together.
 
+### A centred control needs a width to be centred at
+
+`mx-auto` centres a block only if that block has width to give back, and under
+Flux the kit's OTP had it: `<ui-otp>` carried `w-fit`. Sheaf's otp is an ordinary
+block, and the `x-ui.field` this rewrite puts around it is `w-full` — so the auto
+margins collapse to nothing and the six boxes sit hard against the left edge of a
+row that is still, itself, centred. Measured on the two-factor challenge, 48px off.
+
+Left alone the markup would have centred anyway: Sheaf's otp root is
+`display: contents`, so without a field between them the wrapper inside it becomes
+the flex item the page was already centring. The field is what breaks it, so
+`WrapControlsInFields` is what pays for it, adding `w-fit` as it wraps.
+
+The width goes on the control rather than on the field because the field already
+declares `w-full`, and two width utilities on one element is a coin toss decided by
+Tailwind's ordering rather than by ours. Only the OTP is touched, and only when it
+already asks to be centred and names no width of its own — `w-fit` on an input or a
+select would shrink a control meant to fill its field, and Flux centred neither.
+
 ### A box a password manager cannot fill
 
 The one place refit edits Sheaf's own source rather than the kit's, and the only

@@ -770,6 +770,27 @@ it('keeps the browser\'s own defaults dark once Flux stops declaring it', functi
         ->toContain('login using a recovery code');
 })->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
 
+it('keeps the OTP centred once it is wrapped in a field', function (): void {
+    $root = sheafKit('livewire');
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode(['library' => 'sheaf', 'icons' => 'heroicons']),
+    ])->assertSuccessful();
+
+    $project = (new ProjectDetector)->detect($root);
+
+    // The kit centres both its OTPs with `mx-auto`, which worked because Flux's
+    // <ui-otp> was `w-fit`. Sheaf's is an ordinary block inside a `w-full` field,
+    // so the auto margins collapse and the boxes go hard left — 48px off centre on
+    // the challenge page, measured against the row that is still centring them.
+    expect($project->get('resources/views/pages/auth/two-factor-challenge.blade.php'))
+        ->toContain('class="mx-auto w-fit"');
+
+    expect($project->get('resources/views/pages/settings/⚡two-factor-setup-modal.blade.php'))
+        ->toContain('class="mx-auto w-fit"');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+
 it('keeps Tailwind\'s import ahead of Sheaf\'s so the theme stays layered', function (): void {
     $root = sheafKit('livewire');
 

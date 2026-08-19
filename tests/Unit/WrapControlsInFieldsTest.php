@@ -25,6 +25,34 @@ function wrapControls(string $source, string $path = 'resources/views/pages/auth
         ->call($action);
 }
 
+it('gives a centred OTP a width to be centred at', function (): void {
+    // `mx-auto` centres a block only if it has width to give back. Flux's <ui-otp>
+    // was `w-fit`; Sheaf's is an ordinary block, and the field wrapped around it
+    // here is `w-full` — so the auto margins collapse and the boxes sit against
+    // the left edge of a row that is still centred.
+    $source = '<x-ui.otp name="code" length="6" label="OTP Code" label:sr-only class="mx-auto" />';
+
+    expect(wrapControls($source))->toContain('class="mx-auto w-fit"');
+});
+
+it('leaves a width the project chose alone', function (): void {
+    $source = '<x-ui.otp name="code" label="OTP Code" class="mx-auto w-64" />';
+
+    expect(wrapControls($source))->toContain('class="mx-auto w-64"')
+        ->not->toContain('w-fit');
+});
+
+it('widens nothing that was not asking to be centred', function (): void {
+    expect(wrapControls('<x-ui.otp name="code" label="OTP Code" class="my-5" />'))
+        ->toContain('class="my-5"')
+        ->not->toContain('w-fit');
+
+    // And not the controls meant to fill their field, which Flux never centred.
+    expect(wrapControls('<x-ui.input name="email" label="Email" class="mx-auto" />'))
+        ->toContain('class="mx-auto"')
+        ->not->toContain('w-fit');
+});
+
 it('lifts a bound label into a label of its own, and names the error Flux was drawing', function (): void {
     $source = '<x-ui.input name="email" :label="__(\'Email address\')" type="email" required />';
 
@@ -68,7 +96,8 @@ it('keeps a screen-reader-only label hidden', function (): void {
 
     expect(wrapControls($source))
         ->toContain('<x-ui.label class="sr-only" text="OTP Code" />')
-        ->toContain('<x-ui.otp name="code" wire:model="code" length="6" class="mx-auto" />');
+        // The width rides along; see the centring test above.
+        ->toContain('<x-ui.otp name="code" wire:model="code" length="6" class="mx-auto w-fit" />');
 });
 
 it('wraps a control that holds its own children', function (): void {

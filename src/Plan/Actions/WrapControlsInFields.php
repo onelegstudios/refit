@@ -78,6 +78,11 @@ final class WrapControlsInFields extends BladeSweep
 
     private const string ERROR = 'x-ui.error';
 
+    /** The one control the kit centres, and the width that lets it be centred. */
+    private const string CENTRED = 'x-ui.otp';
+
+    private const string SHRINK = 'w-fit';
+
     /** Flux's modifier for a label only a screen reader gets to read. */
     private const string SCREEN_READER = 'label:sr-only';
 
@@ -208,11 +213,11 @@ final class WrapControlsInFields extends BladeSweep
             $moving[] = $hidden;
         }
 
-        $control = $this->without(
+        $control = $this->widthToBeCentredAt($this->without(
             substr($source, $tag->offset, $end - $tag->offset),
             $tag->offset,
             $moving,
-        );
+        ));
 
         $labelled = $this->label($label, $hidden instanceof Attribute);
 
@@ -237,6 +242,62 @@ final class WrapControlsInFields extends BladeSweep
             $indent,
             self::FIELD,
         ));
+    }
+
+    /**
+     * Give a centred OTP a width to be centred at.
+     *
+     * `mx-auto` centres a block only if that block has width to give back, and
+     * Flux's otp had it: `<ui-otp>` was `w-fit`. Sheaf's is an ordinary block, and
+     * the field this sweep puts around it is `w-full` — so the auto margins
+     * collapse to nothing and the boxes sit hard against the left edge of a row
+     * that is still, itself, centred. On the two-factor challenge that is 48px off.
+     *
+     * Without the field the same markup centres on its own, because Sheaf's otp
+     * root is `display: contents` and the wrapper inside it becomes the flex item
+     * the page was centring. So this is the wrapping's debt to pay.
+     *
+     * The width goes on the control rather than on the field because the field
+     * already declares `w-full`, and two width utilities on one element is a
+     * coin toss decided by Tailwind's ordering rather than by ours.
+     *
+     * Only the OTP, and only when it already asks to be centred and names no width
+     * of its own. `w-fit` on an input or a select would shrink a control that is
+     * meant to fill its field, and Flux centred neither.
+     */
+    private function widthToBeCentredAt(string $control): string
+    {
+        $tags = $this->parser->parse($control, self::CENTRED);
+
+        if ($tags === [] || $tags[0]->name !== self::CENTRED) {
+            return $control;
+        }
+
+        $class = $tags[0]->attribute('class');
+
+        if (! $class instanceof Attribute || $class->value === null) {
+            return $control;
+        }
+
+        $classes = preg_split('/\s+/', trim($class->value)) ?: [];
+
+        if (! in_array('mx-auto', $classes, true)) {
+            return $control;
+        }
+
+        foreach ($classes as $name) {
+            // A width the project chose is a width refit has no business widening.
+            if (preg_match('/^w-/', $name) === 1) {
+                return $control;
+            }
+        }
+
+        return substr_replace(
+            $control,
+            $class->value.' '.self::SHRINK,
+            $class->valueOffset(),
+            $class->valueLength(),
+        );
     }
 
     /**
