@@ -542,6 +542,38 @@ it('gives the user menu the row a Sheaf nav item would have had', function (): v
         ->toContain('<x-slot:menu class="z-[100]! min-w-60">');
 })->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
 
+it('empties the user menu to an avatar when the sidebar collapses', function (): void {
+    $root = sheafKit('livewire');
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'library' => 'sheaf',
+            'icons' => 'heroicons',
+        ]),
+    ])->assertSuccessful();
+
+    $project = (new ProjectDetector)->detect($root);
+    $menu = $project->get('resources/views/components/desktop-user-menu.blade.php');
+
+    // A collapsed sidebar is 64px of icons, and Sheaf empties a navlist item down
+    // to one. The trigger goes the same way: the name and the chevron leave, and
+    // an avatar of 8 in a padding of 0.5 keeps the 36px square the icons stand in
+    // — width included, or the hover tint would run the full width of the row.
+    expect($menu)
+        ->toContain('[[data-collapsed]_[data-slot=sidebar]_&]:w-auto')
+        ->toContain('[[data-collapsed]_[data-slot=sidebar]_&]:justify-center')
+        ->toContain('[[data-collapsed]_[data-slot=sidebar]_&]:p-0.5!')
+        ->toContain('[[data-collapsed]_[data-slot=sidebar]_&]:[&>[data-slot=left-icon]]:hidden')
+        ->toContain('<span class="truncate [[data-collapsed]_[data-slot=sidebar]_&]:hidden">');
+
+    // Sheaf stamps the collapse on the layout, which the header sits under as
+    // well, and this is the header's menu too. So every rule names the sidebar,
+    // and the header's copy keeps its name at a width where the sidebar is
+    // already collapsed underneath it.
+    expect($menu)->not->toContain('[[data-collapsed]_&]');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+
 it('composes the header layout the way Sheaf\'s grid reads it', function (): void {
     $root = sheafKit('livewire');
 

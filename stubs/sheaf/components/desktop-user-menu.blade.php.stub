@@ -25,11 +25,26 @@
              icon under `data-slot="left-icon"` — the names are the wrong way
              round in the component, not here. In a header the button is only as
              wide as its content, so there is no free space and the margin is
-             inert: the chevron keeps hugging the name. --}}
+             inert: the chevron keeps hugging the name.
+
+             A collapsed sidebar is 64px of icons, and Sheaf empties a navlist item
+             down to one: the label goes, and the icon centres inside a padding of
+             2. The trigger does the same, down to the size of the box — an avatar
+             of 8 in a padding of 0.5 measures the same 36px as an icon of 5 in a
+             padding of 2 — so the avatar keeps the column the icons above it stand
+             in, and hovers the same square they do. The width has to go with it,
+             or the tint would run the full 48px of the row while theirs does not.
+
+             Sheaf stamps the collapse on the layout, which is an ancestor of the
+             header as well, and this is the header's menu too — at tablet the
+             header is on screen with the sidebar already collapsed under it. So
+             the selector asks for the sidebar by name, and the header's copy keeps
+             its own name at every width. --}}
         <x-ui.button
             variant="ghost"
             iconAfter="chevron-up-down"
-            class="h-auto w-full justify-start rounded-box py-1 ps-3! pe-1! font-normal! text-neutral-600! hover:bg-[--alpha(var(--color-primary)_/5%)]! hover:text-[var(--color-primary)]! dark:text-neutral-400! [&>[data-slot=left-icon]]:ms-auto"
+            class="h-auto w-full justify-start rounded-box py-1 ps-3! pe-1! font-normal! text-neutral-600! hover:bg-[--alpha(var(--color-primary)_/5%)]! hover:text-[var(--color-primary)]! dark:text-neutral-400! [&>[data-slot=left-icon]]:ms-auto
+                   [[data-collapsed]_[data-slot=sidebar]_&]:w-auto [[data-collapsed]_[data-slot=sidebar]_&]:justify-center [[data-collapsed]_[data-slot=sidebar]_&]:p-0.5! [[data-collapsed]_[data-slot=sidebar]_&]:[&>[data-slot=left-icon]]:hidden"
             data-test="sidebar-menu-button"
         >
             {{-- Sheaf wraps a button's slot in a plain inline span, so the avatar
@@ -42,7 +57,7 @@
                     :initials="auth()->user()->initials()"
                 />
 
-                <span class="truncate">{{ $name ?? auth()->user()->name }}</span>
+                <span class="truncate [[data-collapsed]_[data-slot=sidebar]_&]:hidden">{{ $name ?? auth()->user()->name }}</span>
             </span>
         </x-ui.button>
     </x-slot:button>

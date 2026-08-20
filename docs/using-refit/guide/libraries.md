@@ -136,6 +136,16 @@ Sheaf's white-on-border sidebar instead. Flux's `sticky` and `collapsible="mobil
 go with it: Sheaf spells them `sticky-header` and `collapsable`, and left in place
 they were rendering as literal attributes on the div rather than reaching a prop.
 
+The user menu at the foot of that sidebar is dressed as a nav row rather than as a
+button — a ghost button is taller, squarer, darker and heavier than a Sheaf nav
+item, and hovers neutral where every Sheaf nav hovers on the primary — and it
+follows the nav one step further when the sidebar collapses to its 64px of icons.
+The name and the chevron go, and the avatar keeps the same 36px square the icons
+above it stand in. The rules name the sidebar rather than the collapse alone,
+because Sheaf stamps the collapse on the layout and the header sits under that too:
+the same component is the header's menu, and there it keeps its name at every
+width.
+
 **Dropdown triggers.** Flux takes a dropdown's trigger as its first child; Sheaf
 takes it as `<x-slot:button>`. Refit wraps it.
 
