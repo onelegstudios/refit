@@ -1218,6 +1218,33 @@ it('raises the team switcher clear of the sidebar that clips it', function (stri
 })->with(['livewire-teams', 'livewire-workos-teams'])
     ->skip(fn (): bool => ! is_dir(fixturePath('livewire-teams')), 'Run `composer fixtures`.');
 
+it('lays the team switcher out the way Flux laid it out', function (string $kit): void {
+    $root = sheafKit($kit);
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'library' => 'sheaf',
+            'icons' => 'heroicons',
+        ]),
+    ])->assertSuccessful();
+
+    $switcher = (new ProjectDetector)->detect($root)->get('resources/views/components/⚡team-switcher.blade.php');
+
+    // The trigger holds an icon, the team name and a chevron. Sheaf wraps a
+    // button's whole slot in one plain `<span data-text>`, and Tailwind's
+    // preflight makes an svg a block — so the three came out as three lines, and
+    // the chevron's `ms-auto` had no free space to push against.
+    expect($switcher)->toContain('[&>[data-text]]:contents')
+        ->toContain('[&>[data-loading=true]:first-child~[data-text]>*]:opacity-0');
+
+    // And the panel's heading. Sheaf's group is `display: contents` and styles
+    // `label` alone, so the word arrived in the grid as a bare text node in the
+    // first of three columns, with the first team beside it rather than under it.
+    expect($switcher)->toContain('<x-ui.dropdown.group :label="__(\'Teams\')" />');
+})->with(['livewire-teams', 'livewire-workos-teams'])
+    ->skip(fn (): bool => ! is_dir(fixturePath('livewire-teams')), 'Run `composer fixtures`.');
+
 it('leaves the kits without teams without a switcher to raise', function (): void {
     $root = sheafKit('livewire');
 

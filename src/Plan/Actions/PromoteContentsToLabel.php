@@ -33,19 +33,42 @@ use Onelegstudios\Refit\Project\Project;
  * nowhere to put markup — it draws an icon, a label and a badge, and the honest
  * answer to a slot holding more than a label is to say so rather than to flatten
  * it.
+ *
+ * A dropdown group is the same rewrite for a different reason: it does render its
+ * slot, but only `label` is drawn as a heading, and what the slot holds goes
+ * straight into the panel's grid as a child of its own. See {@see self::LABELLED}.
  */
 final class PromoteContentsToLabel extends BladeSweep
 {
     /**
      * The Sheaf components that draw a label from a prop and drop their slot.
      *
-     * Sheaf's other `label` takers — a dropdown group, a select option — render
-     * their slot as well, so a slot label still shows and none of them belong
-     * here.
+     * A select option is the one other `label` taker, and it renders its slot as
+     * well, so a slot label still shows there and it does not belong here.
      *
      * @var list<string>
      */
     private const array TARGETS = ['x-ui.navlist.item', 'x-ui.navbar.item', 'x-ui.radio.item'];
+
+    /**
+     * The component that renders its slot too, and still needs the prop.
+     *
+     * Sheaf's dropdown group is `display: contents` — it exists to hand its
+     * children to the panel's grid — and the muted heading it draws comes from
+     * `label` alone. Flux's `menu.heading` carries that word as contents, so the
+     * rename leaves it as a bare text node in a `grid grid-cols-[auto_1fr_auto]`,
+     * which the panel takes for a child of its own: unstyled, in the first of the
+     * three columns, with the first item of the list beside it in the other two
+     * rather than under it. As `label` it is the row Flux drew.
+     *
+     * Contents richer than a label are left alone here in silence rather than
+     * reported. `flux:menu.radio.group` renames to this same tag, and its
+     * children are items that Sheaf's group passes through exactly as Flux did —
+     * so there is nothing missing to warn about.
+     *
+     * @var list<string>
+     */
+    private const array LABELLED = ['x-ui.dropdown.group'];
 
     /** One Blade echo, with no second one hiding behind it. */
     private const string ECHO = '/^\{\{(?<expression>(?:(?!\}\}).)*)\}\}$/s';
@@ -78,8 +101,10 @@ final class PromoteContentsToLabel extends BladeSweep
 
         $edits = new Edits;
 
-        foreach ($this->nesting->elements($source, self::TARGETS) as $element) {
-            if (! in_array($element->name(), self::TARGETS, true)) {
+        $targets = [...self::TARGETS, ...self::LABELLED];
+
+        foreach ($this->nesting->elements($source, $targets) as $element) {
+            if (! in_array($element->name(), $targets, true)) {
                 continue;
             }
 
@@ -123,7 +148,9 @@ final class PromoteContentsToLabel extends BladeSweep
         $attribute = $this->attribute($contents);
 
         if ($attribute === null) {
-            $this->left[] = $path.': <'.$element->name().'>';
+            if (! in_array($element->name(), self::LABELLED, true)) {
+                $this->left[] = $path.': <'.$element->name().'>';
+            }
 
             return;
         }

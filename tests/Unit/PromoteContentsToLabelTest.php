@@ -48,6 +48,47 @@ it('labels a radio item the same way', function (): void {
     expect(relabel($source))->toBe('<x-ui.radio.item value="light" icon="sun" :label="__(\'Light\')" />');
 });
 
+it('labels a dropdown group, which draws a heading from the prop alone', function (): void {
+    $source = '<x-ui.dropdown.group>{{ __(\'Teams\') }}</x-ui.dropdown.group>';
+
+    // Sheaf's group is `display: contents`, so a slot heading is not a heading:
+    // it arrives in the panel's grid as a bare text node in the first of three
+    // columns, with the first item of the list beside it rather than under it.
+    expect(relabel($source))->toBe('<x-ui.dropdown.group :label="__(\'Teams\')" />');
+});
+
+it('leaves a group holding items alone, and says nothing about it', function (): void {
+    // `flux:menu.radio.group` renames to this tag too, and Sheaf passes its
+    // children through exactly as Flux did — so there is nothing missing here.
+    $source = <<<'BLADE'
+    <x-ui.dropdown.group>
+        <x-ui.dropdown.item icon="sun">{{ __('Light') }}</x-ui.dropdown.item>
+    </x-ui.dropdown.group>
+    BLADE;
+
+    $report = new Report;
+
+    $action = new PromoteContentsToLabel;
+    $project = new Project(
+        root: sys_get_temp_dir(),
+        componentStyle: ComponentStyle::SingleFile,
+        features: [],
+        libraries: [],
+        chiselPending: false,
+    );
+
+    $rewritten = (function () use ($source, $project, $report): string {
+        $rewritten = $this->transform($source, 'resources/views/menu.blade.php', $project, $report);
+
+        $this->finish($report);
+
+        return $rewritten;
+    })->call($action);
+
+    expect($rewritten)->toBe($source)
+        ->and($report->warnings())->toBeEmpty();
+});
+
 it('leaves an item that already names its label alone', function (): void {
     $source = '<x-ui.navlist.item :label="__(\'Dashboard\')" icon="home" :href="route(\'dashboard\')" />';
 

@@ -23,6 +23,7 @@ use Onelegstudios\Refit\Plan\Actions\PreserveTextAlignment;
 use Onelegstudios\Refit\Plan\Actions\PromoteContentsToLabel;
 use Onelegstudios\Refit\Plan\Actions\RaiseSidebarDropdowns;
 use Onelegstudios\Refit\Plan\Actions\RebindAppearanceToTheme;
+use Onelegstudios\Refit\Plan\Actions\RestoreButtonRow;
 use Onelegstudios\Refit\Plan\Actions\RestructureBrandLogo;
 use Onelegstudios\Refit\Plan\Actions\RestructureOverlays;
 use Onelegstudios\Refit\Plan\Actions\RewriteIconNames;
@@ -199,10 +200,11 @@ final class SheafLibrary implements Library
         // All of these read the tags the rename produced, so all of them come
         // after it. Each is a place where Sheaf's component renders what Flux's
         // rendered, but differently enough that a rename alone leaves the view
-        // looking broken: a logo slot whose classes are dropped, a menu panel that
-        // is a grid, text that no longer inherits its alignment, and a label that
-        // has no prop to land in.
+        // looking broken: a logo slot whose classes are dropped, a button that
+        // stacks its own contents, a menu panel that is a grid, text that no
+        // longer inherits its alignment, and a label that has no prop to land in.
         $plan->add(Stage::Reconcile, new RestructureBrandLogo);
+        $plan->add(Stage::Reconcile, new RestoreButtonRow);
         $plan->add(Stage::Reconcile, new PlaceDropdownChildren);
         $plan->add(Stage::Reconcile, new PreserveTextAlignment);
         $plan->add(Stage::Reconcile, new PromoteContentsToLabel);

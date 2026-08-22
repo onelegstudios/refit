@@ -153,6 +153,14 @@ takes it as `<x-slot:button>`. Refit wraps it.
 child closes the modal". Sheaf's modal listens for a `close-modal` event, so the
 wrapper becomes an element that dispatches it.
 
+**Button contents.** Both libraries build a button as a flex row, and the
+difference is one box: Flux's children are the flex items, while Sheaf wraps the
+whole slot in a plain span first. Anything richer than a word then falls back into
+block flow — and Tailwind renders an svg as a block — so the team switcher's icon,
+team name and chevron come out as three stacked lines, with the chevron's `ms-auto`
+pushing against no free space. Refit takes that wrapper out of the layout, and the
+contents lay out in the button's own row again.
+
 **Dropdown menu contents.** Sheaf renders a menu panel as a three-column grid,
 and only the parts it ships declare a place in it. Refit places everything else:
 `contents` on a wrapper such as the log out form, `col-span-full` on a block such
@@ -179,6 +187,13 @@ sub-navigation is three links with a href, a hover state and no text at all, and
 the appearance page's segmented control loses its three words. A slot holding more
 than a label is left alone and reported instead: Sheaf's item draws an icon, a
 label and a badge, and has nowhere to put markup.
+
+A menu heading takes the same move for a different reason. Sheaf's dropdown group
+does render its slot, but only `label` is drawn as the heading — so the word lands
+in the panel's grid as a child of its own: unstyled, in the first of three columns,
+with the first item of the list beside it rather than under it. The team switcher's
+"Teams" is the one the kit writes. A group holding items rather than a heading —
+which is what an appearance menu is — is left exactly as it was.
 
 **Form labels and errors.** Flux's input is the label, the control, the spacing
 and the validation message in one tag. Sheaf splits those apart — `x-ui.field` is

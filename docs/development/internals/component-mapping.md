@@ -175,10 +175,10 @@ Inside `Stage::Reconcile`, and it matters:
    trigger, and what a modal close button wraps.
 2. **`MapComponentTags`** — the dotted icon form is folded into an attribute while
    the suffix is still there to read, then tag names, then attributes and values.
-3. **`RestructureBrandLogo`**, **`PlaceDropdownChildren`**,
+3. **`RestructureBrandLogo`**, **`RestoreButtonRow`**, **`PlaceDropdownChildren`**,
    **`PreserveTextAlignment`**, **`PromoteContentsToLabel`**,
    **`WrapControlsInFields`**, **`ShapeSegmentedGroups`** and
-   **`RaiseSidebarDropdowns`** — after the rename, because all seven read the tags
+   **`RaiseSidebarDropdowns`** — after the rename, because all eight read the tags
    the rename produced.
 4. **`RebindAppearanceToTheme`** and **`ApplyThemeBeforePaint`** — anywhere, in
    practice. Neither reads a tag: one rewrites Alpine expressions, the other
@@ -254,8 +254,19 @@ parser cannot read back — are all left as they were and collected into one
 warning, because Sheaf's item has an icon, a label and a badge and nowhere to put
 anything else.
 
-The other Sheaf components taking a `label` render their slot as well, so a slot
-label still shows and none of them are targets.
+A dropdown group is a target for the opposite reason. It *does* render its slot —
+it is `display: contents`, and handing its children to the panel's grid is the
+whole job — but only `label` is drawn as the muted heading. So Flux's
+`menu.heading`, which carries that word as contents, arrives in a
+`grid grid-cols-[auto_1fr_auto]` as a bare text node, and the panel takes it for a
+child of its own: unstyled, in the first of the three columns, with the first item
+of the list beside it in the other two rather than under it. The team switcher's
+"Teams" is the kit's one of these. Contents richer than a label are left alone
+there in silence rather than reported — `flux:menu.radio.group` renames to the
+same tag, and Sheaf passes those children through exactly as Flux did.
+
+`select.option` is the last component taking a `label`, and it renders its slot as
+a slot, so it is not a target either.
 
 ### A label is not always a prop
 
@@ -442,6 +453,35 @@ the tag is still `<flux:otp`. A later `sheaf:install otp` overwrites it, which i
 the point at which to check whether
 [sheafui/components](https://github.com/sheafui/components) has fixed this
 upstream and this action can go.
+
+### A button is a row, minus one box
+
+Both libraries build a button as a flex row, and the difference between them is a
+single wrapper. Flux's children are the flex items. Sheaf's button wraps the whole
+slot in a `<span data-text>` first, so that span is the only flex item there is and
+its contents are back in ordinary block flow — which matters because Tailwind's
+preflight sets `svg { display: block }`.
+
+The team switcher's trigger is where the kit shows it. An icon, the team name and
+a chevron come out as three stacked lines, and the chevron's `ms-auto` — a margin
+against free space a block box does not have — leaves it under the name instead of
+opposite it.
+
+`RestoreButtonRow` puts `[&>[data-text]]:contents` on the button, which takes the
+wrapper out of the layout and makes the children flex items of the button again,
+laid out by its own `items-center`, `gap-x-2` and `justify-*` exactly as Flux laid
+them out. One utility on a tag the view already writes, rather than a wrapper
+element refit would have to invent and the reader would have to maintain.
+
+The second utility pays for the first. Sheaf dims a loading button's contents with
+`[&>[data-loading=true]:first-child~*]:opacity-0`, which names that same span — and
+opacity on a box that has stopped generating one does nothing, so the label would
+sit at full strength under the spinner. Restating it one level down, over the
+children that now generate the boxes, keeps the loading state the component ships.
+
+Only buttons whose slot holds markup are touched: text alone lays out the same
+either way, and neither a bound `:class`, nor Sheaf's own button, nor a button
+already carrying the class is rewritten.
 
 ### A menu is a grid
 
