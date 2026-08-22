@@ -149,6 +149,14 @@ width.
 **Dropdown triggers.** Flux takes a dropdown's trigger as its first child; Sheaf
 takes it as `<x-slot:button>`. Refit wraps it.
 
+**Tooltip triggers.** The same story with a different slot. Flux hangs a tooltip on
+its child and takes the text as a `content` attribute; Sheaf reads `{{ $trigger }}`
+and a `<x-ui.tooltip.content>` child. So refit wraps the child in
+`<x-slot:trigger>` and turns the attribute into that content child. Left alone the
+team pages die on `Undefined variable $trigger` before they draw a row. `position`
+becomes `placement` while it is there, or the bubble points up wherever the kit
+asked for down.
+
 **Modal close buttons.** `<flux:modal.close>` is a wrapper meaning "clicking my
 child closes the modal". Sheaf's modal listens for a `close-modal` event, so the
 wrapper becomes an element that dispatches it.

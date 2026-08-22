@@ -54,6 +54,62 @@ it('does not let a nested dropdown steal the outer menu', function (): void {
     expect(substr_count(restructure($source), '<x-slot:button>'))->toBe(1);
 });
 
+it('lifts a tooltip\'s child into the trigger slot, and its content out of the tag', function (): void {
+    // The teams list writes exactly this, and Sheaf's tooltip renders
+    // `{{ $trigger }}` — so left as a rename the page dies on an undefined
+    // variable rather than merely looking wrong.
+    $source = <<<'BLADE'
+    <flux:tooltip :content="__('Leave team')">
+        <flux:button variant="ghost" icon="trash" />
+    </flux:tooltip>
+    BLADE;
+
+    expect(restructure($source))
+        ->toMatch('/<x-slot:trigger>\s*<flux:button variant="ghost" icon="trash" \/>\s*<\/x-slot:trigger>/')
+        ->toContain('<flux:tooltip.content>{{ __(\'Leave team\') }}</flux:tooltip.content>')
+        // Spent on the child, so it does not ride along onto Sheaf's wrapper div.
+        ->not->toContain(':content=');
+});
+
+it('writes a literal tooltip content as text rather than an echo', function (): void {
+    expect(restructure('<flux:tooltip content="Copy"><flux:button icon="clipboard" /></flux:tooltip>'))
+        ->toContain('<flux:tooltip.content>Copy</flux:tooltip.content>')
+        ->not->toContain('content="Copy"');
+});
+
+it('wraps the trigger of a longhand tooltip and leaves its content where it is', function (): void {
+    $source = <<<'BLADE'
+    <flux:tooltip position="bottom">
+        <flux:navbar.item icon="folder" href="#" />
+        <flux:tooltip.content>{{ __('Repository') }}</flux:tooltip.content>
+    </flux:tooltip>
+    BLADE;
+
+    expect(restructure($source))
+        ->toMatch('/<x-slot:trigger>\s*<flux:navbar.item icon="folder" href="#" \/>\s*<\/x-slot:trigger>/')
+        // One content child, still the kit's own, and still outside the slot.
+        ->toMatch('/<\/x-slot:trigger>\s*<flux:tooltip.content>/')
+        ->and(substr_count(restructure($source), 'flux:tooltip.content'))->toBe(2);
+});
+
+it('does not give a tooltip written both ways two contents', function (): void {
+    $source = '<flux:tooltip content="Copy"><flux:button /><flux:tooltip.content>Copy it</flux:tooltip.content></flux:tooltip>';
+
+    // The child wins, and the attribute still comes off rather than landing on
+    // Sheaf's wrapper div.
+    expect(substr_count(restructure($source), '<flux:tooltip.content>'))->toBe(1)
+        ->and(restructure($source))->toContain('Copy it')
+        ->not->toContain('content="Copy"');
+});
+
+it('leaves a tooltip with nothing to say alone', function (): void {
+    // No content either way, so there is no tooltip text to move and no telling
+    // what the body was meant to be.
+    $source = '<flux:tooltip><flux:button icon="trash" /></flux:tooltip>';
+
+    expect(restructure($source))->toBe($source);
+});
+
 it('turns a modal close wrapper into the event Sheaf listens for', function (): void {
     $source = <<<'BLADE'
     <flux:modal.close>

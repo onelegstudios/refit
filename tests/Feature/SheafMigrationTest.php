@@ -1245,6 +1245,28 @@ it('lays the team switcher out the way Flux laid it out', function (string $kit)
 })->with(['livewire-teams', 'livewire-workos-teams'])
     ->skip(fn (): bool => ! is_dir(fixturePath('livewire-teams')), 'Run `composer fixtures`.');
 
+it('gives the tooltips on the team pages the trigger Sheaf renders', function (string $kit): void {
+    $root = sheafKit($kit);
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'library' => 'sheaf',
+            'icons' => 'heroicons',
+        ]),
+    ])->assertSuccessful();
+
+    $index = (new ProjectDetector)->detect($root)->get('resources/views/pages/teams/⚡index.blade.php');
+
+    // Flux hangs a tooltip on its child and takes the text as an attribute; Sheaf
+    // renders `{{ $trigger }}` and reads a content child. A rename alone left the
+    // teams list throwing "Undefined variable $trigger" before it drew a row.
+    expect($index)->toContain('<x-slot:trigger>')
+        ->toContain('<x-ui.tooltip.content>{{ __(\'Leave team\') }}</x-ui.tooltip.content>')
+        ->not->toContain(':content=');
+})->with(['livewire-teams', 'livewire-workos-teams'])
+    ->skip(fn (): bool => ! is_dir(fixturePath('livewire-teams')), 'Run `composer fixtures`.');
+
 it('leaves the kits without teams without a switcher to raise', function (): void {
     $root = sheafKit('livewire');
 

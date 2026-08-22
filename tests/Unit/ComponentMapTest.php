@@ -67,6 +67,14 @@ it('renames the attributes Sheaf spells differently', function (): void {
         ->toBe('<flux:sidebar.profile icon:trailing="chevrons-up-down" />');
 });
 
+it('spells a tooltip\'s position the way Sheaf declares it', function (): void {
+    // Both libraries take the same four words for where the bubble goes, and only
+    // the prop differs — so left alone every tooltip points up, and the ones in
+    // the header overlap the bar they hang from.
+    expect(mapTags('<flux:tooltip position="bottom"><flux:tooltip.content>Hi</flux:tooltip.content></flux:tooltip>'))
+        ->toBe('<x-ui.tooltip placement="bottom"><x-ui.tooltip.content>Hi</x-ui.tooltip.content></x-ui.tooltip>');
+});
+
 it('keeps the colon on a bound attribute it renames', function (): void {
     expect(mapTags('<flux:button :icon-trailing="$icon" />'))
         ->toBe('<x-ui.button :iconAfter="$icon" />');

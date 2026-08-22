@@ -42,6 +42,9 @@ final class ComponentMap
         'flux:separator' => 'x-ui.separator',
         'flux:avatar' => 'x-ui.avatar',
         'flux:tooltip' => 'x-ui.tooltip',
+        // Flux's longhand, and the shape RestructureOverlays has already rewritten
+        // the shorthand `content` attribute into by the time this rename runs.
+        'flux:tooltip.content' => 'x-ui.tooltip.content',
         // Flux calls it a callout; Sheaf files it under the plural.
         'flux:callout' => 'x-ui.alerts',
 
@@ -179,6 +182,10 @@ final class ComponentMap
         // stray HTML attribute.
         'x-ui.modal' => ['name' => 'id', 'focusable' => 'autofocus'],
         'x-ui.modal.trigger' => ['name' => 'id'],
+        // Where the bubble goes. Both libraries take the same four words for it
+        // and only the prop differs, so left alone every tooltip in a header
+        // points up and overlaps the bar it hangs from.
+        'x-ui.tooltip' => ['position' => 'placement'],
     ];
 
     /**
