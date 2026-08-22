@@ -11,6 +11,7 @@ use Onelegstudios\Refit\Libraries\Sheaf\ComponentMap;
 use Onelegstudios\Refit\Libraries\Sheaf\Components;
 use Onelegstudios\Refit\Libraries\Sheaf\LayoutStubs;
 use Onelegstudios\Refit\Plan\Actions\AcceptOtpAutofill;
+use Onelegstudios\Refit\Plan\Actions\AddressModalDispatches;
 use Onelegstudios\Refit\Plan\Actions\ApplyThemeBeforePaint;
 use Onelegstudios\Refit\Plan\Actions\BindModalState;
 use Onelegstudios\Refit\Plan\Actions\CarryOtpValue;
@@ -232,6 +233,12 @@ final class SheafLibrary implements Library
         // renamed tag but the `name` -> `id` pairing the rename performed, since
         // an unpaired modal has no open state worth binding.
         $plan->add(Stage::Reconcile, new BindModalState);
+
+        // And the modals the kit closes from PHP rather than from a click. The
+        // event name is already Sheaf's; the argument naming which modal it means
+        // is not, and Livewire sends that argument as the detail the listener
+        // reads — so the invitation sends and the dialog stays open.
+        $plan->add(Stage::Reconcile, new AddressModalDispatches);
 
         // Also after the rename — it reads `x-ui.dropdown`, which does not exist
         // until MapComponentTags has run. The chrome refit writes lands in the

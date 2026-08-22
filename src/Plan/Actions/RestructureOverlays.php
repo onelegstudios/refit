@@ -34,10 +34,16 @@ use Onelegstudios\Refit\Project\Project;
  * knows how to translate.
  *
  * **Modal close buttons.** `<flux:modal.close>` is a wrapper whose only job is
- * "clicking my child closes the modal". Sheaf's modal listens for a
- * `close-modal` event instead, so the wrapper becomes an element carrying that
- * dispatch. `class="contents"` keeps it out of the layout, which is what Flux's
- * own wrapper does.
+ * "clicking my child closes the modal", so the wrapper becomes an element that
+ * asks Sheaf's modal to close itself. `class="contents"` keeps it out of the
+ * layout, which is what Flux's own wrapper does.
+ *
+ * What it carries is `$data.close()`, the call Sheaf documents for exactly this
+ * button. A bare `$dispatch('close-modal')` looks like the equivalent and is not:
+ * Sheaf's modal listens on the window and closes only when `detail.id` matches
+ * its own, so an event with no detail at all is heard and ignored, and Cancel
+ * does nothing. Nothing here needs to know the id — the close button is inside
+ * the modal's own Alpine scope, which is where `close()` lives.
  */
 final class RestructureOverlays extends BladeSweep
 {
@@ -54,7 +60,7 @@ final class RestructureOverlays extends BladeSweep
     /**
      * How Sheaf's modal is told to close from inside its own contents.
      */
-    private const string CLOSE = '<div class="contents" x-on:click="$dispatch(\'close-modal\')">';
+    private const string CLOSE = '<div class="contents" x-on:click="$data.close()">';
 
     /** @var list<string> */
     private array $touched = [];
@@ -302,7 +308,8 @@ final class RestructureOverlays extends BladeSweep
         $report->note(sprintf(
             'Reshaped the dropdowns, tooltips and modal close buttons in %d file(s). Sheaf takes a dropdown\'s '
             .'trigger through <x-slot:button> and a tooltip\'s through <x-slot:trigger>, and closes a modal by '
-            .'dispatching close-modal, so all three needed moving rather than renaming — worth a look in the diff.',
+            .'calling $data.close() from inside it, so all three needed moving rather than renaming — worth a '
+            .'look in the diff.',
             count($this->touched),
         ));
 

@@ -556,6 +556,39 @@ Dropdowns a project writes for itself are not touched. The kit's other one is a
 per-member role menu on the teams edit page, which sits in main and has neither
 problem.
 
+### A shared event is not a shared envelope
+
+Flux and Sheaf both close a modal with a browser event called `close-modal`, which
+is why this one survives every pass looking correct. What differs is what the
+event has to carry. Flux read the modal's `name` out of the detail; Sheaf's modal
+listens on the window and closes only when `detail.id` matches the id it resolved
+for itself. An event with the wrong key — or with no detail at all — is received
+and ignored, and nothing anywhere says so.
+
+The kit sends that event from two places, and both needed re-addressing:
+
+| Where | The kit's version | What refit writes |
+|---|---|---|
+| `<flux:modal.close>` around a Cancel button | wrapper meaning "my child closes the modal" | `<div class="contents" x-on:click="$data.close()">` |
+| `$this->dispatch('close-modal', name: …)` after the work is done | Livewire event, `detail.name` | the same call with `id:` |
+
+`RestructureOverlays` does the first, because the wrapper is already its business.
+`AddressModalDispatches` does the second, over blades and `app/Livewire` alike,
+matching on the event name rather than the argument — the toast beside it takes a
+payload of its own that must not be touched.
+
+The Cancel button takes the call rather than the event because it does not have to
+know the id: it sits inside the modal's own Alpine scope, so `$data.close()`
+reaches the instance directly. That is the same reasoning `BindModalState` uses for
+`$modal.open(modalId)`, and it is what makes both work for the teams variants,
+where the id is a bound expression rather than a literal.
+
+One Flux-shaped event is deliberately left: the kit's "New team" and "Leave team"
+buttons carry `x-on:click="$dispatch('open-modal', '…')"`, and the rename has
+already wrapped each of them in an `<x-ui.modal.trigger>` that opens the modal
+properly. The stale dispatch is inert — Sheaf ignores it for the reason above —
+and rewriting markup that works would be churn.
+
 ### A shared word is not a shared meaning
 
 `variant="segmented"` is the same attribute with the same value in both

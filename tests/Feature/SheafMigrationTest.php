@@ -727,6 +727,48 @@ it('labels the form controls Sheaf renders bare, and says why they were rejected
         ->not->toContain('viewable');
 })->skip(fn (): bool => ! is_dir(fixturePath('livewire-teams')), 'Run `composer fixtures`.');
 
+it('closes a modal both ways the kit closes one', function (): void {
+    $root = sheafKit('livewire-teams');
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'library' => 'sheaf',
+            'icons' => 'heroicons',
+        ]),
+    ])->assertSuccessful();
+
+    $project = (new ProjectDetector)->detect($root);
+
+    // Cancel. Sheaf's modal listens on the window and closes only when the event
+    // carries its own id, so the bare `$dispatch('close-modal')` that reads like
+    // Flux's wrapper is heard and ignored — the button renders and does nothing.
+    // `$data.close()` is the call Sheaf documents for this button, and it needs no
+    // id: it is evaluated inside the modal's own Alpine scope.
+    expect($project->get('resources/views/pages/teams/⚡invite-member-modal.blade.php'))
+        ->toContain('<div class="contents" x-on:click="$data.close()">')
+        ->not->toContain("\$dispatch('close-modal')");
+
+    // And the same modal closing itself once the invitation has gone. Livewire
+    // sends named arguments as the browser event's detail, and Sheaf reads
+    // `detail.id` where Flux read `detail.name`.
+    expect($project->get('resources/views/pages/teams/⚡invite-member-modal.blade.php'))
+        ->toContain("\$this->dispatch('close-modal', id: 'invite-member')");
+
+    // Including where the modal is named at runtime rather than in the markup.
+    expect($project->get('resources/views/pages/teams/⚡remove-member-modal.blade.php'))
+        ->toContain("\$this->dispatch('close-modal', id: \$this->modalName)");
+
+    // The toast next to it keeps its own payload: this is addressed by event
+    // name, not by argument name.
+    expect($project->get('resources/views/pages/teams/⚡index.blade.php'))
+        ->toContain("\$this->dispatch('notify', type: 'success'");
+
+    // The kit with no teams has one of these too, on the delete-account dialog.
+    expect($project->get('resources/views/pages/settings/⚡delete-user-modal.blade.php'))
+        ->toContain('x-on:click="$data.close()"');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire-teams')), 'Run `composer fixtures`.');
+
 it('gives the select the runtime and the primitive that make it open', function (): void {
     $root = sheafKit('livewire-teams');
 

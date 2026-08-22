@@ -110,15 +110,19 @@ it('leaves a tooltip with nothing to say alone', function (): void {
     expect(restructure($source))->toBe($source);
 });
 
-it('turns a modal close wrapper into the event Sheaf listens for', function (): void {
+it('turns a modal close wrapper into the call Sheaf closes on', function (): void {
     $source = <<<'BLADE'
     <flux:modal.close>
         <flux:button variant="filled">Cancel</flux:button>
     </flux:modal.close>
     BLADE;
 
+    // Not a bare `$dispatch('close-modal')`: Sheaf's modal listens on the window
+    // and closes only when `detail.id` is its own, so an event with no detail is
+    // heard and ignored. `$data.close()` is the call its own documentation gives
+    // this button, and the close button is inside the scope that holds it.
     expect(restructure($source))
-        ->toContain('x-on:click="$dispatch(\'close-modal\')"')
+        ->toContain('x-on:click="$data.close()"')
         ->toContain('class="contents"')
         ->toContain('</div>')
         ->not->toContain('flux:modal.close')

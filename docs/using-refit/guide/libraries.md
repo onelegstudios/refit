@@ -178,8 +178,20 @@ becomes `placement` while it is there, or the bubble points up wherever the kit
 asked for down.
 
 **Modal close buttons.** `<flux:modal.close>` is a wrapper meaning "clicking my
-child closes the modal". Sheaf's modal listens for a `close-modal` event, so the
-wrapper becomes an element that dispatches it.
+child closes the modal". Refit turns it into a wrapper that calls `$data.close()`,
+the call Sheaf documents for exactly this button. Both libraries also close a
+modal with a `close-modal` event, and that resemblance is a trap: Sheaf's modal
+listens on the window and closes only when the event carries its own id, so an
+event dispatched without one is heard and ignored. The kit's Cancel buttons are
+the ones that go quiet.
+
+The kit closes its modals from PHP as well, once the work is done —
+`$this->dispatch('close-modal', name: 'invite-member')`. The event name is already
+the one Sheaf listens for; the argument is not. Livewire sends named arguments as
+the browser event's detail, and Sheaf reads `detail.id` where Flux read
+`detail.name`, so refit re-addresses those calls to `id:`. Left alone the
+invitation sends, the toast appears, the list updates and the dialog stays open on
+top of it.
 
 **Button contents.** Both libraries build a button as a flex row, and the
 difference is one box: Flux's children are the flex items, while Sheaf wraps the
