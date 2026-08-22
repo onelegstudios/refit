@@ -12,12 +12,13 @@ use Onelegstudios\Refit\Project\Project;
 /**
  * Let a password manager fill Sheaf's OTP the way it filled Flux's.
  *
- * This is the one place refit edits Sheaf's own source rather than the kit's, and
- * it is deliberate: `sheaf:install` copies these files into the project, so they
- * are the project's to fix, and nothing on the page can reach the behaviour from
- * outside. It is a stopgap until the fix lands upstream — a later `sheaf:install`
- * overwrites it, and every edit is anchored on the lines it is replacing, so a
- * version that has moved on is reported rather than mangled.
+ * One of the two places refit edits Sheaf's own source rather than the kit's — the
+ * other re-keys the collapse rules that hide the settings menu — and it is
+ * deliberate: `sheaf:install` copies these files into the project, so they are the
+ * project's to fix, and nothing on the page can reach the behaviour from outside.
+ * It is a stopgap until the fix lands upstream — a later `sheaf:install` overwrites
+ * it, and every edit is anchored on the lines it is replacing, so a version that
+ * has moved on is reported rather than mangled.
  *
  * Flux's `<ui-otp>` and Sheaf's `x-ui.otp` disagree on the three things that
  * decide whether autofill works, and Sheaf takes the losing side of each:

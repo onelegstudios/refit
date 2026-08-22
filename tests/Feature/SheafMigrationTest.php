@@ -603,6 +603,38 @@ it('empties the user menu to an avatar when the sidebar collapses', function ():
     expect($menu)->not->toContain('[[data-collapsed]_&]');
 })->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
 
+it('stops the collapse at the sidebar so the settings menu survives it', function (): void {
+    $root = sheafKit('livewire');
+
+    // Sheaf's navlist item, as `sheaf:install` writes it: a label the collapse
+    // takes off the row, keyed on a `:has()` with nothing in front of it.
+    $item = SheafLibrary::COMPONENT_DIRECTORY.'/navlist/item.blade.php';
+
+    file_put_contents(
+        $root.'/'.$item,
+        '<a href="{{ $href }}" class="gap-x-2 pl-3 [:has([data-collapsed]_&)_&]:p-2">'
+        .'<span class="text-base [:has([data-collapsed]_&)_&]:hidden">{{ $label }}</span></a>'."\n",
+    );
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'library' => 'sheaf',
+            'icons' => 'heroicons',
+        ]),
+    ])->assertSuccessful();
+
+    $project = (new ProjectDetector)->detect($root);
+
+    // The settings sub-navigation is a navlist too, out in the main column, and
+    // its rows are a label with no icon beside them. Asked of the page rather
+    // than of the element, the collapse emptied all three of them.
+    expect($project->get($item))
+        ->toContain('[[data-collapsed]_[data-slot=sidebar]_&]:hidden')
+        ->toContain('[[data-collapsed]_[data-slot=sidebar]_&]:p-2')
+        ->not->toContain(':has([data-collapsed]');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+
 it('composes the header layout the way Sheaf\'s grid reads it', function (): void {
     $root = sheafKit('livewire');
 

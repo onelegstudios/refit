@@ -46,8 +46,14 @@ final class FollowSidebarCollapse extends BladeSweep
     /** What Flux stamps on an ancestor, and the kit reads with an `in-*` variant. */
     private const string FLUX = 'in-data-flux-sidebar-collapsed-desktop:';
 
-    /** And what Sheaf stamps instead, asked for by the sidebar it narrows. */
-    private const string SHEAF = '[[data-collapsed]_[data-slot=sidebar]_&]:';
+    /**
+     * And what Sheaf stamps instead, asked for by the sidebar it narrows.
+     *
+     * Public because it is the one spelling of this question refit writes, and
+     * the sweep that re-keys Sheaf's own components onto it should be reading it
+     * here rather than keeping a second copy in step.
+     */
+    public const string SHEAF = '[[data-collapsed]_[data-slot=sidebar]_&]:';
 
     /**
      * The variant, at the start of a class name rather than inside one.

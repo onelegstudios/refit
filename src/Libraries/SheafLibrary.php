@@ -30,6 +30,7 @@ use Onelegstudios\Refit\Plan\Actions\RestructureOverlays;
 use Onelegstudios\Refit\Plan\Actions\RewriteIconNames;
 use Onelegstudios\Refit\Plan\Actions\RewriteToastCalls;
 use Onelegstudios\Refit\Plan\Actions\RunProcess;
+use Onelegstudios\Refit\Plan\Actions\ScopeCollapseToSidebar;
 use Onelegstudios\Refit\Plan\Actions\ShapeSegmentedGroups;
 use Onelegstudios\Refit\Plan\Actions\WireSheafRuntimes;
 use Onelegstudios\Refit\Plan\Actions\WrapControlsInFields;
@@ -222,6 +223,12 @@ final class SheafLibrary implements Library
         // the rules survive intact and every one of them is inert.
         $plan->add(Stage::Reconcile, new FollowSidebarCollapse);
 
+        // And the same question asked from the other side. Sheaf's own components
+        // spell the collapse as a `:has()` with nothing in front of it, which is a
+        // question the whole document answers — so a collapsed sidebar empties the
+        // settings sub-navigation out in the main column too.
+        $plan->add(Stage::Reconcile, new ScopeCollapseToSidebar);
+
         // After the field wrapping rather than beside it, because that sweep reads
         // the OTP's `name` to key the error it writes and this one takes the same
         // attribute off — Sheaf spends it on every digit box, so a form posts one
@@ -230,8 +237,8 @@ final class SheafLibrary implements Library
 
         // And the other half of the same page. Sheaf's OTP is hostile to password
         // managers in three ways Flux's was not, all of them inside the component
-        // `sheaf:install` has just copied into the project — so this is the one
-        // action that edits Sheaf's own source, until the fix lands upstream.
+        // `sheaf:install` has just copied into the project — the other place refit
+        // edits Sheaf's own source, until the fix lands upstream.
         if (AcceptOtpAutofill::used($project)) {
             $plan->add(Stage::Reconcile, new AcceptOtpAutofill);
         }
