@@ -565,15 +565,17 @@ listens on the window and closes only when `detail.id` matches the id it resolve
 for itself. An event with the wrong key — or with no detail at all — is received
 and ignored, and nothing anywhere says so.
 
-The kit sends that event from two places, and both needed re-addressing:
+The kit raises those events from three places, and none of them survives the
+rename working:
 
 | Where | The kit's version | What refit writes |
 |---|---|---|
 | `<flux:modal.close>` around a Cancel button | wrapper meaning "my child closes the modal" | `<div class="contents" x-on:click="$data.close()">` |
 | `$this->dispatch('close-modal', name: …)` after the work is done | Livewire event, `detail.name` | the same call with `id:` |
+| `x-on:click="$dispatch('open-modal', '…')"` on the button that opens one | Alpine event, a bare string for a detail | nothing — the trigger around it already opens the modal |
 
 `RestructureOverlays` does the first, because the wrapper is already its business.
-`AddressModalDispatches` does the second, over blades and `app/Livewire` alike,
+`AddressModalDispatches` does the other two, over blades and `app/Livewire` alike,
 matching on the event name rather than the argument — the toast beside it takes a
 payload of its own that must not be touched.
 
@@ -583,11 +585,18 @@ reaches the instance directly. That is the same reasoning `BindModalState` uses 
 `$modal.open(modalId)`, and it is what makes both work for the teams variants,
 where the id is a bound expression rather than a literal.
 
-One Flux-shaped event is deliberately left: the kit's "New team" and "Leave team"
-buttons carry `x-on:click="$dispatch('open-modal', '…')"`, and the rename has
-already wrapped each of them in an `<x-ui.modal.trigger>` that opens the modal
-properly. The stale dispatch is inert — Sheaf ignores it for the reason above —
-and rewriting markup that works would be churn.
+The third is the only one that is deleted rather than translated, and only because
+something else is already doing its job: `<flux:modal.trigger>` becomes
+`<x-ui.modal.trigger>`, which opens the modal by id on a click of its own. The
+`x-data=""` beside it goes too — that was Flux's instruction for this button, since
+`$dispatch` is an Alpine magic and needs a component to run in, and with the
+handler gone it declares a scope for nothing. A tag using that scope for anything
+else keeps it.
+
+A dispatch with no trigger around it is not redundant, it is broken, so that one is
+rewritten to `$modal.open(…)` rather than removed. Neither branch touches a handler
+that does more than raise the event: there is no safe way to keep the rest and move
+the call, so it is left for a human.
 
 ### A shared word is not a shared meaning
 

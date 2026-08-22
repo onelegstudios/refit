@@ -193,6 +193,13 @@ the browser event's detail, and Sheaf reads `detail.id` where Flux read
 invitation sends, the toast appears, the list updates and the dialog stays open on
 top of it.
 
+The same mismatch reaches the buttons that *open* a modal, and there the fix is a
+deletion. `<flux:modal.trigger>` becomes `<x-ui.modal.trigger>`, which opens the
+modal by id on its own, so the `x-on:click="$dispatch('open-modal', '…')"` the kit
+puts on the button inside it — and the `x-data=""` that was only there to give that
+magic a scope — are both taken off. A dispatch with no trigger around it is doing
+real work, and becomes `$modal.open(…)` instead.
+
 **Button contents.** Both libraries build a button as a flex row, and the
 difference is one box: Flux's children are the flex items, while Sheaf wraps the
 whole slot in a plain span first. Anything richer than a word then falls back into

@@ -767,6 +767,14 @@ it('closes a modal both ways the kit closes one', function (): void {
     // The kit with no teams has one of these too, on the delete-account dialog.
     expect($project->get('resources/views/pages/settings/⚡delete-user-modal.blade.php'))
         ->toContain('x-on:click="$data.close()"');
+
+    // And the button that opens one. The rename wraps it in a trigger that opens
+    // the modal by id, so the kit's own dispatch is redundant as well as
+    // mis-addressed — and `x-data=""` was only there to give it a scope to run in.
+    expect($project->get('resources/views/pages/teams/⚡index.blade.php'))
+        ->toContain('<x-ui.button variant="primary" icon="plus" data-test="teams-new-team-button">')
+        ->not->toContain('open-modal')
+        ->not->toContain('x-data=""');
 })->skip(fn (): bool => ! is_dir(fixturePath('livewire-teams')), 'Run `composer fixtures`.');
 
 it('gives the select the runtime and the primitive that make it open', function (): void {
