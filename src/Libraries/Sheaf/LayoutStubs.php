@@ -38,6 +38,20 @@ final class LayoutStubs
 
     private const string CREATE_TEAM_MODAL = '__CREATE_TEAM_MODAL__';
 
+    /**
+     * The switcher, in the gutter every other row of the sidebar sits in.
+     *
+     * Sheaf's sidebar has no padding of its own — a navlist supplies it, with a
+     * `px-2` and, once the sidebar narrows to 64px, an `items-center` that holds
+     * its rows in the column. The kit hangs the switcher off the sidebar
+     * directly, which Flux padded and Sheaf does not: there it ran edge to edge,
+     * out of line with the nav under it, and had nothing to centre it against
+     * once there was more column than row.
+     */
+    private const string SWITCHER = "\n                <x-ui.navlist>\n"
+        ."                    <livewire:team-switcher />\n"
+        ."                </x-ui.navlist>\n\n";
+
     /** The kit file that renders one of the layout variants beside it. */
     private const string DELEGATING_LAYOUT = 'resources/views/layouts/app.blade.php';
 
@@ -152,7 +166,7 @@ final class LayoutStubs
         return str_replace(
             [self::TEAM_SWITCHER."\n", self::CREATE_TEAM_MODAL."\n"],
             $teams
-                ? ["\n                <livewire:team-switcher />\n", "\n        <livewire:create-team-modal />\n"]
+                ? [self::SWITCHER, "\n        <livewire:create-team-modal />\n"]
                 : ['', ''],
             $contents,
         );

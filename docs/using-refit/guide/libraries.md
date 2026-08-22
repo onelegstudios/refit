@@ -166,6 +166,19 @@ because Sheaf stamps the collapse on the layout and the header sits under that t
 the same component is the header's menu, and there it keeps its name at every
 width.
 
+The team switcher goes into the sidebar inside a navlist of its own, for the
+gutter — Flux padded its sidebar and Sheaf's has none, so hung off the sidebar
+directly the switcher ran edge to edge and out of line with the nav under it, with
+nothing to centre it once the column narrowed.
+
+And its collapsed row is re-keyed rather than redesigned. The kit had already
+dressed this for 64px — a `users` glyph in place of the name, and no chevron — but
+keyed it on the attribute Flux stamps, which is spelled in class names rather than
+in tags and so survives the rename intact and inert. Every rule came out the wrong
+way round: no glyph, a name truncated to nothing, a chevron with no room for its
+`ms-auto`. Pointed at Sheaf's `data-collapsed` the kit's own intent works again,
+and the trigger takes the same 36px square the user menu and the nav icons keep.
+
 **Dropdown triggers.** Flux takes a dropdown's trigger as its first child; Sheaf
 takes it as `<x-slot:button>`. Refit wraps it.
 

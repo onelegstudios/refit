@@ -15,6 +15,7 @@ use Onelegstudios\Refit\Plan\Actions\AddressModalDispatches;
 use Onelegstudios\Refit\Plan\Actions\ApplyThemeBeforePaint;
 use Onelegstudios\Refit\Plan\Actions\BindModalState;
 use Onelegstudios\Refit\Plan\Actions\CarryOtpValue;
+use Onelegstudios\Refit\Plan\Actions\FollowSidebarCollapse;
 use Onelegstudios\Refit\Plan\Actions\MapComponentTags;
 use Onelegstudios\Refit\Plan\Actions\OrderThemeImport;
 use Onelegstudios\Refit\Plan\Actions\PlaceDropdownChildren;
@@ -214,6 +215,12 @@ final class SheafLibrary implements Library
         $plan->add(Stage::Reconcile, new PromoteContentsToLabel);
         $plan->add(Stage::Reconcile, new WrapControlsInFields);
         $plan->add(Stage::Reconcile, new ShapeSegmentedGroups);
+
+        // The same after-the-rename group, for a difference a rename can never
+        // see: the kit styles its collapsed sidebar rows against an attribute
+        // Flux stamps and Sheaf does not, in class names rather than in tags. So
+        // the rules survive intact and every one of them is inert.
+        $plan->add(Stage::Reconcile, new FollowSidebarCollapse);
 
         // After the field wrapping rather than beside it, because that sweep reads
         // the OTP's `name` to key the error it writes and this one takes the same

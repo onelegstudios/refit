@@ -177,9 +177,9 @@ Inside `Stage::Reconcile`, and it matters:
    the suffix is still there to read, then tag names, then attributes and values.
 3. **`RestructureBrandLogo`**, **`RestoreButtonRow`**, **`PlaceDropdownChildren`**,
    **`PreserveTextAlignment`**, **`PromoteContentsToLabel`**,
-   **`WrapControlsInFields`**, **`ShapeSegmentedGroups`** and
-   **`RaiseSidebarDropdowns`** — after the rename, because all eight read the tags
-   the rename produced.
+   **`WrapControlsInFields`**, **`ShapeSegmentedGroups`**,
+   **`FollowSidebarCollapse`** and **`RaiseSidebarDropdowns`** — after the rename,
+   because all nine read the tags the rename produced.
 4. **`RebindAppearanceToTheme`** and **`ApplyThemeBeforePaint`** — anywhere, in
    practice. Neither reads a tag: one rewrites Alpine expressions, the other
    writes a script into the head. Both have to be in the reconcile stage rather
@@ -482,6 +482,47 @@ children that now generate the boxes, keeps the loading state the component ship
 Only buttons whose slot holds markup are touched: text alone lays out the same
 either way, and neither a bound `:class`, nor Sheaf's own button, nor a button
 already carrying the class is rewritten.
+
+### A collapse is written in classes, not in tags
+
+Both libraries narrow the desktop sidebar to a column of icons, and both let a view
+style itself against that. Flux stamps `data-flux-sidebar-collapsed-desktop` on an
+ancestor, and the kit reads it with an `in-*` variant. Sheaf stamps `data-collapsed`
+on the layout.
+
+Nothing in the rename can see the difference, because it is spelled in class names
+rather than in tags — so the team switcher arrives with four rules keyed on an
+attribute nothing sets any more, and every one of them is the wrong way round. The
+`users` glyph the kit put there for exactly this moment stays `hidden`, the team
+name stays and truncates to nothing, the chevron keeps an `ms-auto` with no room to
+use it, and the trigger stays full-width and left-aligned: 64px of column holding a
+name it cannot show.
+
+`FollowSidebarCollapse` re-keys the variant onto
+`[[data-collapsed]_[data-slot=sidebar]_&]:`, which is most of the fix, because the
+kit had already decided what a collapsed row should look like. The selector names
+the sidebar as well as the collapse for the same reason the user menu's stub does:
+`data-collapsed` sits on the layout, the header is under it too, and a row that
+also appears in a header should keep its name at every width.
+
+The rest is the box. A trigger that centres itself when collapsed is being emptied
+down to one glyph, so it takes the square a collapsed navlist item stands in —
+`w-auto h-9 p-2!`, which is 20px of glyph inside 8px of padding, the same 36px the
+icons above it hover — instead of running the width of the row. The variant outranks
+the button's own `w-full` and `ps-*` on specificity, and Sheaf's `h-10` comes from
+inside a `:where()` and carries none at all. A glyph the collapse *reveals* grows
+from the kit's `size-4` to the navlist's `size-5` with it; one the collapse hides
+keeps whatever size the row drew it at.
+
+`not-in-data-flux-sidebar-collapsed-desktop:` is left alone — it is a different rule
+with a different answer, and swapping the middle out of it would leave neither. It
+only reaches the kit's header layout, which refit replaces wholesale.
+
+The switcher's place in the sidebar is the other half of this. Flux padded its
+sidebar; Sheaf's has no padding of its own and a navlist supplies it, with the
+`px-2` every other row here already has and the `items-center` that holds a
+collapsed row in the column. So the stub hangs the switcher inside an
+`<x-ui.navlist>` rather than off the sidebar directly.
 
 ### A menu is a grid
 

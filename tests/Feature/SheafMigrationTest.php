@@ -1355,6 +1355,60 @@ it('lays the team switcher out the way Flux laid it out', function (string $kit)
 })->with(['livewire-teams', 'livewire-workos-teams'])
     ->skip(fn (): bool => ! is_dir(fixturePath('livewire-teams')), 'Run `composer fixtures`.');
 
+it('empties the team switcher to a glyph when the sidebar collapses', function (string $kit): void {
+    $root = sheafKit($kit);
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'library' => 'sheaf',
+            'icons' => 'heroicons',
+        ]),
+    ])->assertSuccessful();
+
+    $switcher = (new ProjectDetector)->detect($root)->get('resources/views/components/⚡team-switcher.blade.php');
+
+    // The kit had already dressed this row for a 64px column — a `users` glyph
+    // in place of the name, and no chevron. It keyed all of it on the attribute
+    // Flux stamps, which no rename can see and Sheaf never sets, so every rule
+    // came through the migration inert and the wrong way round: no glyph, a name
+    // truncated to nothing, and a chevron with no room for its `ms-auto`.
+    expect($switcher)
+        ->toContain('<x-ui.icon name="users" class="hidden size-5 [[data-collapsed]_[data-slot=sidebar]_&]:block" />')
+        ->toContain('<span class="truncate font-semibold [[data-collapsed]_[data-slot=sidebar]_&]:hidden">')
+        ->toContain('class="ms-auto size-4 [[data-collapsed]_[data-slot=sidebar]_&]:hidden"')
+        ->not->toContain('in-data-flux-sidebar-collapsed-desktop');
+
+    // And the trigger takes the square a collapsed navlist item stands in, so
+    // its hover box is the one the glyphs above it hover rather than the width
+    // of the whole row.
+    expect($switcher)
+        ->toContain('[[data-collapsed]_[data-slot=sidebar]_&]:justify-center')
+        ->toContain('[[data-collapsed]_[data-slot=sidebar]_&]:w-auto')
+        ->toContain('[[data-collapsed]_[data-slot=sidebar]_&]:h-9')
+        ->toContain('[[data-collapsed]_[data-slot=sidebar]_&]:p-2!');
+})->with(['livewire-teams', 'livewire-workos-teams'])
+    ->skip(fn (): bool => ! is_dir(fixturePath('livewire-teams')), 'Run `composer fixtures`.');
+
+it('puts the team switcher in the gutter the rest of the sidebar sits in', function (string $kit): void {
+    $root = sheafKit($kit);
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'library' => 'sheaf',
+            'icons' => 'heroicons',
+        ]),
+    ])->assertSuccessful();
+
+    // Flux padded its sidebar and Sheaf does not — a navlist does, with the
+    // `px-2` every other row here already has and the `items-center` that holds
+    // a collapsed row in the column.
+    expect((new ProjectDetector)->detect($root)->get('resources/views/layouts/app/sidebar.blade.php'))
+        ->toContain("<x-ui.navlist>\n                    <livewire:team-switcher />\n                </x-ui.navlist>");
+})->with(['livewire-teams', 'livewire-workos-teams'])
+    ->skip(fn (): bool => ! is_dir(fixturePath('livewire-teams')), 'Run `composer fixtures`.');
+
 it('gives the tooltips on the team pages the trigger Sheaf renders', function (string $kit): void {
     $root = sheafKit($kit);
 
