@@ -179,6 +179,17 @@ way round: no glyph, a name truncated to nothing, a chevron with no room for its
 `ms-auto`. Pointed at Sheaf's `data-collapsed` the kit's own intent works again,
 and the trigger takes the same 36px square the user menu and the nav icons keep.
 
+**The settings menu, when the sidebar collapses.** Sheaf's own components ask
+whether the sidebar is collapsed with a rule that no element in particular is the
+subject of, so the whole page answers it: collapse the sidebar and every navlist
+in the document loses its labels, the settings sub-navigation out in the main
+column included — three rows with no icon in them, and so three rows of nothing.
+Refit re-keys those rules onto the same sidebar-and-collapse selector it points
+the kit's own at, which leaves a collapsed sidebar looking exactly as it did and
+the settings menu where it was. This is one of two places refit edits Sheaf's own
+components — the OTP box a password manager cannot fill is the other — so a later
+`sheaf:install` puts the leak back.
+
 **Dropdown triggers.** Flux takes a dropdown's trigger as its first child; Sheaf
 takes it as `<x-slot:button>`. Refit wraps it.
 

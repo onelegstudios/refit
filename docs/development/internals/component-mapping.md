@@ -180,9 +180,11 @@ Inside `Stage::Reconcile`, and it matters:
    **`WrapControlsInFields`**, **`ShapeSegmentedGroups`**,
    **`FollowSidebarCollapse`** and **`RaiseSidebarDropdowns`** — after the rename,
    because all nine read the tags the rename produced.
-4. **`RebindAppearanceToTheme`** and **`ApplyThemeBeforePaint`** — anywhere, in
-   practice. Neither reads a tag: one rewrites Alpine expressions, the other
-   writes a script into the head. Both have to be in the reconcile stage rather
+4. **`RebindAppearanceToTheme`**, **`ApplyThemeBeforePaint`** and
+   **`ScopeCollapseToSidebar`** — anywhere, in practice. None of the three reads a
+   tag: one rewrites Alpine expressions, one writes a script into the head, and
+   the third re-keys a class inside components Sheaf's own CLI wrote, which never
+   said `flux:` to begin with. All three have to be in the reconcile stage rather
    than the write stage, though, because the files they edit are still moving
    until then.
 5. **The icon sweeps** — last, so they run against the tags the migration
@@ -412,8 +414,9 @@ select would shrink a control meant to fill its field, and Flux centred neither.
 
 ### A box a password manager cannot fill
 
-The one place refit edits Sheaf's own source rather than the kit's, and the only
-change here that is a stopgap rather than a translation.
+One of the two places refit edits Sheaf's own source rather than the kit's — the
+[collapse that the whole page answers](#a-collapse-the-whole-page-answers-for) is
+the other — and, with it, a stopgap rather than a translation.
 
 Flux's `<ui-otp>` and Sheaf's `x-ui.otp` disagree on the three things that decide
 whether a password manager can fill a code, and Sheaf takes the losing side of
@@ -523,6 +526,48 @@ sidebar; Sheaf's has no padding of its own and a navlist supplies it, with the
 `px-2` every other row here already has and the `items-center` that holds a
 collapsed row in the column. So the stub hangs the switcher inside an
 `<x-ui.navlist>` rather than off the sidebar directly.
+
+### A collapse the whole page answers for
+
+The rules Sheaf's own components are written with have the same subject problem,
+from the other direction. Sheaf spells "when the sidebar is collapsed" as
+`[:has([data-collapsed]_&)_&]:`, which Tailwind compiles to
+
+```css
+:has([data-collapsed] .the-class) .the-class { … }
+```
+
+Neither half of that asks about the element being styled. Nothing stands in front
+of the `:has()`, so any ancestor may answer it and `<html>` does; and the class
+inside it is the utility rather than this element, so a single navlist item under
+the collapsed layout answers on behalf of the whole document. Tailwind emits one
+class per utility, so the rule then reaches every element on the page that shares
+it.
+
+The settings pages are where that shows. Their sub-navigation is a navlist too —
+out in the main column, three rows that are a label and nothing else. Collapse the
+sidebar and the label span's own `[:has([data-collapsed]_&)_&]:hidden` matches out
+there as well: three rows of nothing, and a settings menu that comes back only
+when the sidebar is opened again.
+
+`ScopeCollapseToSidebar` re-keys the variant onto the same
+`[[data-collapsed]_[data-slot=sidebar]_&]:` the kit's own rules were pointed at,
+which asks about the element instead of about the page: it is inside a sidebar,
+and the layout above it is collapsed. Inside the sidebar every rule keeps meaning
+what it meant; outside it, none of them mean anything at all.
+
+Sheaf's opposite spelling, `[:not(:has([data-collapsed]_&))_&]:`, is left as it
+is. It reads as the other half of the same question and does not behave like one:
+a descendant combinator needs only one ancestor to match, and the sidebar holds no
+`[data-collapsed]` of its own, so the rule is on wherever it is written — inside a
+collapsed sidebar included. That is already what the page outside the sidebar
+wants, and re-keying it would change how a collapsed sidebar looks rather than
+what it manages to show.
+
+Like the OTP patch, this edits files `sheaf:install` copied into the project,
+which is what makes them the project's, and a later install overwrites it. It
+matches on the variant rather than on a line, so a Sheaf that has fixed this
+upstream, or spelled it some other way, has nothing here to change.
 
 ### A menu is a grid
 
