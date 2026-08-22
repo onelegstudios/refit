@@ -47,7 +47,7 @@ reimplementing it — including the parts that put it there in the first place.
 
 | Stage | What happens |
 |---|---|
-| Dependencies | `composer require sheaf/cli`, then `php artisan sheaf:init`, then `php artisan sheaf:install <component>` — each one skipped if it has already been done |
+| Dependencies | `composer require sheaf/cli`, then `php artisan sheaf:init`, then `php artisan sheaf:install <component>`, then `npm install @sheaf/rover` — each one skipped if it has already been done |
 | Write | The chrome files, rewritten from refit's Sheaf stubs, and `app.css`'s imports put back in order |
 | Reconcile | The overlays are reshaped, then every remaining tag and attribute is mapped |
 | Format | `pint --dirty`, as always |
@@ -67,6 +67,22 @@ plan is refit closing a gap rather than refit being greedy. `field`, `label` and
 `error` are there for the same reason from the other end: no Flux tag becomes any
 of them, but refit writes all three itself, around every control it
 [labels](#the-parts-that-move-rather-than-rename).
+
+Two of those components are half Blade and half JavaScript, and the CLI installs
+only the Blade half in any meaningful sense. The other half lands in
+`resources/js` — a magic in `globals/`, an `Alpine.data()` in `components/` — and
+nothing imports it, so the module never reaches the bundle and what it registers
+never exists. Refit imports both directories from your entrypoint, whatever they
+happen to hold, because a file in either is by definition something the page wants
+loaded once.
+
+`@sheaf/rover` is the npm half of the same gap. Sheaf's select runtime drives its
+option list through a `$rover` plugin published separately, and the component's
+manifest declares no dependency on it — so `sheaf:install select` succeeds, the
+component is complete on disk, and the control cannot open. Refit installs the
+package and registers the plugin in your entrypoint, ahead of the runtime that
+reads it. If the install fails you keep a working migration and a note saying what
+to run: the select is the only thing waiting on it.
 
 `sheaf:init` is a one-time setup, and refit passes the flags your answers imply:
 `--with-dark-mode`, because every layout the kit ships puts `class="dark"` on the
@@ -95,6 +111,10 @@ carrying on after it failed would point an entire application at components that
 are not there. Being offline, or a Pro component wanting `php artisan sheaf:login`
 first, both land here. Fix it and run refit again — the plan is rebuilt from
 scratch each time, so the steps that did work are simply skipped.
+
+`npm install @sheaf/rover` is the one step that does not stop the run. Nothing is
+rewritten *onto* it, so a failure there is a warning in the notes and a select
+that will not open, rather than a migration you have to start over.
 
 ### The parts that move rather than rename
 

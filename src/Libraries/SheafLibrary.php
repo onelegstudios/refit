@@ -14,7 +14,6 @@ use Onelegstudios\Refit\Plan\Actions\AcceptOtpAutofill;
 use Onelegstudios\Refit\Plan\Actions\ApplyThemeBeforePaint;
 use Onelegstudios\Refit\Plan\Actions\BindModalState;
 use Onelegstudios\Refit\Plan\Actions\CarryOtpValue;
-use Onelegstudios\Refit\Plan\Actions\ImportSheafGlobals;
 use Onelegstudios\Refit\Plan\Actions\MapComponentTags;
 use Onelegstudios\Refit\Plan\Actions\OrderThemeImport;
 use Onelegstudios\Refit\Plan\Actions\PlaceDropdownChildren;
@@ -30,6 +29,7 @@ use Onelegstudios\Refit\Plan\Actions\RewriteIconNames;
 use Onelegstudios\Refit\Plan\Actions\RewriteToastCalls;
 use Onelegstudios\Refit\Plan\Actions\RunProcess;
 use Onelegstudios\Refit\Plan\Actions\ShapeSegmentedGroups;
+use Onelegstudios\Refit\Plan\Actions\WireSheafRuntimes;
 use Onelegstudios\Refit\Plan\Actions\WrapControlsInFields;
 use Onelegstudios\Refit\Plan\Plan;
 use Onelegstudios\Refit\Plan\Report;
@@ -66,6 +66,9 @@ final class SheafLibrary implements Library
 
     /** Written by `sheaf:init`, and the honest signal that it has been run. */
     public const string THEME_STYLESHEET = 'resources/css/theme.css';
+
+    /** The component whose runtime is built on an npm primitive Sheaf never installs. */
+    private const string PRIMITIVE_COMPONENT = 'select';
 
     public function key(): string
     {
@@ -325,11 +328,27 @@ final class SheafLibrary implements Library
             ));
         }
 
-        // After all of those, and unconditionally: the globals it has to import
+        // The one dependency Sheaf's own installer does not resolve. The select's
+        // runtime is written against `$rover`, an Alpine plugin published on npm
+        // and named nowhere in the component's manifest — so `sheaf:install
+        // select` succeeds, the component is complete on disk, and the control
+        // still cannot open. Not `required`, because a project can be rewritten
+        // fine without it: WireSheafRuntimes checks before it registers anything,
+        // and says what is missing when it cannot.
+        if (in_array(self::PRIMITIVE_COMPONENT, Components::closure(ComponentMap::components()), true)
+            && ! WireSheafRuntimes::primitiveInstalled($project)) {
+            $plan->add(Stage::Dependencies, new RunProcess(
+                ['npm', 'install', WireSheafRuntimes::PRIMITIVE],
+                sprintf('Installing Sheaf\'s "%s" primitive', WireSheafRuntimes::PRIMITIVE),
+                timeout: 600,
+            ));
+        }
+
+        // After all of those, and unconditionally: the runtimes it has to import
         // are files the installs above have not written yet, so there is nothing
         // to inspect at planning time. The action is a no-op when they all turn
         // out to be imported already.
-        $plan->add(Stage::Write, new ImportSheafGlobals);
+        $plan->add(Stage::Write, new WireSheafRuntimes);
     }
 
     /**

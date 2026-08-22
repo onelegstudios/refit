@@ -9,6 +9,7 @@ use Onelegstudios\Refit\Libraries\Sheaf\ComponentMap;
 use Onelegstudios\Refit\Libraries\Sheaf\Components;
 use Onelegstudios\Refit\Libraries\SheafLibrary;
 use Onelegstudios\Refit\Plan\Actions\OrderThemeImport;
+use Onelegstudios\Refit\Plan\Actions\WireSheafRuntimes;
 use Onelegstudios\Refit\Plan\Plan;
 use Onelegstudios\Refit\Plan\Report;
 use Onelegstudios\Refit\Plan\Stage;
@@ -32,6 +33,12 @@ function sheafKit(string $kit, bool $withComponents = true): string
     $manifest['require-dev'][SheafLibrary::PACKAGE] = '^1.0';
     file_put_contents($root.'/composer.json', (string) json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
 
+    // And the npm primitive the select's runtime is built on, so the plan has no
+    // `npm install` to run either.
+    $package = json_decode((string) file_get_contents($root.'/package.json'), true);
+    $package['dependencies'][WireSheafRuntimes::PRIMITIVE] = '^1.0.4';
+    file_put_contents($root.'/package.json', (string) json_encode($package, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+
     file_put_contents($root.'/'.SheafLibrary::THEME_STYLESHEET, ":root { --color-accent: #000; }\n");
 
     // And `sheaf:init` does not only write that file — it prepends the import for
@@ -47,6 +54,14 @@ function sheafKit(string $kit, bool $withComponents = true): string
         foreach (Components::closure(ComponentMap::components()) as $component) {
             @mkdir($root.'/'.SheafLibrary::COMPONENT_DIRECTORY.'/'.$component, 0755, true);
         }
+
+        // Including the halves it writes into resources/js and imports nowhere:
+        // a magic in `globals`, an `Alpine.data()` in `components`.
+        @mkdir($root.'/'.WireSheafRuntimes::GLOBALS, 0755, true);
+        file_put_contents($root.'/'.WireSheafRuntimes::GLOBALS.'/modals.js', "document.addEventListener('alpine:init', () => {});\n");
+
+        @mkdir($root.'/'.WireSheafRuntimes::RUNTIMES, 0755, true);
+        file_put_contents($root.'/'.WireSheafRuntimes::RUNTIMES.'/select.js', "this.\$rover.options\nAlpine.data('selectComponent', () => ({}));\n");
     }
 
     app()->setBasePath($root);
@@ -157,6 +172,20 @@ it('stops before touching a view when an install step fails', function (): void 
 
     expect(file_get_contents($root.'/resources/views/layouts/app/sidebar.blade.php'))->toBe($before)
         ->and(fluxTagsUnder($root))->not->toBe([]);
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+
+it('plans the npm primitive Sheaf\'s own installer leaves out', function (): void {
+    $root = copyFixture('livewire');
+
+    // `sheaf:install select` writes a runtime built on `$rover` and declares no
+    // external dependency for it, so the component arrives complete and dead.
+    expect(implode("\n", installSteps($root)))->toContain('npm install @sheaf/rover');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+
+it('leaves the npm step out once the primitive is a dependency', function (): void {
+    $root = sheafKit('livewire');
+
+    expect(implode("\n", installSteps($root)))->not->toContain('npm install');
 })->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
 
 it('plans a sheaf:install for every component it needs and does not have', function (): void {
@@ -696,6 +725,37 @@ it('labels the form controls Sheaf renders bare, and says why they were rejected
     expect($project->get('resources/views/pages/auth/login.blade.php'))
         ->toContain('revealable')
         ->not->toContain('viewable');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire-teams')), 'Run `composer fixtures`.');
+
+it('gives the select the runtime and the primitive that make it open', function (): void {
+    $root = sheafKit('livewire-teams');
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'library' => 'sheaf',
+            'icons' => 'heroicons',
+        ]),
+    ])->assertSuccessful();
+
+    $project = (new ProjectDetector)->detect($root);
+
+    // Sheaf writes both halves of a select and imports neither: the Alpine.data()
+    // its `x-data` names, and the `$rover` plugin that runtime drives the option
+    // list with. Without them the browser throws `selectComponent is not defined`
+    // as it walks the page, and the invite modal's Role never opens — a team
+    // member cannot be given a role at all.
+    expect($project->get(WireSheafRuntimes::ENTRYPOINT))
+        ->toContain("import rover from '@sheaf/rover';")
+        ->toContain("import './components/select.js';")
+        ->toContain('Alpine.plugin(rover);')
+        ->toContain("import './globals/modals.js';");
+
+    // The plugin is registered before Alpine walks anything, and the primitive is
+    // imported ahead of the runtime that reads it.
+    $entrypoint = $project->get(WireSheafRuntimes::ENTRYPOINT);
+
+    expect(strpos($entrypoint, 'import rover'))->toBeLessThan(strpos($entrypoint, './components/select.js'));
 })->skip(fn (): bool => ! is_dir(fixturePath('livewire-teams')), 'Run `composer fixtures`.');
 
 it('posts the two-factor code Sheaf would have left out of the form', function (string $kit, string $challenge, string $setup): void {

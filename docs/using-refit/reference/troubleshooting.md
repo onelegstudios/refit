@@ -100,6 +100,22 @@ and the counts, so the file is worth a look either way.
 Something the plan did not account for was still in a directory it meant to
 remove. Nothing was deleted; move or delete the remaining files yourself.
 
+**"Sheaf's select is driven by the `$rover` Alpine plugin, and @sheaf/rover is not installed"**
+
+The `npm install @sheaf/rover` step did not run or did not work, so refit imported
+the select's runtime but left the plugin it depends on unregistered. Run the
+install, then add `import rover from '@sheaf/rover'` and `Alpine.plugin(rover)` to
+`resources/js/app.js` — the message says both. Until then every `<x-ui.select>`
+renders and never opens; nothing else in the migration is waiting on it.
+
+**"Skipped importing Sheaf's runtimes — resources/js/app.js does not exist"**
+
+Sheaf writes half of some components as JavaScript and imports none of it, and
+refit does that importing from the Vite entrypoint the kit ships. With no
+entrypoint there is nowhere to put the lines. Import
+`resources/js/globals/*.js` and `resources/js/components/*.js` from whichever file
+your build actually reads.
+
 **"Formatting with Pint failed"**
 
 The finishing Pint pass could not run — usually because the project has no

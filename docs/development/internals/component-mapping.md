@@ -616,6 +616,55 @@ modal — is left verbatim and reported. Each has its own Sheaf answer, and none
 them is this one. The PHP `Flux::toast()` is not one of these: it is not `$flux`
 magic at all, and `RewriteToastCalls` rewrites it.
 
+### A component can be half JavaScript, and the install only wires up one file
+
+Sheaf writes a component's runtime into `resources/js` in two shapes. A file in
+`globals/` registers an Alpine magic on `alpine:init` — `$theme` from `theme.js`,
+`$modal` from `modals.js`. A file in `components/` registers the `Alpine.data()`
+that the component's own markup names in its `x-data` — `selectComponent` from
+`select.js`. Only `sheaf:init` writes an import, and only for its own `theme.js`.
+Everything a later `sheaf:install` drops in is written to disk and left out of the
+module graph.
+
+Nothing about that is visible from the outside. The components render, Vite is
+happy, and the failure waits for the browser to evaluate an expression naming
+something undefined — where it throws inside Alpine's handler and stops. For a
+global that expression is a click: `$modal.open(...)` on "Enable 2FA" and "Delete
+account". For a component runtime it is the `x-data` itself, so the failure is on
+the way in: `selectComponent is not defined` before the page has finished
+painting, and every `<x-ui.select>` is then a box that will not open. The teams
+kit puts one of those in the invite modal, which is how a team member gets
+invited to no role at all.
+
+`WireSheafRuntimes` imports both directories rather than a list of files, for the
+reason the component graph is resolved by name rather than by the CLI's config: a
+runtime that arrives tomorrow should arrive working.
+
+The select needs one thing more. Its runtime drives the option list through
+`$rover`, an Alpine plugin published as `@sheaf/rover` and installed by nothing —
+the component's manifest declares no external dependency, and only Sheaf's
+documentation for the primitive mentions it. Importing the runtime without
+registering the plugin trades `selectComponent is not defined` for `$rover is not
+defined`, so the action writes `Alpine.plugin(rover)` alongside the imports, and
+`SheafLibrary` plans the `npm install` that makes it resolvable.
+
+Three things about where those lines go:
+
+- **Ahead of whatever else the entrypoint does.** A magic has to be registered
+  before the markup reading it is evaluated, and an entrypoint that starts
+  Livewire itself does that on its last line — after which registering a plugin is
+  too late.
+- **The primitive first.** Sheaf asks for it to be imported before the components
+  that depend on it. ES imports are hoisted, so `Alpine.plugin(rover)` sitting
+  among them still runs after every module has evaluated and before Alpine starts:
+  the kit's `@vite` tag is deferred, and Livewire's own script — which defines
+  `window.Alpine` and starts Alpine on `DOMContentLoaded` — is injected before
+  `</body>` and runs first.
+- **Only when the package is there.** An import Vite cannot resolve fails the
+  whole build, which is a worse outcome than the select alone not opening. The
+  action reads `package.json` and, when the primitive is missing, writes the
+  imports it can and warns with the command to run.
+
 ## Adding a library
 
 1. Implement `Library`. Put anything specific to it under `src/Libraries/<Name>/`.
