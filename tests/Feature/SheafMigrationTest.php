@@ -512,6 +512,19 @@ it('keeps the logo tile Sheaf\'s brand would have dropped', function (): void {
     expect($logo)->toContain('<x-slot name="logo">')
         ->toContain('<div class="flex aspect-square size-8 items-center justify-center rounded-md bg-accent-content text-accent-foreground">')
         ->not->toContain('<x-slot name="logo" class=');
+
+    // And only once, because Sheaf has one brand where Flux had two: the arms of
+    // the kit's conditional come out of the rename identical, so the conditional
+    // and the prop that drove it go with them.
+    expect(substr_count($logo, '<x-ui.brand'))->toBe(1)
+        ->and($logo)->not->toContain('@if')
+        ->and($logo)->not->toContain('sidebar');
+
+    // Which means nothing may still be passing it, or Sheaf's brand merges the
+    // value onto its own <a> as a stray sidebar="1".
+    foreach ($project->blades() as $path) {
+        expect($project->get($path))->not->toContain(':sidebar');
+    }
 })->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
 
 it('gives everything in a dropdown menu a place in Sheaf\'s grid', function (): void {

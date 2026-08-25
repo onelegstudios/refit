@@ -175,11 +175,13 @@ Inside `Stage::Reconcile`, and it matters:
    trigger, and what a modal close button wraps.
 2. **`MapComponentTags`** — the dotted icon form is folded into an attribute while
    the suffix is still there to read, then tag names, then attributes and values.
-3. **`RestructureBrandLogo`**, **`RestoreButtonRow`**, **`PlaceDropdownChildren`**,
-   **`PreserveTextAlignment`**, **`PromoteContentsToLabel`**,
-   **`WrapControlsInFields`**, **`ShapeSegmentedGroups`**,
-   **`FollowSidebarCollapse`** and **`RaiseSidebarDropdowns`** — after the rename,
-   because all nine read the tags the rename produced.
+3. **`MergeBrandVariants`**, **`RestructureBrandLogo`**, **`RestoreButtonRow`**,
+   **`PlaceDropdownChildren`**, **`PreserveTextAlignment`**,
+   **`PromoteContentsToLabel`**, **`WrapControlsInFields`**,
+   **`ShapeSegmentedGroups`**, **`FollowSidebarCollapse`** and
+   **`RaiseSidebarDropdowns`** — after the rename, because all ten read the tags
+   the rename produced. `MergeBrandVariants` comes before `RestructureBrandLogo`
+   so there is one brand to shape rather than two.
 4. **`RebindAppearanceToTheme`**, **`ApplyThemeBeforePaint`** and
    **`ScopeCollapseToSidebar`** — anywhere, in practice. None of the three reads a
    tag: one rewrites Alpine expressions, one writes a script into the head, and
@@ -225,6 +227,26 @@ calls `@vite('resources/js/passkeys.js')` inside `passkey-registration` and
 whose head already has one. The discriminator is a stylesheet — CSS has to be in
 the head — with `<head` itself as a fallback for a project that imports its CSS
 from JavaScript and never names a `.css` in Blade.
+
+### Two components becoming one leaves a choice behind
+
+Flux ships two brands — `flux:brand` and `flux:sidebar.brand` — and the kit's logo
+component chooses between them on a `sidebar` prop, writing the whole brand out
+once per arm. Both names map to `x-ui.brand`, so after `MapComponentTags` the two
+arms are byte-identical and the prop cannot change what renders.
+
+`MergeBrandVariants` drops the conditional, un-indents the surviving arm into its
+place, and takes the prop out of `@props` once nothing in the file still reads it.
+It is anchored on the shape rather than the path, because `NamespaceComponents`
+turns `app-logo.blade.php` into `brand/logo.blade.php` in the move stage, and it
+refuses anything that is not the case it was written for: arms that differ, a
+conditional with another one nested inside it, or a duplicate with no brand in it.
+
+The call sites go with it. Refit's own layout stubs stop passing `:sidebar`; a
+call site refit did not write that still passes it lands the value in
+`$attributes`, where Sheaf's brand merges it onto its `<a>` as a stray
+`sidebar="1"`. That is inert, and the alternative — leaving a prop declared so
+nothing can read it — hides the call site rather than fixing it.
 
 ### A slot is not only a slot
 

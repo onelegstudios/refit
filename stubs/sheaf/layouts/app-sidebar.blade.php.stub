@@ -14,7 +14,7 @@
                  literal attributes on the div. --}}
             <x-ui.sidebar>
                 <x-slot:brand>
-                    <x-app-logo :sidebar="true" href="{{ route('dashboard') }}" wire:navigate />
+                    <x-app-logo href="{{ route('dashboard') }}" wire:navigate />
                 </x-slot:brand>
 __TEAM_SWITCHER__
                 <x-ui.navlist>
