@@ -239,6 +239,14 @@ as the profile header, and a spanning div around a component such as a modal
 trigger. Left alone, those rows render in the first column at a fraction of the
 panel's width.
 
+**One brand, not two.** Flux ships `flux:brand` for a header and
+`flux:sidebar.brand` for a sidebar, so the kit's logo component takes a `sidebar`
+prop and writes the whole brand out twice to choose between them. Sheaf ships one
+brand and refit maps both names to it, so the two arms come out identical and the
+prop has nothing left to decide. Refit takes the conditional and the prop out and
+keeps one brand. Left alone it is a duplicate of the logo that every later edit
+has to be made to twice.
+
 **The logo tile.** The kit gives its logo slot the classes that draw the accent
 tile behind the mark, and Flux's brand renders them onto a wrapper. Sheaf's brand
 renders the slot bare, so refit moves those classes onto an element inside the
