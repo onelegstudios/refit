@@ -186,9 +186,20 @@ in the document loses its labels, the settings sub-navigation out in the main
 column included — three rows with no icon in them, and so three rows of nothing.
 Refit re-keys those rules onto the same sidebar-and-collapse selector it points
 the kit's own at, which leaves a collapsed sidebar looking exactly as it did and
-the settings menu where it was. This is one of two places refit edits Sheaf's own
-components — the OTP box a password manager cannot fill is the other — so a later
-`sheaf:install` puts the leak back.
+the settings menu where it was. This is one of three places refit edits Sheaf's own
+components — the nav item icons and the OTP box a password manager cannot fill are
+the others — so a later `sheaf:install` puts the leak back.
+
+**Nav item icons, when the icons are Phosphor.** Sheaf's `navlist.item` and
+`navbar.item` size their icon with `[:where(&)]:size-5`, a class they add through
+`->class()` and then hand to `x-ui.icon` in an attribute bag. Both steps escape it,
+so the `&` reaches the browser as `&amp;` and the class names no rule Tailwind
+wrote. Heroicons hid that: `wireui/heroicons` draws its glyphs at `width="24"
+height="24"`, so the dead class cost nothing. `wireui/phosphoricons` ships a
+`viewBox` and no dimensions, so with the class gone the icon has no size at all and
+an `<svg>` with auto width in the item's flex row lays out at zero — a sidebar of
+labels with no glyphs in front of them. Refit adds the same class without the first
+escape, keeping the `:where()` so `icon:class` goes on winning.
 
 **Dropdown triggers.** Flux takes a dropdown's trigger as its first child; Sheaf
 takes it as `<x-slot:button>`. Refit wraps it.

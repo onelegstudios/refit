@@ -32,6 +32,7 @@ use Onelegstudios\Refit\Plan\Actions\RewriteToastCalls;
 use Onelegstudios\Refit\Plan\Actions\RunProcess;
 use Onelegstudios\Refit\Plan\Actions\ScopeCollapseToSidebar;
 use Onelegstudios\Refit\Plan\Actions\ShapeSegmentedGroups;
+use Onelegstudios\Refit\Plan\Actions\SizeNavItemIcons;
 use Onelegstudios\Refit\Plan\Actions\SwitchIconSet;
 use Onelegstudios\Refit\Plan\Actions\WireSheafRuntimes;
 use Onelegstudios\Refit\Plan\Actions\WrapControlsInFields;
@@ -239,6 +240,13 @@ final class SheafLibrary implements Library
         // settings sub-navigation out in the main column too.
         $plan->add(Stage::Reconcile, new ScopeCollapseToSidebar);
 
+        // And a third read of Sheaf's own source, for a size that is written and
+        // then escaped away: the nav items hand their icon a class through a bag
+        // that gets HTML-escaped twice on the way to the `<svg>`. Heroicons hid
+        // it behind the dimensions its artwork carries; Phosphor's carries none,
+        // so a sidebar of labels and no glyphs is how the icon choice shows it.
+        $plan->add(Stage::Reconcile, new SizeNavItemIcons);
+
         // After the field wrapping rather than beside it, because that sweep reads
         // the OTP's `name` to key the error it writes and this one takes the same
         // attribute off — Sheaf spends it on every digit box, so a form posts one
@@ -247,8 +255,8 @@ final class SheafLibrary implements Library
 
         // And the other half of the same page. Sheaf's OTP is hostile to password
         // managers in three ways Flux's was not, all of them inside the component
-        // `sheaf:install` has just copied into the project — the other place refit
-        // edits Sheaf's own source, until the fix lands upstream.
+        // `sheaf:install` has just copied into the project — the last of the three
+        // places refit edits Sheaf's own source, until the fix lands upstream.
         if (AcceptOtpAutofill::used($project)) {
             $plan->add(Stage::Reconcile, new AcceptOtpAutofill);
         }

@@ -436,9 +436,10 @@ select would shrink a control meant to fill its field, and Flux centred neither.
 
 ### A box a password manager cannot fill
 
-One of the two places refit edits Sheaf's own source rather than the kit's — the
-[collapse that the whole page answers](#a-collapse-the-whole-page-answers-for) is
-the other — and, with it, a stopgap rather than a translation.
+One of the three places refit edits Sheaf's own source rather than the kit's — the
+[collapse that the whole page answers](#a-collapse-the-whole-page-answers-for) and
+the [icon class that is escaped twice](#a-class-escaped-twice-is-not-a-class) are
+the others — and, with it, a stopgap rather than a translation.
 
 Flux's `<ui-otp>` and Sheaf's `x-ui.otp` disagree on the three things that decide
 whether a password manager can fill a code, and Sheaf takes the losing side of
@@ -590,6 +591,49 @@ Like the OTP patch, this edits files `sheaf:install` copied into the project,
 which is what makes them the project's, and a later install overwrites it. It
 matches on the variant rather than on a line, so a Sheaf that has fixed this
 upstream, or spelled it some other way, has nothing here to change.
+
+### A class escaped twice is not a class
+
+The third read of Sheaf's own source, and the only one whose damage the icon
+choice decides.
+
+Sheaf's `navlist.item` and `navbar.item` size their icon with a variant written to
+lose — `[:where(&)]:size-5` compiles to a zero-specificity rule, so a caller's own
+`icon:class="size-4"` beats it without needing `!`. Both add it the same way, and
+it is the way that breaks it:
+
+```blade
+:attributes="$iconAttributes->class('[:where(&)]:size-5')"
+```
+
+`class()` is `merge()`, and `merge()` HTML-escapes what it is handed, so the bag
+carries `[:where(&amp;)]:size-5` from there on. That is correct exactly once, and
+this class is written into the DOM twice: `x-ui.icon` takes the bag in through
+`:attributes` and hands it straight back out through `<x-dynamic-component>`, which
+is a component tag, so the compiler escapes the value again on its way to the icon
+set's `<svg {{ $attributes }}>`. The browser undoes one of the two, and the class
+lands as `[:where(&amp;)]:size-5` — a name Tailwind wrote no rule for.
+
+Which icon set is in the tree is what decides whether that is visible.
+`wireui/heroicons` draws every glyph with `width="24" height="24"` on the `<svg>`
+itself, so the dead class costs nothing and the icon is 24px because the artwork
+said so. `wireui/phosphoricons` ships a `viewBox` and no dimensions, leaving the
+size entirely to a class that is no longer there — and an `<svg>` with auto width
+inside the item's own flex row lays out at zero. So the same components that were
+fine on Heroicons render a Phosphor sidebar as labels with nothing in front of
+them, gutters and all.
+
+`merge()` takes an `$escape` argument, so `SizeNavItemIcons` adds the same class
+without the escape that is one too many:
+
+```blade
+:attributes="$iconAttributes->merge(['class' => '[:where(&)]:size-5'], escape: false)"
+```
+
+The `:where()` survives intact, which is the point of it — swapping in a plain
+`size-5` would fix the escaping and take `icon:class` down with it. Like the other
+two, this matches on the call rather than on a line, so a Sheaf that has fixed it
+upstream, or sized its icons some other way, has nothing here to change.
 
 ### A menu is a grid
 
