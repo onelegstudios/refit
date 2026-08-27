@@ -36,6 +36,7 @@ use Onelegstudios\Refit\Plan\Actions\SizeNavItemIcons;
 use Onelegstudios\Refit\Plan\Actions\SwitchIconSet;
 use Onelegstudios\Refit\Plan\Actions\WireSheafRuntimes;
 use Onelegstudios\Refit\Plan\Actions\WrapControlsInFields;
+use Onelegstudios\Refit\Plan\Actions\YieldIconColour;
 use Onelegstudios\Refit\Plan\Plan;
 use Onelegstudios\Refit\Plan\Report;
 use Onelegstudios\Refit\Plan\Stage;
@@ -247,6 +248,12 @@ final class SheafLibrary implements Library
         // so a sidebar of labels and no glyphs is how the icon choice shows it.
         $plan->add(Stage::Reconcile, new SizeNavItemIcons);
 
+        // A fourth, in the component that one hands the class to. Sheaf's icon
+        // colours itself at a specificity the caller cannot beat, and Tailwind
+        // sorts the tie in the component's favour — so the two-factor QR asks to
+        // stay dark on its light disc and comes out white on white.
+        $plan->add(Stage::Reconcile, new YieldIconColour);
+
         // After the field wrapping rather than beside it, because that sweep reads
         // the OTP's `name` to key the error it writes and this one takes the same
         // attribute off — Sheaf spends it on every digit box, so a form posts one
@@ -255,7 +262,7 @@ final class SheafLibrary implements Library
 
         // And the other half of the same page. Sheaf's OTP is hostile to password
         // managers in three ways Flux's was not, all of them inside the component
-        // `sheaf:install` has just copied into the project — the last of the three
+        // `sheaf:install` has just copied into the project — the last of the four
         // places refit edits Sheaf's own source, until the fix lands upstream.
         if (AcceptOtpAutofill::used($project)) {
             $plan->add(Stage::Reconcile, new AcceptOtpAutofill);
