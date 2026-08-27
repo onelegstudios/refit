@@ -436,10 +436,11 @@ select would shrink a control meant to fill its field, and Flux centred neither.
 
 ### A box a password manager cannot fill
 
-One of the three places refit edits Sheaf's own source rather than the kit's — the
-[collapse that the whole page answers](#a-collapse-the-whole-page-answers-for) and
-the [icon class that is escaped twice](#a-class-escaped-twice-is-not-a-class) are
-the others — and, with it, a stopgap rather than a translation.
+One of the four places refit edits Sheaf's own source rather than the kit's — the
+[collapse that the whole page answers](#a-collapse-the-whole-page-answers-for), the
+[icon class that is escaped twice](#a-class-escaped-twice-is-not-a-class) and the
+[colour that wins a tie it should lose](#a-colour-that-wins-a-tie-it-should-lose)
+are the others — and, with it, a stopgap rather than a translation.
 
 Flux's `<ui-otp>` and Sheaf's `x-ui.otp` disagree on the three things that decide
 whether a password manager can fill a code, and Sheaf takes the losing side of
@@ -594,8 +595,8 @@ upstream, or spelled it some other way, has nothing here to change.
 
 ### A class escaped twice is not a class
 
-The third read of Sheaf's own source, and the only one whose damage the icon
-choice decides.
+The third read of Sheaf's own source, and one of two whose damage the icon choice
+decides.
 
 Sheaf's `navlist.item` and `navbar.item` size their icon with a variant written to
 lose — `[:where(&)]:size-5` compiles to a zero-specificity rule, so a caller's own
@@ -634,6 +635,53 @@ The `:where()` survives intact, which is the point of it — swapping in a plain
 `size-5` would fix the escaping and take `icon:class` down with it. Like the other
 two, this matches on the call rather than on a line, so a Sheaf that has fixed it
 upstream, or sized its icons some other way, has nothing here to change.
+
+### A colour that wins a tie it should lose
+
+The fourth read of Sheaf's own source, in the component the last one hands its
+class to.
+
+Flux's icon had no colour of its own. It drew in `currentColor`, and the view
+decided — a class on the tag, or the colour of the text around it. Sheaf's
+`x-ui.icon` colours itself, and does it at full specificity:
+
+```blade
+{{ $attributes->class(['text-neutral-700 dark:text-neutral-300']) }}
+```
+
+`class()` is `merge()`, and `merge()` puts its default in *front* of what the
+caller passed — but the order of names inside a `class` attribute decides nothing.
+What decides is the order Tailwind emits the rules in, and inside one variant it
+sorts them by name. `.dark\:text-accent-foreground` is written out before
+`.dark\:text-neutral-300`, so of two classes tied on specificity the component's
+is the one that wins.
+
+The two-factor setup modal is where the kit shows it. Its QR glyph sits on a disc
+that is light in both appearances — `bg-stone-100 dark:bg-stone-200` — and asks to
+stay dark on it:
+
+```blade
+<x-ui.icon name="ps:qr-code" class="relative z-20 dark:text-accent-foreground"/>
+```
+
+Sheaf answers `neutral-300`, and the icon goes white on white. Phosphor is where
+anyone notices: `wireui/phosphoricons` draws a filled QR block, which disappears
+completely, where `wireui/heroicons` draws the same colour as 1.5px strokes and
+merely looks faint. The tie is not confined to that page — the team invitation
+alert's `text-blue-600` and the setup key's copied `text-green-500` both lose to
+`text-neutral-700` the same way.
+
+So `YieldIconColour` writes the default to lose on purpose, with the variant the
+nav items already use for their size and the `escape` argument they already need:
+
+```blade
+{{ $attributes->merge(['class' => '[:where(&)]:text-neutral-700 dark:[:where(&)]:text-neutral-300'], escape: false) }}
+```
+
+A zero-specificity rule loses to any class the view writes, whatever the order,
+and still beats plain inheritance — so an icon that asks for no colour is drawn in
+exactly the neutral pair it was, and no caller has to shout over the component
+with `!`. Like the other three, it matches on the call rather than on a line.
 
 ### A menu is a grid
 

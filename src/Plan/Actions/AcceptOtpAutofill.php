@@ -12,11 +12,12 @@ use Onelegstudios\Refit\Project\Project;
 /**
  * Let a password manager fill Sheaf's OTP the way it filled Flux's.
  *
- * One of the three places refit edits Sheaf's own source rather than the kit's —
- * the others re-key the collapse rules that hide the settings menu, and unescape
- * the class that sizes a nav item's icon — and it is deliberate: `sheaf:install`
- * copies these files into the project, so they are the project's to fix, and
- * nothing on the page can reach the behaviour from outside. It is a stopgap until
+ * One of the four places refit edits Sheaf's own source rather than the kit's —
+ * the others re-key the collapse rules that hide the settings menu, unescape the
+ * class that sizes a nav item's icon, and let an icon's colour yield to the
+ * caller's — and it is deliberate: `sheaf:install` copies these files into the
+ * project, so they are the project's to fix, and nothing on the page can reach the
+ * behaviour from outside. It is a stopgap until
  * the fix lands upstream — a later `sheaf:install` overwrites it, and every edit is
  * anchored on the lines it is replacing, so a version that has moved on is reported
  * rather than mangled.

@@ -38,12 +38,12 @@ use Onelegstudios\Refit\Project\Project;
  * `:where()` survives intact, which is the point of it: `icon:class` goes on
  * winning.
  *
- * The third place refit edits Sheaf's own source rather than the kit's, for the
- * reason the other two give: `sheaf:install` copies these files into the project,
- * which is what makes them the project's to fix, and no caller can reach a class
- * the component writes for itself. It matches on the call rather than on a line,
- * so a Sheaf that has fixed this upstream — or sized its icons some other way —
- * has nothing here to change.
+ * One of the four places refit edits Sheaf's own source rather than the kit's,
+ * for the reason the other three give: `sheaf:install` copies these files into the
+ * project, which is what makes them the project's to fix, and no caller can reach
+ * a class the component writes for itself. It matches on the call rather than on a
+ * line, so a Sheaf that has fixed this upstream — or sized its icons some other
+ * way — has nothing here to change.
  */
 final class SizeNavItemIcons extends BladeSweep
 {

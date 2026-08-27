@@ -186,9 +186,10 @@ in the document loses its labels, the settings sub-navigation out in the main
 column included — three rows with no icon in them, and so three rows of nothing.
 Refit re-keys those rules onto the same sidebar-and-collapse selector it points
 the kit's own at, which leaves a collapsed sidebar looking exactly as it did and
-the settings menu where it was. This is one of three places refit edits Sheaf's own
-components — the nav item icons and the OTP box a password manager cannot fill are
-the others — so a later `sheaf:install` puts the leak back.
+the settings menu where it was. This is one of four places refit edits Sheaf's own
+components — the nav item icons, the colour those icons paint over their caller's,
+and the OTP box a password manager cannot fill are the others — so a later
+`sheaf:install` puts the leak back.
 
 **Nav item icons, when the icons are Phosphor.** Sheaf's `navlist.item` and
 `navbar.item` size their icon with `[:where(&)]:size-5`, a class they add through
@@ -200,6 +201,18 @@ height="24"`, so the dead class cost nothing. `wireui/phosphoricons` ships a
 an `<svg>` with auto width in the item's flex row lays out at zero — a sidebar of
 labels with no glyphs in front of them. Refit adds the same class without the first
 escape, keeping the `:where()` so `icon:class` goes on winning.
+
+**Icon colours.** Flux's icon drew in `currentColor` and let the view decide. Sheaf's
+`x-ui.icon` gives itself `text-neutral-700 dark:text-neutral-300`, at the same
+specificity as the class the caller put on the tag — and Tailwind settles that tie by
+the order it writes the rules in, which the component wins. The two-factor setup
+modal is where you see it: its QR glyph asks for `dark:text-accent-foreground` to
+stay dark on a disc that is light in both appearances, gets `neutral-300` instead,
+and in dark mode goes white on white. Phosphor is where anyone notices, because its
+QR is a filled block rather than thin strokes. Refit rewrites the component's own
+colour to `[:where(&)]:` — the same zero-specificity variant it uses for the size
+above, so an icon that names a colour keeps it and one that names none is coloured
+exactly as before.
 
 **Dropdown triggers.** Flux takes a dropdown's trigger as its first child; Sheaf
 takes it as `<x-slot:button>`. Refit wraps it.

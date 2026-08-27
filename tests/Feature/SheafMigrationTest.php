@@ -661,6 +661,45 @@ it('stops the collapse at the sidebar so the settings menu survives it', functio
         ->not->toContain(':has([data-collapsed]');
 })->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
 
+it('lets the two-factor QR keep the colour Sheaf\'s icon would paint over', function (): void {
+    $root = sheafKit('livewire');
+
+    // Sheaf's icon component, as `sheaf:install` writes it: a colour of its own,
+    // at the same specificity as the caller's, added to the bag the icon set's
+    // `<svg>` renders.
+    $icon = SheafLibrary::COMPONENT_DIRECTORY.'/icon/index.blade.php';
+
+    file_put_contents(
+        $root.'/'.$icon,
+        '<x-dynamic-component :component="$component"'
+        ." {{ \$attributes->class(['text-neutral-700 dark:text-neutral-300']) }}"
+        .' data-slot="icon" />'."\n",
+    );
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'library' => 'sheaf',
+            'icons' => 'phosphor',
+        ]),
+    ])->assertSuccessful();
+
+    $project = (new ProjectDetector)->detect($root);
+
+    // Tailwind sorts a same-specificity tie by name, and `dark:text-neutral-300`
+    // is written after `dark:text-accent-foreground` — so the QR glyph asked to
+    // stay dark on a disc that is light in both appearances and came out white on
+    // white. A zero-specificity default loses that tie instead.
+    expect($project->get($icon))
+        ->toContain("\$attributes->merge(['class' => '[:where(&)]:text-neutral-700 dark:[:where(&)]:text-neutral-300'], escape: false)")
+        ->not->toContain('->class(');
+
+    // And the view is left saying exactly what it said: the fix is the component
+    // yielding, not every caller shouting over it with `!`.
+    expect($project->get('resources/views/pages/settings/⚡two-factor-setup-modal.blade.php'))
+        ->toContain('<x-ui.icon name="ps:qr-code" class="relative z-20 dark:text-accent-foreground"/>');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+
 it('composes the header layout the way Sheaf\'s grid reads it', function (): void {
     $root = sheafKit('livewire');
 
