@@ -52,6 +52,14 @@ missing component does not render.
 Phosphor needs `php artisan sheaf:init --with-phosphor`. Refit says so rather than
 running it, because it changes what Sheaf installs.
 
+Refit also patches the two components that would otherwise draw a Phosphor glyph at
+no size at all. Sheaf's `navlist.item` and `navbar.item` size their icon with a
+class that gets HTML-escaped twice on its way to the `<svg>`, so it names no rule
+and does nothing. Heroicons never showed it — its artwork carries its own
+`width`/`height` — and Phosphor's does not, which turns a sidebar into labels with
+nothing in front of them. See
+[Sheaf's components](/docs/using-refit/guide/libraries).
+
 **Lucide is not offered under Sheaf.** It would need a third artwork mechanism —
 `blade-ui-kit/blade-icons` and the `bk:` name prefix — and a dependency you did
 not ask for. Nothing stops you doing it by hand afterwards.
