@@ -20,7 +20,6 @@ use Onelegstudios\Refit\Plan\Actions\MapComponentTags;
 use Onelegstudios\Refit\Plan\Actions\MergeBrandVariants;
 use Onelegstudios\Refit\Plan\Actions\OrderThemeImport;
 use Onelegstudios\Refit\Plan\Actions\PlaceDropdownChildren;
-use Onelegstudios\Refit\Plan\Actions\PrefixIconNames;
 use Onelegstudios\Refit\Plan\Actions\PreserveTextAlignment;
 use Onelegstudios\Refit\Plan\Actions\PromoteContentsToLabel;
 use Onelegstudios\Refit\Plan\Actions\RaiseSidebarDropdowns;
@@ -33,6 +32,7 @@ use Onelegstudios\Refit\Plan\Actions\RewriteToastCalls;
 use Onelegstudios\Refit\Plan\Actions\RunProcess;
 use Onelegstudios\Refit\Plan\Actions\ScopeCollapseToSidebar;
 use Onelegstudios\Refit\Plan\Actions\ShapeSegmentedGroups;
+use Onelegstudios\Refit\Plan\Actions\SwitchIconSet;
 use Onelegstudios\Refit\Plan\Actions\WireSheafRuntimes;
 use Onelegstudios\Refit\Plan\Actions\WrapControlsInFields;
 use Onelegstudios\Refit\Plan\Plan;
@@ -187,7 +187,14 @@ final class SheafLibrary implements Library
             );
         }
 
-        $plan->add(Stage::Reconcile, new PrefixIconNames('ps:', $this->vocabulary()));
+        // After the Lucide reconcile above, so the four names it produces are
+        // Heroicons by the time the table is asked about them.
+        $plan->add(Stage::Reconcile, new SwitchIconSet(
+            'ps:',
+            IconMap::HEROICONS_TO_PHOSPHOR,
+            'Phosphor',
+            $this->vocabulary(),
+        ));
     }
 
     public function planMigration(Plan $plan, Project $project, IconStrategy $strategy, Report $report): void
