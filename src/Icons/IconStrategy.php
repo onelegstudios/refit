@@ -49,7 +49,7 @@ enum IconStrategy: string
             self::Keep => 'Changes nothing — what a fresh starter kit gives you',
             self::Heroicons => 'Drops the kit\'s vendored Lucide overrides for names the set already has',
             self::Lucide => 'Generates Flux icon overrides so even Flux\'s own internals match',
-            self::Phosphor => 'Installs Phosphor with Sheaf and prefixes every icon name with ps:',
+            self::Phosphor => 'Installs Phosphor with Sheaf and moves every icon name onto it, ps: and all',
         };
     }
 }

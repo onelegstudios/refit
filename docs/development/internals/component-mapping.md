@@ -104,7 +104,7 @@ attribute it names an icon through, the attributes that carry an icon name on an
 component, and — for libraries that have them — the dotted tag form and the
 variant attributes.
 
-`RewriteIconNames`, `DropSolidIconVariant`, `PrefixIconNames` and `IconScanner`
+`RewriteIconNames`, `DropSolidIconVariant`, `SwitchIconSet` and `IconScanner`
 all take one. None of them contains the string `flux:` any more.
 
 Nullable fields are how a library says it does not have something. Sheaf's

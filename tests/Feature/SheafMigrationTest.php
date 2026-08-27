@@ -359,7 +359,7 @@ it('points the kit\'s vendored Lucide names back at Heroicons', function (): voi
         ->and($names)->not->toContain('layout-grid');
 })->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
 
-it('prefixes every icon name when Phosphor is asked for', function (): void {
+it('translates and prefixes every icon name when Phosphor is asked for', function (): void {
     $root = sheafKit('livewire');
 
     $this->artisan('refit', [
@@ -376,7 +376,20 @@ it('prefixes every icon name when Phosphor is asked for', function (): void {
 
     foreach ($names as $name) {
         expect($name)->toStartWith('ps:');
+
+        // The prefix is only half of it. A name Phosphor spells differently has
+        // to be spelled its way too, or the component behind it does not exist
+        // and the page 500s instead of losing an icon.
+        expect(IconMap::HEROICONS_TO_PHOSPHOR)
+            ->toContain(substr($name, strlen('ps:')));
     }
+
+    // The three the kit writes that Phosphor spells differently, and the one it
+    // spells the same, so a table that quietly emptied itself would be caught.
+    expect($names)->toContain('ps:fingerprint')
+        ->toContain('ps:house')
+        ->toContain('ps:gear')
+        ->toContain('ps:eye-slash');
 })->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
 
 it('keeps the auth pages centred once Sheaf owns their alignment', function (): void {

@@ -35,7 +35,19 @@ codebase, so there is no override directory and nothing to generate.
 | Choice | What happens |
 |---|---|
 | **Heroicons only** | What Sheaf reads by default, and where a Flux kit almost entirely is already. The four vendored Lucide names are pointed back at Heroicons |
-| **Phosphor only** | The same, then every icon name is prefixed with `ps:`, which is how Sheaf picks its provider |
+| **Phosphor only** | The same, then every icon name is translated to Phosphor's spelling of it and prefixed with `ps:`, which is how Sheaf picks its provider |
+
+The prefix on its own would not be enough. The two sets agree on `check` and
+`folder` and disagree on nearly everything longer: Heroicons' `finger-print` is
+Phosphor's `fingerprint`, `x-mark` is `x`, `cog` is `gear`, and every chevron is a
+caret. A name that is prefixed but not translated resolves to a component that
+does not exist, which takes the page down rather than losing an icon — so refit
+carries a table, the same way the Lucide direction does.
+
+A name outside that table keeps its Heroicons spelling and stays unprefixed, so
+it goes on being drawn by Heroicons, and it is reported with the files it was
+left in. A page with two icon sets on it looks inconsistent; a page with a
+missing component does not render.
 
 Phosphor needs `php artisan sheaf:init --with-phosphor`. Refit says so rather than
 running it, because it changes what Sheaf installs.
