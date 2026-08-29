@@ -186,6 +186,11 @@ final class ComponentMap
         // and only the prop differs, so left alone every tooltip in a header
         // points up and overlaps the bar it hangs from.
         'x-ui.tooltip' => ['position' => 'placement'],
+        // The word above a group of nav items. Flux calls it the group's
+        // `heading`; Sheaf declares `label`, and reads nothing from `heading` —
+        // so left alone the "Platform" heading over the sidebar's links simply
+        // never renders.
+        'x-ui.navlist.group' => ['heading' => 'label'],
     ];
 
     /**

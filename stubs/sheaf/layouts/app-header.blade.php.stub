@@ -93,7 +93,7 @@
                 </x-slot:brand>
 __TEAM_SWITCHER__
                 <x-ui.navlist>
-                    <x-ui.navlist.group :heading="__('Platform')">
+                    <x-ui.navlist.group :label="__('Platform')">
                         <x-ui.navlist.item
                             icon="squares-2x2"
                             :label="__('Dashboard')"
