@@ -142,10 +142,10 @@ Six kinds of entry:
   tag that owns them. `name` is the word both libraries spend everywhere — the icon
   on `<x-ui.icon>`, the field on `<x-ui.input>` — and only on a modal does it mean
   identity, where Flux's `name` is Sheaf's `id`. `heading` is the same shape:
-  `<x-ui.navlist.group>` wants it renamed to `label`, but `<x-ui.alerts>` is handed
-  one too, from `flux:callout`, and `label` is no more right there than `heading`
-  was. Keyed by the *Sheaf* name, because this pass runs after the tag rename over
-  a tree that already says `x-ui.`.
+  `<x-ui.navlist.group>` wants it renamed to `label`, and `<x-ui.alerts>`, the
+  other tag Flux hands a `heading` to, wants nothing of the sort. Keyed by the
+  *Sheaf* name, because this pass runs after the tag rename over a tree that
+  already says `x-ui.`.
 - **`VALUES`** — keyed by the *Flux* tag, so the pass looks a Sheaf tag back up
   through the map. Only the variants the kit actually writes are listed; Sheaf
   passes an unknown variant through to classes rather than throwing, so guessing
@@ -178,9 +178,11 @@ Unlike the Flux manifest this needs no licence and no sidecar install —
 
 Inside `Stage::Reconcile`, and it matters:
 
-1. **`RestructureOverlays`** — first, while the markup still says `flux:`, because
-   both of its rewrites read Flux's own arrangement: where a dropdown keeps its
-   trigger, and what a modal close button wraps.
+1. **`RestructureOverlays`** and **`RestructureCallouts`** — first, while the
+   markup still says `flux:`, because both read Flux's own arrangement: where a
+   dropdown keeps its trigger, what a modal close button wraps, and which of a
+   callout's two lines it wrote as an attribute. Each ends by putting Flux's own
+   longhand in the file, which the rename then knows how to translate.
 2. **`MapComponentTags`** — the dotted icon form is folded into an attribute while
    the suffix is still there to read, then tag names, then attributes and values.
 3. **`MergeBrandVariants`**, **`RestructureBrandLogo`**, **`RestoreButtonRow`**,

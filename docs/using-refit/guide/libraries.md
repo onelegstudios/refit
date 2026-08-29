@@ -248,6 +248,15 @@ puts on the button inside it — and the `x-data=""` that was only there to give
 magic a scope — are both taken off. A dispatch with no trigger around it is doing
 real work, and becomes `$modal.open(…)` instead.
 
+**Callout headings.** Flux lets a callout carry its heading as an attribute and
+expands it into a `<flux:callout.heading>` child itself. Sheaf's alert only ever
+reads the child, and declares no prop for one — so a rename alone drops the word
+on the wrapper div as a stray HTML attribute. Refit writes the child out, the same
+way Flux's own component does. Left alone the two-factor pages report a rejected
+code as an empty red box. The variant goes with it: Sheaf files red under `error`
+and falls back to blue for a word it does not know, and `danger` is one, so the
+kit's error callouts came out as calm blue notices.
+
 **Button contents.** Both libraries build a button as a flex row, and the
 difference is one box: Flux's children are the flex items, while Sheaf wraps the
 whole slot in a plain span first. Anything richer than a word then falls back into

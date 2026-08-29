@@ -108,6 +108,21 @@ it('translates variant values per component', function (): void {
         ->toBe('<x-ui.button variant="ghost" />');
 });
 
+it('names a callout\'s danger after the state Sheaf files it under', function (): void {
+    // Sheaf's alert knows info, success, warning and error, and falls back to
+    // blue for anything else — so the kit's danger callouts came out as calm
+    // notices saying a two-factor code was rejected.
+    expect(mapTags('<flux:callout variant="danger" />'))
+        ->toBe('<x-ui.alerts variant="error" />');
+});
+
+it('translates the callout parts a heading was written out into', function (): void {
+    expect(mapTags('<flux:callout.heading>Nope</flux:callout.heading>'))
+        ->toBe('<x-ui.alerts.heading>Nope</x-ui.alerts.heading>')
+        ->and(mapTags('<flux:callout.text>Why</flux:callout.text>'))
+        ->toBe('<x-ui.alerts.description>Why</x-ui.alerts.description>');
+});
+
 it('leaves the prominent button prominent', function (): void {
     // `primary` means the same thing in both libraries — and in Sheaf it is also
     // the button's default. Sheaf's `solid` is a 5% neutral wash, the quiet one
