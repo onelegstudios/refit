@@ -130,7 +130,7 @@ Sheaf's translation table, and the same discipline as
 [`IconMap`](/docs/development/internals/icon-pipeline): curated, commented where a
 call was close, and reported rather than guessed at when there is no answer.
 
-Five kinds of entry:
+Six kinds of entry:
 
 - **`TAGS`** — `flux:callout` to `x-ui.alerts`, `flux:menu.item` to
   `x-ui.dropdown.item`, `flux:main` to `x-ui.layout.main`.
@@ -138,6 +138,14 @@ Five kinds of entry:
   matched by name alone so the pass can run after the rename. A prop belongs to
   the one component that declares it, so matching by name across every Sheaf tag
   costs nothing as long as no two collide.
+- **`TAG_ATTRIBUTES`** — the renames where two do collide, so they are keyed by the
+  tag that owns them. `name` is the word both libraries spend everywhere — the icon
+  on `<x-ui.icon>`, the field on `<x-ui.input>` — and only on a modal does it mean
+  identity, where Flux's `name` is Sheaf's `id`. `heading` is the same shape:
+  `<x-ui.navlist.group>` wants it renamed to `label`, but `<x-ui.alerts>` is handed
+  one too, from `flux:callout`, and `label` is no more right there than `heading`
+  was. Keyed by the *Sheaf* name, because this pass runs after the tag rename over
+  a tree that already says `x-ui.`.
 - **`VALUES`** — keyed by the *Flux* tag, so the pass looks a Sheaf tag back up
   through the map. Only the variants the kit actually writes are listed; Sheaf
   passes an unknown variant through to classes rather than throwing, so guessing
