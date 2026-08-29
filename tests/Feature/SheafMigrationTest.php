@@ -984,6 +984,34 @@ it('posts the two-factor code Sheaf would have left out of the form', function (
     ],
 ])->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
 
+it('gives the two-factor errors the heading Sheaf reads them from', function (string $kit, string $codes): void {
+    $root = sheafKit($kit);
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'library' => 'sheaf',
+            'icons' => 'heroicons',
+        ]),
+    ])->assertSuccessful();
+
+    $page = (new ProjectDetector)->detect($root)->get($codes);
+
+    // Flux takes a callout's heading as an attribute and expands it into a child
+    // itself; Sheaf's alert only ever reads the child. A rename alone left the
+    // word on the wrapper div as a stray HTML attribute, so the reason a code was
+    // rejected rendered as an empty box.
+    expect($page)->toContain('<x-ui.alerts.heading>{{$message}}</x-ui.alerts.heading>')
+        ->not->toContain('heading="{{$message}}"')
+        // And Sheaf files red under `error`, falling back to blue for a word it
+        // does not know — which `danger` is.
+        ->toContain('<x-ui.alerts variant="error"');
+})->with([
+    ['livewire', 'resources/views/pages/settings/two-factor/⚡recovery-codes.blade.php'],
+    ['livewire-teams', 'resources/views/pages/settings/two-factor/⚡recovery-codes.blade.php'],
+    ['livewire-class-components', 'resources/views/livewire/settings/two-factor/recovery-codes.blade.php'],
+])->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+
 it('plans the OTP autofill patch only for a kit that has an OTP', function (): void {
     // Sheaf's OTP is hostile to password managers in three ways Flux's was not,
     // and all three live in the component `sheaf:install` copies into the project

@@ -45,8 +45,13 @@ final class ComponentMap
         // Flux's longhand, and the shape RestructureOverlays has already rewritten
         // the shorthand `content` attribute into by the time this rename runs.
         'flux:tooltip.content' => 'x-ui.tooltip.content',
-        // Flux calls it a callout; Sheaf files it under the plural.
+        // Flux calls it a callout; Sheaf files it under the plural. Both of its
+        // parts are the longhand RestructureCallouts has already rewritten the
+        // shorthand `heading` and `text` attributes into by the time this
+        // rename runs — Sheaf's alert takes neither as a prop.
         'flux:callout' => 'x-ui.alerts',
+        'flux:callout.heading' => 'x-ui.alerts.heading',
+        'flux:callout.text' => 'x-ui.alerts.description',
 
         // Form controls.
         'flux:input' => 'x-ui.input',
@@ -223,6 +228,15 @@ final class ComponentMap
             'variant' => [
                 'solid' => 'solid',
                 'pill' => 'soft',
+            ],
+        ],
+        // Sheaf names the red one after the state rather than the consequence,
+        // and falls back to blue for a word it does not know — so the kit's
+        // `danger` callouts, which are all of them, come out as calm blue notices
+        // saying a two-factor code was rejected.
+        'flux:callout' => [
+            'variant' => [
+                'danger' => 'error',
             ],
         ],
     ];

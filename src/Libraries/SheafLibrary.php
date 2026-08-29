@@ -26,6 +26,7 @@ use Onelegstudios\Refit\Plan\Actions\RaiseSidebarDropdowns;
 use Onelegstudios\Refit\Plan\Actions\RebindAppearanceToTheme;
 use Onelegstudios\Refit\Plan\Actions\RestoreButtonRow;
 use Onelegstudios\Refit\Plan\Actions\RestructureBrandLogo;
+use Onelegstudios\Refit\Plan\Actions\RestructureCallouts;
 use Onelegstudios\Refit\Plan\Actions\RestructureOverlays;
 use Onelegstudios\Refit\Plan\Actions\RewriteIconNames;
 use Onelegstudios\Refit\Plan\Actions\RewriteToastCalls;
@@ -207,10 +208,12 @@ final class SheafLibrary implements Library
 
         $stubs->contribute($plan, $project, $report);
 
-        // Ahead of the rename, because both of its rewrites read Flux's own
-        // arrangement — where a dropdown keeps its trigger, and what a modal
-        // close button wraps.
+        // Ahead of the rename, because all of these read Flux's own arrangement —
+        // where a dropdown keeps its trigger, what a modal close button wraps,
+        // and which of a callout's two lines it wrote as an attribute. Each ends
+        // by putting Flux's longhand in the file, which the rename then knows.
         $plan->add(Stage::Reconcile, new RestructureOverlays);
+        $plan->add(Stage::Reconcile, new RestructureCallouts);
         $plan->add(Stage::Reconcile, new MapComponentTags);
 
         // All of these read the tags the rename produced, so all of them come
