@@ -37,9 +37,9 @@
 
              Sheaf stamps the collapse on the layout, which is an ancestor of the
              header as well, and this is the header's menu too — at tablet the
-             header is on screen with the sidebar already collapsed under it. So
-             the selector asks for the sidebar by name, and the header's copy keeps
-             its own name at every width. --}}
+             header layout's bar is on screen with the sidebar already collapsed
+             under it. So the selector asks for the sidebar by name, and the
+             header's copy keeps its own name at every width. --}}
         <x-ui.button
             variant="ghost"
             iconAfter="chevron-up-down"
