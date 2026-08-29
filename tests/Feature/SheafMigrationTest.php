@@ -579,8 +579,10 @@ it('gives the user menu the row a Sheaf nav item would have had', function (): v
 
     // Sheaf's navs indent their items by a navlist's gutter of 2. The menu is the
     // last row of the same column, and outside a navlist it runs edge to edge.
+    // Sheaf's sidebar is on screen from md, so the menu takes over from the
+    // mobile bar there rather than at lg, where Flux's sidebar used to appear.
     expect($project->get('resources/views/layouts/app/sidebar.blade.php'))
-        ->toContain("<x-ui.navlist class=\"max-lg:hidden\">\n                    <x-desktop-user-menu");
+        ->toContain("<x-ui.navlist class=\"max-md:hidden\">\n                    <x-desktop-user-menu");
 
     // And a ghost button is taller, squarer, darker and heavier than a nav item,
     // and hovers neutral where every Sheaf nav hovers on the primary.
@@ -595,6 +597,30 @@ it('gives the user menu the row a Sheaf nav item would have had', function (): v
         // The panel opens no narrower than the row it belongs to. A minimum
         // rather than a width, so it still grows for a long address.
         ->toContain('<x-slot:menu class="z-[100]! min-w-60">');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+
+it('stops the mobile bar where Sheaf starts showing the sidebar', function (): void {
+    $root = sheafKit('livewire');
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'library' => 'sheaf',
+            'icons' => 'heroicons',
+        ]),
+    ])->assertSuccessful();
+
+    $project = (new ProjectDetector)->detect($root);
+    $sidebar = $project->get('resources/views/layouts/app/sidebar.blade.php');
+
+    // Flux stashed its sidebar below lg, so the kit's bar ran to lg with it.
+    // Sheaf's sidebar is an overlay below md and a collapsed rail from md up, so
+    // the bar and its toggle stop at md — otherwise the rail gets a second
+    // toggle and a second menu stacked above it.
+    expect($sidebar)
+        ->toContain('<x-ui.layout.header class="md:hidden">')
+        ->toContain('<x-ui.sidebar.toggle class="md:hidden" />')
+        ->not->toContain('lg:hidden');
 })->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
 
 it('empties the user menu to an avatar when the sidebar collapses', function (): void {

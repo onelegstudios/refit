@@ -50,8 +50,13 @@ __TEAM_SWITCHER__
                 {{-- Every nav group above sits in a navlist's gutter of 2. The menu
                      is the last row of the same column, so it sits in one too —
                      without it the trigger runs edge to edge and the sidebar's
-                     rows no longer line up. --}}
-                <x-ui.navlist class="max-lg:hidden">
+                     rows no longer line up.
+
+                     The kit handed the menu over to the header below lg, because
+                     that is where Flux's sidebar stopped being on screen. Sheaf's
+                     is on screen from md, so the handover moves with it: below md
+                     the header's copy, from md up this one, in the rail. --}}
+                <x-ui.navlist class="max-md:hidden">
                     <x-desktop-user-menu :name="auth()->user()->name" />
                 </x-ui.navlist>
             </x-ui.sidebar>
@@ -61,9 +66,16 @@ __TEAM_SWITCHER__
                  does exactly that, and collapses to the height of its own borders.
                  A column gives the page a height to grow into. --}}
             <x-ui.layout.main class="flex flex-col">
-                <x-ui.layout.header class="lg:hidden">
+                {{-- The kit hid this bar at lg, where Flux's sidebar stopped
+                     stashing itself. Sheaf's sidebar stops one breakpoint earlier:
+                     it is an overlay below md and a 4rem rail from md up, already
+                     collapsed and carrying its own toggle. So the bar the overlay
+                     needs is only wanted below md — left at lg it would put a
+                     second toggle and a second menu above a sidebar that is
+                     already there. --}}
+                <x-ui.layout.header class="md:hidden">
                     {{-- Sheaf's toggle draws its own glyph and takes no icon. --}}
-                    <x-ui.sidebar.toggle class="lg:hidden" />
+                    <x-ui.sidebar.toggle class="md:hidden" />
 
                     <div class="flex-1"></div>
 
