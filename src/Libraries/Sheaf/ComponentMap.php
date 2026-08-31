@@ -199,6 +199,16 @@ final class ComponentMap
         // so left alone the "Platform" heading over the sidebar's links simply
         // never renders.
         'x-ui.navlist.group' => ['heading' => 'label'],
+        // Which nav item is the one you are on. Flux marks it `current`; Sheaf
+        // declares `active` and reads nothing from `current`, falling back to
+        // `url($href) === url()->current()` when nothing is passed. That
+        // fallback is why this hides: for an exact-match route it lands on the
+        // same answer, so the sidebar looks right while the prop does nothing.
+        // Where the two disagree it is a plain regression — the settings
+        // sidebar's `routeIs('teams.*')` covers `teams.edit` and `teams.create`
+        // as well, and URL equality against `route('teams.index')` does not.
+        'x-ui.navlist.item' => ['current' => 'active'],
+        'x-ui.navbar.item' => ['current' => 'active'],
     ];
 
     /**

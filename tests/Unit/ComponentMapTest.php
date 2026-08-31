@@ -75,6 +75,23 @@ it('spells a tooltip\'s position the way Sheaf declares it', function (): void {
         ->toBe('<x-ui.tooltip placement="bottom"><x-ui.tooltip.content>Hi</x-ui.tooltip.content></x-ui.tooltip>');
 });
 
+it('marks the nav item you are on with the prop Sheaf reads', function (): void {
+    // Sheaf falls back to `url($href) === url()->current()` when nothing is
+    // passed, which is why this hides on the dashboard: the fallback and the
+    // expression agree there. `teams.*` is where they part — it covers
+    // `teams.edit` too, so left untranslated the settings sidebar drops the
+    // Teams highlight the moment you open a team.
+    expect(mapTags('<flux:navlist.item :href="route(\'teams.index\')" :current="request()->routeIs(\'teams.*\')" wire:navigate>Teams</flux:navlist.item>'))
+        ->toBe('<x-ui.navlist.item :href="route(\'teams.index\')" :active="request()->routeIs(\'teams.*\')" wire:navigate>Teams</x-ui.navlist.item>')
+        ->and(mapTags('<flux:navbar.item :current="request()->routeIs(\'dashboard\')" />'))
+        ->toBe('<x-ui.navbar.item :active="request()->routeIs(\'dashboard\')" />')
+        // Keying the table by the Sheaf tag is what collects this one: the kit
+        // writes `current` on `flux:sidebar.item` ten times over, and that tag
+        // renames into `x-ui.navlist.item` before this pass reads it.
+        ->and(mapTags('<flux:sidebar.item :current="request()->routeIs(\'settings.*\')" />'))
+        ->toBe('<x-ui.navlist.item :active="request()->routeIs(\'settings.*\')" />');
+});
+
 it('keeps the colon on a bound attribute it renames', function (): void {
     expect(mapTags('<flux:button :icon-trailing="$icon" />'))
         ->toBe('<x-ui.button :iconAfter="$icon" />');

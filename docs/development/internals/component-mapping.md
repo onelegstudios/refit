@@ -143,9 +143,12 @@ Seven kinds of entry:
   on `<x-ui.icon>`, the field on `<x-ui.input>` — and only on a modal does it mean
   identity, where Flux's `name` is Sheaf's `id`. `heading` is the same shape:
   `<x-ui.navlist.group>` wants it renamed to `label`, and `<x-ui.alerts>`, the
-  other tag Flux hands a `heading` to, wants nothing of the sort. Keyed by the
-  *Sheaf* name, because this pass runs after the tag rename over a tree that
-  already says `x-ui.`.
+  other tag Flux hands a `heading` to, wants nothing of the sort. `current` is
+  here for the narrower reason that a nav item is the only thing that has one:
+  Flux's `current` is Sheaf's `active`, and keying it by the Sheaf tag also
+  collects `flux:sidebar.item`, which renames into `x-ui.navlist.item` and
+  carries most of the kit's ten. Keyed by the *Sheaf* name, because this pass
+  runs after the tag rename over a tree that already says `x-ui.`.
 - **`VALUES`** — keyed by the *Flux* tag, so the pass looks a Sheaf tag back up
   through the map. Only the variants the kit actually writes are listed; Sheaf
   passes an unknown variant through to classes rather than throwing, so guessing
