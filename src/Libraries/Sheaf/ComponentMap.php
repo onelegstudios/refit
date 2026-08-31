@@ -223,6 +223,10 @@ final class ComponentMap
      * guessing is worse than doing nothing — runs the other way here, and all six
      * levels are listed even though the kit only ever writes two.
      *
+     * A heading's `size` looks like the same exception and is not one. `base` is
+     * there because refit itself writes it into the tree first, so by the time
+     * this pass runs it is a value the file holds like any other.
+     *
      * The value keys are `array-key` rather than `string` because of that column:
      * PHP folds a numeric string key down to an int, so `'1'` is stored as `1`.
      * {@see value()} still finds it — the lookup coerces the same way — but the
@@ -245,6 +249,21 @@ final class ComponentMap
         // codes panel's `level="3"` flattens into the same level as the headings
         // around it. Nothing about the rendered page shows either, since `h2` is
         // a plausible tag to find there.
+        //
+        // The size column is the same two libraries spelling the same words at
+        // different points on the scale. Flux has three outcomes — `xl` is
+        // `text-2xl`, `lg` is `text-base`, everything else is `text-sm` — and
+        // Sheaf has eight, so `lg` means `text-xl` there. Left alone every
+        // `size="lg"` heading in the kit grows two steps, from 16px to 20px.
+        // `xl` lands on `text-2xl` in both and is listed anyway, for the same
+        // reason `flux:button`'s `danger` is: it records that the match was
+        // checked rather than missed.
+        //
+        // `base` is Flux's own prop default, which the kit never writes out. An
+        // `AddAttribute` planned ahead of the rename puts it in the file, so this
+        // column can translate it like any other written value — the same shape
+        // `RestructureCallouts` works in: write Flux's own longhand first, and
+        // let the rename read it.
         'flux:heading' => [
             'level' => [
                 '1' => 'h1',
@@ -253,6 +272,11 @@ final class ComponentMap
                 '4' => 'h4',
                 '5' => 'h5',
                 '6' => 'h6',
+            ],
+            'size' => [
+                'base' => 'xs',
+                'lg' => 'sm',
+                'xl' => 'xl',
             ],
         ],
         'flux:badge' => [

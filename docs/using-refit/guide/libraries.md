@@ -293,6 +293,13 @@ have no `<h1>` in their outline and the recovery-codes heading sits at the level
 of the section above it, with nothing on the rendered page to show for either. A
 level bound to an expression is reported instead, since refit cannot read it.
 
+**Heading sizes.** Both libraries name the sizes with the same words and put them
+at different points on the scale: Flux's `size="lg"` is `text-base` and Sheaf's is
+`text-xl`, two steps further up. The defaults disagree too — a heading with no
+`size` is `text-sm` in Flux and `text-base` in Sheaf — so refit writes Flux's own
+default out before the rename and translates it with the rest. Left alone every
+sized heading in the kit grows one step and every bare one grows another.
+
 **Text alignment.** The kit centres its auth headings by putting `text-center` on
 a wrapping div. Sheaf's heading and text declare `text-start` themselves, so refit
 restates the alignment on the tag as `text-center!`.

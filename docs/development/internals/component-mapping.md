@@ -150,7 +150,9 @@ Seven kinds of entry:
   through the map. Only the variants the kit actually writes are listed; Sheaf
   passes an unknown variant through to classes rather than throwing, so guessing
   would be worse than doing nothing. A heading's `level` is the exception, and
-  lists all six because Sheaf *discards* a level it does not recognise.
+  lists all six because Sheaf *discards* a level it does not recognise. A
+  heading's `size` looks like a second exception and is not one: `base` is listed
+  because refit writes that value into the tree itself, before this pass runs.
 - **`BOUND_VALUES`** — why a bound value is worth a word, for the few where it is.
   `VALUES` reads literals, so `:level="$depth"` goes untranslated however complete
   the table is, and a warning is all refit has left.
@@ -182,11 +184,12 @@ Unlike the Flux manifest this needs no licence and no sidecar install —
 
 Inside `Stage::Reconcile`, and it matters:
 
-1. **`RestructureOverlays`** and **`RestructureCallouts`** — first, while the
-   markup still says `flux:`, because both read Flux's own arrangement: where a
-   dropdown keeps its trigger, what a modal close button wraps, and which of a
-   callout's two lines it wrote as an attribute. Each ends by putting Flux's own
-   longhand in the file, which the rename then knows how to translate.
+1. **`RestructureOverlays`**, **`RestructureCallouts`** and the heading-size
+   **`AddAttribute`** — first, while the markup still says `flux:`, because all
+   three read Flux's own arrangement: where a dropdown keeps its trigger, what a
+   modal close button wraps, which of a callout's two lines it wrote as an
+   attribute, and which headings named no size at all. Each ends by putting
+   Flux's own longhand in the file, which the rename then knows how to translate.
 2. **`MapComponentTags`** — the dotted icon form is folded into an attribute while
    the suffix is still there to read, then tag names, then attributes and values.
 3. **`MergeBrandVariants`**, **`RestructureBrandLogo`**, **`RestoreButtonRow`**,
@@ -816,6 +819,42 @@ expression, the value pass reads literals, and the fallback stays as quiet as
 before — so `BOUND_VALUES` gives the sweep a sentence to say about it, in the same
 spirit as `UNMAPPED`. The kit writes no bound levels, so an ordinary run produces
 no such warning.
+
+### A size is a word both libraries own
+
+Flux's heading has three outcomes: `xl` is `text-2xl`, `lg` is `text-base`, and
+everything else — including the `base` its prop defaults to — is `text-sm`.
+Sheaf's has eight, running `xs` through `4xl`, and defaults to `base`. The two
+scales share their vocabulary and disagree about where each word sits on it, so
+the rename carries every heading in the kit one or two steps up: `size="lg"`
+goes from 16px to 20px, and a heading with no `size` at all goes from 14px to
+16px.
+
+`VALUES` handles the written half. `lg` becomes `sm`, which is Sheaf's word for
+the size Flux was drawing, and `xl` is listed as itself — the same argument
+`flux:button`'s `danger => danger` makes, that a no-op entry records a match
+checked rather than a match missed.
+
+The unwritten half is the one worth the paragraph. 56 of the kit's headings name
+no size, so there is no value in the file for a value table to translate, and
+the fix has to *add* an attribute rather than rewrite one. `AddAttribute` already
+does exactly that, and it is planned ahead of `MapComponentTags`, writing
+`size="base"` — Flux's own prop default, spelled in Flux's own vocabulary, onto a
+tag that still says `flux:`. The rename then translates it to `xs` through the
+same column as everything else.
+
+Writing Flux's longhand out and letting the rename read it is the pattern
+`RestructureCallouts` established, and it is why the action reads the Flux tag
+rather than the Sheaf one. Keying it off `x-ui.heading` after the rename would
+work too, but it would have to write `xs` — Sheaf's word — from an action that
+knows nothing else about Sheaf's scale, and it would leave a project that had
+written `size="base"` out by hand untranslated, because `AddAttribute` skips a
+tag that already carries the attribute.
+
+A bound `:size` is skipped for the same reason, and is left out of
+`BOUND_VALUES` deliberately: Sheaf falls back to `text-base` for a size word it
+does not know, so an untranslated one is visibly the wrong size on the page. That
+is the ordinary variant argument, and only `level` escapes it.
 
 ### An overlay has to clear what it opens over
 
