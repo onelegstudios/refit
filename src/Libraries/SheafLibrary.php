@@ -11,6 +11,7 @@ use Onelegstudios\Refit\Libraries\Sheaf\ComponentMap;
 use Onelegstudios\Refit\Libraries\Sheaf\Components;
 use Onelegstudios\Refit\Libraries\Sheaf\LayoutStubs;
 use Onelegstudios\Refit\Plan\Actions\AcceptOtpAutofill;
+use Onelegstudios\Refit\Plan\Actions\AddAttribute;
 use Onelegstudios\Refit\Plan\Actions\AddressModalDispatches;
 use Onelegstudios\Refit\Plan\Actions\ApplyThemeBeforePaint;
 use Onelegstudios\Refit\Plan\Actions\BindModalState;
@@ -77,6 +78,14 @@ final class SheafLibrary implements Library
 
     /** The component whose runtime is built on an npm primitive Sheaf never installs. */
     private const string PRIMITIVE_COMPONENT = 'select';
+
+    /** The tag whose unwritten size the migration writes out. Flux's name, since it runs before the rename. */
+    private const string HEADING_TAG = 'flux:heading';
+
+    private const string HEADING_SIZE = 'size';
+
+    /** Flux's own prop default, which `ComponentMap::VALUES` then translates to Sheaf's `xs`. */
+    private const string HEADING_DEFAULT = 'base';
 
     public function key(): string
     {
@@ -215,6 +224,21 @@ final class SheafLibrary implements Library
         // by putting Flux's longhand in the file, which the rename then knows.
         $plan->add(Stage::Reconcile, new RestructureOverlays);
         $plan->add(Stage::Reconcile, new RestructureCallouts);
+
+        // The same move for a value that was never written down at all. Both
+        // libraries name a heading's sizes with the same words and put them at
+        // different points on the scale, so the value table translates the ones
+        // the kit writes — but the kit leaves `size` off 56 of its headings, and
+        // the two defaults disagree too: Flux's bare heading is `text-sm`,
+        // Sheaf's is `text-base`. Writing Flux's own default out makes the
+        // silent case a written one, and the rename then translates it with the
+        // rest.
+        $plan->add(Stage::Reconcile, new AddAttribute(
+            self::HEADING_TAG,
+            self::HEADING_SIZE,
+            self::HEADING_DEFAULT,
+        ));
+
         $plan->add(Stage::Reconcile, new MapComponentTags);
 
         // All of these read the tags the rename produced, so all of them come

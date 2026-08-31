@@ -416,6 +416,37 @@ it('keeps the document outline the kit wrote', function (): void {
         ->not->toContain('level="3"');
 })->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
 
+it('gives every heading the size it was already rendering at', function (): void {
+    $root = sheafKit('livewire');
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'library' => 'sheaf',
+            'icons' => 'heroicons',
+        ]),
+    ])->assertSuccessful();
+
+    $project = (new ProjectDetector)->detect($root);
+
+    // Both libraries spell the sizes with the same words and put them at
+    // different points on the scale, so `lg` is `text-base` in Flux and
+    // `text-xl` in Sheaf — two steps up on a rename alone.
+    expect($project->get('resources/views/pages/settings/⚡delete-user-modal.blade.php'))
+        ->toContain('size="sm"')
+        ->not->toContain('size="lg"')
+        // The one that survives, and only by coincidence: `xl` is `text-2xl` in
+        // both.
+        ->and($project->get('resources/views/partials/settings-heading.blade.php'))
+        ->toContain('<x-ui.heading size="xl"')
+        // And the case a value table cannot reach, because there is no value in
+        // the file to translate: the two defaults disagree too, so a heading
+        // that named no size grew from 14px to 16px. Flux's default is written
+        // out ahead of the rename and translated with the rest.
+        ->and($project->get('resources/views/pages/settings/⚡delete-user-form.blade.php'))
+        ->toContain('<x-ui.heading size="xs"');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+
 it('keeps the auth pages centred once Sheaf owns their alignment', function (): void {
     $root = sheafKit('livewire');
 

@@ -116,7 +116,24 @@ it('names a heading\'s level the way Sheaf reads it', function (): void {
         ->toBe('<x-ui.heading size="xl" level="h1">Settings</x-ui.heading>')
         // The recovery-codes panel, which flattened into the level above it.
         ->and(mapTags('<flux:heading size="lg" level="3">2FA recovery codes</flux:heading>'))
-        ->toBe('<x-ui.heading size="lg" level="h3">2FA recovery codes</x-ui.heading>');
+        ->toBe('<x-ui.heading size="sm" level="h3">2FA recovery codes</x-ui.heading>');
+});
+
+it('puts a heading\'s size back where it was on Sheaf\'s scale', function (): void {
+    // The same words at different points on the scale. Flux's `lg` is
+    // `text-base`; Sheaf's is `text-xl`, two steps further up, and `sm` is the
+    // word for the size Flux drew — so the kit's 35 `size="lg"` headings grew
+    // from 16px to 20px on a rename alone.
+    expect(mapTags('<flux:heading size="lg">Delete account?</flux:heading>'))
+        ->toBe('<x-ui.heading size="sm">Delete account?</x-ui.heading>')
+        // `xl` is `text-2xl` in both, and listed for the same reason
+        // `flux:button`'s `danger` is: to record that the match was checked.
+        ->and(mapTags('<flux:heading size="xl">Settings</flux:heading>'))
+        ->toBe('<x-ui.heading size="xl">Settings</x-ui.heading>')
+        // And Flux's own default, which the sweep only ever sees because
+        // `AddAttribute` wrote it out ahead of the rename.
+        ->and(mapTags('<flux:heading size="base">Passkeys</flux:heading>'))
+        ->toBe('<x-ui.heading size="xs">Passkeys</x-ui.heading>');
 });
 
 it('leaves a heading that already names its level alone', function (): void {
