@@ -33,8 +33,11 @@ final class ComponentMap
         // Text and layout primitives.
         'flux:button' => 'x-ui.button',
         'flux:heading' => 'x-ui.heading',
-        // Sheaf has no `subheading`. Its `text` is the muted secondary style the
-        // kit uses subheading for on every settings and auth page.
+        // Sheaf has no `subheading`, and its `text` is the primary style rather
+        // than Flux's muted one — so both land here and MuteSecondaryText
+        // restates the contrast as a class. Sheaf's `description` is a form
+        // element, not a text style: it belongs inside a field and stays out of
+        // this table.
         'flux:subheading' => 'x-ui.text',
         'flux:text' => 'x-ui.text',
         'flux:link' => 'x-ui.link',

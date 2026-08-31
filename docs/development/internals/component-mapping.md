@@ -187,11 +187,14 @@ Inside `Stage::Reconcile`, and it matters:
    the suffix is still there to read, then tag names, then attributes and values.
 3. **`MergeBrandVariants`**, **`RestructureBrandLogo`**, **`RestoreButtonRow`**,
    **`PlaceDropdownChildren`**, **`PreserveTextAlignment`**,
-   **`PromoteContentsToLabel`**, **`WrapControlsInFields`**,
-   **`ShapeSegmentedGroups`**, **`FollowSidebarCollapse`** and
-   **`RaiseSidebarDropdowns`** — after the rename, because all ten read the tags
-   the rename produced. `MergeBrandVariants` comes before `RestructureBrandLogo`
-   so there is one brand to shape rather than two.
+   **`MuteSecondaryText`**, **`PromoteContentsToLabel`**,
+   **`WrapControlsInFields`**, **`ShapeSegmentedGroups`**,
+   **`FollowSidebarCollapse`** and **`RaiseSidebarDropdowns`** — after the
+   rename, because all eleven read the tags the rename produced.
+   `MergeBrandVariants` comes before `RestructureBrandLogo` so there is one brand
+   to shape rather than two. `MuteSecondaryText` follows `PreserveTextAlignment`
+   because both append to the same `class` attribute on the same tags; either
+   order works, and each tolerates the other having created the attribute first.
 4. **`RebindAppearanceToTheme`**, **`ApplyThemeBeforePaint`** and
    **`ScopeCollapseToSidebar`** — anywhere, in practice. None of the three reads a
    tag: one rewrites Alpine expressions, one writes a script into the head, and
@@ -735,6 +738,53 @@ heading's own class wins.
 
 A tag that already says something about alignment, or whose classes are bound, is
 left alone, and so is anything under Sheaf's own component directory.
+
+### Neither is contrast
+
+Flux draws `text` and `subheading` from the same declaration —
+`[:where(&)]:text-zinc-500 [:where(&)]:dark:text-white/70` — so both are muted,
+and the kit uses `subheading` for the sentence under every settings heading and
+`text` for the description under every auth title. Sheaf has no `subheading` at
+all, and its `text` is the other end of the scale: `text-neutral-950
+dark:text-neutral-50`, written bare rather than inside `:where()`.
+
+So the mapping is right about the component and wrong about the contrast. Both
+Flux tags become `<x-ui.text>` — `x-ui.heading` would be worse, since Flux styles
+its subheading as muted text rather than as a heading — and `MuteSecondaryText`
+restates the contrast afterwards, in the vocabulary the rest of the
+after-the-rename group reads.
+
+Sheaf mutes text with opacity rather than with a second component, so that is what
+gets restated: `opacity-75` for the ordinary secondary line, `opacity-50` where
+Flux said `variant="subtle"`. Opacity composes with whatever colour the component
+declares instead of competing with it on specificity, which is why it is the right
+tool here and a `text-neutral-500` class would not be.
+
+Three of Flux's props go the same way, because `x-ui.text` declares none at all —
+`text.blade.php` is one `<div>` with `{{ $attributes->class(...) }}` — so each
+lands on the rendered element as a stray HTML attribute that styles nothing:
+
+| Flux | Sheaf |
+| --- | --- |
+| `variant="subtle"` | `opacity-50` |
+| `color="red"` | `text-red-600! dark:text-red-400!` |
+| `size="lg"` | `text-base`, alongside the opacity — a large subheading is still a muted one |
+
+Note the asymmetry in `!`. Sheaf writes its size inside `[:where(&)]:` but its
+colour bare, so a plain `text-base` beats `[:where(&)]:text-sm` on specificity
+while a plain `text-red-600` only ties with `text-neutral-950` and would be
+decided by whichever utility Tailwind emits last.
+
+The kit's own `text-zinc-500 dark:text-zinc-400` pairs come off in the same pass,
+for that same reason: against Flux's specificity-0 default they always won,
+against Sheaf's bare colour they are a coin flip. Removing them leaves the kit
+with one muting mechanism rather than two.
+
+A tag whose classes are bound is left alone, as is one that has already had its
+say about contrast — by carrying an `opacity-`, or by flagging a colour of its own
+with `!`. That second guard is what keeps the kit's four `!text-green-600` success
+messages from being dimmed. Sheaf's own component directory is skipped, as it is
+for alignment.
 
 ### An overlay has to clear what it opens over
 

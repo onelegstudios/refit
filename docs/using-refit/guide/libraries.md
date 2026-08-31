@@ -290,6 +290,16 @@ behind it, which reads as no logo at all.
 a wrapping div. Sheaf's heading and text declare `text-start` themselves, so refit
 restates the alignment on the tag as `text-center!`.
 
+**Text contrast.** Flux draws `text` and `subheading` alike, and draws both muted.
+Sheaf's `text` is the other end of the scale — `text-neutral-950`, the primary
+style — so refit restates the contrast the way Sheaf does, with `opacity-75` on
+the tag (`opacity-50` where Flux said `variant="subtle"`). The kit's own
+`text-zinc-500 dark:text-zinc-400` pairs come off at the same time, leaving one
+muting mechanism rather than two. Left alone every sentence under a settings
+heading and every description under an auth title reads at full body contrast.
+Flux's `color="red"` and `size="lg"` become classes here too, since Sheaf's text
+takes no props at all.
+
 **Item labels.** Flux reads a nav item's text out of its slot; Sheaf's
 `navlist.item`, `navbar.item` and `radio.item` render `{{ $label }}` and never
 touch the slot. So refit moves the contents onto the tag — a single Blade echo
@@ -481,8 +491,8 @@ npm run build
 ```
 
 The build is not optional. The migration writes utilities the old stylesheet has
-never seen — `text-center!` on the auth headings among them — so a stale build
-renders the new markup with half its classes missing.
+never seen — `text-center!` and `opacity-75` on the auth headings among them — so
+a stale build renders the new markup with half its classes missing.
 
 Then walk the app. Login, register, the two-factor setup modal, settings, and the
 sidebar both collapsed and on mobile — that is where the mapping is most likely to
