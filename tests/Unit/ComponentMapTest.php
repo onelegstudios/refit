@@ -194,6 +194,24 @@ it('maps every Flux tag the starter kits actually write', function (): void {
     expect($unknown)->toBe([]);
 });
 
+it('sends both of Flux\'s secondary text tags to the one component Sheaf has', function (): void {
+    // Sheaf has no `subheading`, and Flux styles its own as muted text rather
+    // than as a heading — so `x-ui.heading` would be the worse of the two homes.
+    // MuteSecondaryText is what restates the contrast the rename loses.
+    expect(ComponentMap::tag('flux:text'))->toBe('x-ui.text')
+        ->and(ComponentMap::tag('flux:subheading'))->toBe('x-ui.text');
+});
+
+it('keeps `description` out of the map, because it is a form element', function (): void {
+    // Sheaf's `description` is styled entirely through sibling selectors on
+    // `data-slot="description"` inside `field`, so outside a `<x-ui.field>` its
+    // rules never fire. It belongs in the stack WrapControlsInFields builds and
+    // nowhere else — and nothing in the kit asks for it anyway: `flux:description`
+    // appears zero times across all five fixtures.
+    expect(ComponentMap::components())->not->toContain('description')
+        ->and(ComponentMap::TAGS)->not->toContain('x-ui.description');
+});
+
 it('asks for a component by its top-level install name', function (): void {
     expect(ComponentMap::componentFor('x-ui.navlist.item'))->toBe('navlist')
         ->and(ComponentMap::componentFor('x-ui.button'))->toBe('button')

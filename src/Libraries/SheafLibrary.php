@@ -18,6 +18,7 @@ use Onelegstudios\Refit\Plan\Actions\CarryOtpValue;
 use Onelegstudios\Refit\Plan\Actions\FollowSidebarCollapse;
 use Onelegstudios\Refit\Plan\Actions\MapComponentTags;
 use Onelegstudios\Refit\Plan\Actions\MergeBrandVariants;
+use Onelegstudios\Refit\Plan\Actions\MuteSecondaryText;
 use Onelegstudios\Refit\Plan\Actions\OrderThemeImport;
 use Onelegstudios\Refit\Plan\Actions\PlaceDropdownChildren;
 use Onelegstudios\Refit\Plan\Actions\PreserveTextAlignment;
@@ -228,6 +229,7 @@ final class SheafLibrary implements Library
         $plan->add(Stage::Reconcile, new RestoreButtonRow);
         $plan->add(Stage::Reconcile, new PlaceDropdownChildren);
         $plan->add(Stage::Reconcile, new PreserveTextAlignment);
+        $plan->add(Stage::Reconcile, new MuteSecondaryText);
         $plan->add(Stage::Reconcile, new PromoteContentsToLabel);
         $plan->add(Stage::Reconcile, new WrapControlsInFields);
         $plan->add(Stage::Reconcile, new ShapeSegmentedGroups);

@@ -410,7 +410,9 @@ it('keeps the auth pages centred once Sheaf owns their alignment', function (): 
     // of its own and its text defaults to it, so neither inherits any more.
     expect($header)->toContain('text-center')
         ->toContain('<x-ui.heading class="text-center!"')
-        ->toContain('<x-ui.text class="text-center!"');
+        // And the description is muted in the same breath, by MuteSecondaryText
+        // appending to the class attribute this sweep just created.
+        ->toContain('<x-ui.text class="text-center! opacity-75"');
 })->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
 
 it('leaves the auth pages a button worth pressing', function (): void {
