@@ -217,6 +217,14 @@ exactly as before.
 **Dropdown triggers.** Flux takes a dropdown's trigger as its first child; Sheaf
 takes it as `<x-slot:button>`. Refit wraps it.
 
+**Dropdown placement.** Flux takes it as two attributes — `position="bottom"` and
+`align="end"` — and joins them itself. Sheaf takes the one hyphenated value Alpine
+Anchor reads, so refit merges the pair into `position="bottom-end"` and drops the
+`align`, which is not a Sheaf prop and would otherwise land on the panel wrapper
+as a stray HTML attribute. Left alone every menu opens centred on its trigger; the
+member-role picker on the team page is where it shows. A placement bound to an
+expression is left alone and named in the notes.
+
 **Tooltip triggers.** The same story with a different slot. Flux hangs a tooltip on
 its child and takes the text as a `content` attribute; Sheaf reads `{{ $trigger }}`
 and a `<x-ui.tooltip.content>` child. So refit wraps the child in

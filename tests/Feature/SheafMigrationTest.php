@@ -621,6 +621,34 @@ it('gives everything in a dropdown menu a place in Sheaf\'s grid', function (): 
         ->toContain('<div class="col-span-full">');
 })->skip(fn (): bool => ! is_dir(fixturePath('livewire-teams')), 'Run `composer fixtures`.');
 
+it('opens a dropdown on the edge Flux aligned it to', function (string $kit): void {
+    $root = sheafKit($kit);
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'library' => 'sheaf',
+            'icons' => 'heroicons',
+        ]),
+    ])->assertSuccessful();
+
+    $project = (new ProjectDetector)->detect($root);
+
+    // Flux takes a placement as two attributes and joins them itself; Sheaf
+    // takes the one value Alpine Anchor reads. The member-role picker is where
+    // it shows: a right-aligned trigger whose panel hung under its middle,
+    // because `position="bottom"` survived as a valid, centred placement.
+    expect($project->get('resources/views/pages/teams/⚡edit.blade.php'))
+        ->toContain('<x-ui.dropdown position="bottom-end">');
+
+    // And the align has to go with it, or it falls out of `{{ $attributes }}`
+    // onto the panel wrapper as a stray, long-deprecated HTML attribute.
+    foreach ($project->blades() as $path) {
+        expect($project->get($path))->not->toContain(' align="');
+    }
+})->with(['livewire-teams', 'livewire-workos-teams'])
+    ->skip(fn (): bool => ! is_dir(fixturePath('livewire-teams')), 'Run `composer fixtures`.');
+
 it('gives the user menu the row a Sheaf nav item would have had', function (): void {
     $root = sheafKit('livewire');
 
@@ -1530,7 +1558,7 @@ it('raises the team switcher clear of the sidebar that clips it', function (stri
     // sidebar, whose `overflow-y: auto` makes the `overflow-x: visible` beside it
     // compute to auto too: the right-hand edge of the menu was cut off.
     expect((new ProjectDetector)->detect($root)->get('resources/views/components/⚡team-switcher.blade.php'))
-        ->toContain('<x-ui.dropdown portal position="bottom" align="start">')
+        ->toContain('<x-ui.dropdown portal position="bottom-start">')
         // And teleporting alone drops it below the sidebar's inline z-index 99.
         ->toContain('<x-slot:menu class="z-[100]! min-w-56">');
 })->with(['livewire-teams', 'livewire-workos-teams'])
