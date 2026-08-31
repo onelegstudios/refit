@@ -286,6 +286,13 @@ renders the slot bare, so refit moves those classes onto an element inside the
 slot. Left alone the mark keeps its `text-white dark:text-black` with nothing
 behind it, which reads as no logo at all.
 
+**Heading levels.** Flux numbers them and Sheaf names them — `level="1"` against
+a component that matches `h1` through `h6` and falls back to `h2`. Refit
+translates the number to the name, all six of them. Left alone the settings pages
+have no `<h1>` in their outline and the recovery-codes heading sits at the level
+of the section above it, with nothing on the rendered page to show for either. A
+level bound to an expression is reported instead, since refit cannot read it.
+
 **Text alignment.** The kit centres its auth headings by putting `text-center` on
 a wrapping div. Sheaf's heading and text declare `text-start` themselves, so refit
 restates the alignment on the tag as `text-center!`.

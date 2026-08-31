@@ -24,7 +24,9 @@ use Onelegstudios\Refit\Project\Project;
  *
  * Anything the map has no answer for is left exactly as it was and reported. A
  * half-rewritten tag would be worse than an untouched one, and the diff is where
- * the user sees the rest.
+ * the user sees the rest. A value the map has an answer for but cannot read —
+ * a bound `:level` on a heading — is reported too, since there the untouched tag
+ * is the thing that looks finished.
  */
 final class MapComponentTags extends BladeSweep
 {
@@ -42,6 +44,15 @@ final class MapComponentTags extends BladeSweep
      */
     private array $unmapped = [];
 
+    /**
+     * Bound values the sweep could not read, as Flux tag and attribute mapped to
+     * the files writing them. Only the ones {@see ComponentMap::BOUND_VALUES} has
+     * something to say about — every other bound attribute is fine left alone.
+     *
+     * @var array<string, array<string, list<string>>>
+     */
+    private array $bound = [];
+
     public function __construct(
         private readonly TagRewriter $rewriter = new TagRewriter,
         private readonly TagParser $parser = new TagParser,
@@ -54,7 +65,7 @@ final class MapComponentTags extends BladeSweep
 
     protected function transform(string $source, string $path, Project $project, Report $report): string
     {
-        $this->collectUnmapped($source, $path);
+        $this->collect($source, $path);
 
         // `<flux:icon.home />` -> `<x-ui.icon name="home" />`. Suffixes that have
         // a component of their own — `icon.loading` — are left for the tag pass.
@@ -140,11 +151,16 @@ final class MapComponentTags extends BladeSweep
     }
 
     /**
-     * Note the Flux tags in one file that this sweep is about to leave behind.
+     * Note what this sweep is about to leave behind in one file.
+     *
+     * Both kinds in a single walk of the Flux tags: the tags with no translation
+     * at all, and the values that have one the sweep cannot reach.
      */
-    private function collectUnmapped(string $source, string $path): void
+    private function collect(string $source, string $path): void
     {
         foreach ($this->parser->parse($source, self::FLUX_PREFIX) as $tag) {
+            $this->collectBound($tag, $path);
+
             if (ComponentMap::tag($tag->name) !== null) {
                 continue;
             }
@@ -158,6 +174,30 @@ final class MapComponentTags extends BladeSweep
 
             if (! in_array($path, $this->unmapped[$tag->name], true)) {
                 $this->unmapped[$tag->name][] = $path;
+            }
+        }
+    }
+
+    /**
+     * Note the bound values on one tag that the value pass will not be able to read.
+     */
+    private function collectBound(Tag $tag, string $path): void
+    {
+        foreach ($tag->attributes as $attribute) {
+            if (! $attribute->isBound()) {
+                continue;
+            }
+
+            $bare = substr($attribute->name, 1);
+
+            if (ComponentMap::whyBound($tag->name, $bare) === null) {
+                continue;
+            }
+
+            $this->bound[$tag->name][$bare] ??= [];
+
+            if (! in_array($path, $this->bound[$tag->name][$bare], true)) {
+                $this->bound[$tag->name][$bare][] = $path;
             }
         }
     }
@@ -182,5 +222,26 @@ final class MapComponentTags extends BladeSweep
         }
 
         $this->unmapped = [];
+
+        ksort($this->bound);
+
+        foreach ($this->bound as $flux => $attributes) {
+            ksort($attributes);
+
+            foreach ($attributes as $attribute => $paths) {
+                // Named as the file reads after the sweep, since the tag itself
+                // is renamed and the attribute is all that is left of the Flux
+                // spelling.
+                $report->warn(sprintf(
+                    'Left :%s alone on <%s> in %s — %s',
+                    $attribute,
+                    ComponentMap::tag($flux) ?? $flux,
+                    implode(', ', $paths),
+                    ComponentMap::whyBound($flux, $attribute) ?? '',
+                ));
+            }
+        }
+
+        $this->bound = [];
     }
 }

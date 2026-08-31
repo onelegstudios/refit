@@ -217,7 +217,18 @@ final class ComponentMap
      * the rename left "Log in" and "Register" looking like the button beside
      * them rather than the one to press.
      *
-     * @var array<string, array<string, array<string, string>>>
+     * A heading's `level` is the one column listed past what the kit writes, and
+     * for the opposite reason: Sheaf does not pass an unrecognised level through,
+     * it discards it. So the argument that stops the variant tables growing —
+     * guessing is worse than doing nothing — runs the other way here, and all six
+     * levels are listed even though the kit only ever writes two.
+     *
+     * The value keys are `array-key` rather than `string` because of that column:
+     * PHP folds a numeric string key down to an int, so `'1'` is stored as `1`.
+     * {@see value()} still finds it — the lookup coerces the same way — but the
+     * type has to say so.
+     *
+     * @var array<string, array<string, array<array-key, string>>>
      */
     public const array VALUES = [
         'flux:button' => [
@@ -225,6 +236,23 @@ final class ComponentMap
                 'filled' => 'soft',
                 'subtle' => 'ghost',
                 'danger' => 'danger',
+            ],
+        ],
+        // Flux numbers a heading's level and casts it to an integer; Sheaf names
+        // them, matching `level` against `h1` through `h6` and falling back to
+        // `h2` for everything else. So `level="1"` renders an `<h2>` — the
+        // settings pages lose the only `<h1>` in their outline, and the recovery
+        // codes panel's `level="3"` flattens into the same level as the headings
+        // around it. Nothing about the rendered page shows either, since `h2` is
+        // a plausible tag to find there.
+        'flux:heading' => [
+            'level' => [
+                '1' => 'h1',
+                '2' => 'h2',
+                '3' => 'h3',
+                '4' => 'h4',
+                '5' => 'h5',
+                '6' => 'h6',
             ],
         ],
         'flux:badge' => [
@@ -241,6 +269,32 @@ final class ComponentMap
             'variant' => [
                 'danger' => 'error',
             ],
+        ],
+    ];
+
+    /**
+     * Values refit can only translate when they are written out, and what to say
+     * when a project has bound them instead.
+     *
+     * VALUES reads literals. A bound attribute carries a PHP expression, so the
+     * sweep passes over it, and for a variant that is the right answer either
+     * way: Sheaf sends a word it does not know through to classes, so an
+     * untranslated variant looks wrong on the page rather than going missing.
+     *
+     * A heading's level is the one place that reasoning fails, because the
+     * fallback there is silent — the page renders, the outline is wrong, and
+     * nothing in the markup says so. An ordinary run produces none of these
+     * warnings, since the kit writes its levels out; they exist for the project
+     * that has moved to `:level="$depth"`.
+     *
+     * Curated for the same reason {@see UNMAPPED} is: a warning that only names
+     * the gap leaves the reader to work out why it matters.
+     *
+     * @var array<string, array<string, string>>
+     */
+    public const array BOUND_VALUES = [
+        'flux:heading' => [
+            'level' => 'Sheaf names heading levels rather than numbering them, and quietly renders an <h2> for anything that is not h1 through h6.',
         ],
     ];
 
@@ -273,6 +327,14 @@ final class ComponentMap
     public static function whyUnmapped(string $flux): ?string
     {
         return self::UNMAPPED[$flux] ?? null;
+    }
+
+    /**
+     * Why a bound value on a Flux tag is worth a word, when refit has one.
+     */
+    public static function whyBound(string $flux, string $attribute): ?string
+    {
+        return self::BOUND_VALUES[$flux][$attribute] ?? null;
     }
 
     /**
