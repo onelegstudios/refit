@@ -369,6 +369,15 @@ security pages — rejecting you without saying why, because those pages had no
 your own field gets the label alone, and the checkbox is not part of this at all:
 Sheaf's renders the label it is handed.
 
+**The nav item you are on.** Flux marks it `current`; Sheaf declares `active` and
+reads nothing from `current`, falling back to comparing the item's href against
+the current URL when neither is passed. That fallback is why the rename is easy
+to miss — for an exact-match link like Dashboard it lands on the same answer, so
+the sidebar looks right while the prop sits there doing nothing. Where the two
+disagree it is a plain bug: the settings sidebar marks Teams current on
+`teams.*`, which covers `teams.edit` and `teams.create` as well, and URL equality
+against `route('teams.index')` does not.
+
 **Password reveal.** Flux's `viewable` is Sheaf's `revealable`. It is only a
 rename, but without it the attribute lands on the wrapper div and all ten password
 fields in the kit lose their eye.

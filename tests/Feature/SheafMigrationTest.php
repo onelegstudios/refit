@@ -224,6 +224,16 @@ it('installs something for every component tag the chrome stubs write', function
         ->and(array_values(array_diff(array_keys($written), $installed)))->toBe([]);
 });
 
+it('writes the chrome stubs in Sheaf\'s vocabulary, not Flux\'s', function (): void {
+    // The stubs are hand-written Sheaf markup, so they should not be leaning on
+    // the mapping table at all — and `current` is the one that reads as fine
+    // either way, because Sheaf's URL fallback highlights Dashboard regardless
+    // while the expression sits there dead and ships as `current="1"`.
+    foreach ((array) glob(__DIR__.'/../../stubs/sheaf/*/*.blade.php.stub') as $stub) {
+        expect((string) file_get_contents((string) $stub))->not->toContain(':current');
+    }
+});
+
 it('leaves no Flux tag behind anywhere in the tree', function (string $kit): void {
     $root = sheafKit($kit);
 

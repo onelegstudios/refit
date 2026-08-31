@@ -23,7 +23,7 @@ __TEAM_SWITCHER__
                             icon="home"
                             :label="__('Dashboard')"
                             :href="route('dashboard')"
-                            :current="request()->routeIs('dashboard')"
+                            :active="request()->routeIs('dashboard')"
                             wire:navigate
                         />
                     </x-ui.navlist.group>
