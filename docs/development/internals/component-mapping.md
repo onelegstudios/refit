@@ -184,12 +184,13 @@ Unlike the Flux manifest this needs no licence and no sidecar install —
 
 Inside `Stage::Reconcile`, and it matters:
 
-1. **`RestructureOverlays`**, **`RestructureCallouts`** and the heading-size
-   **`AddAttribute`** — first, while the markup still says `flux:`, because all
-   three read Flux's own arrangement: where a dropdown keeps its trigger, what a
-   modal close button wraps, which of a callout's two lines it wrote as an
-   attribute, and which headings named no size at all. Each ends by putting
-   Flux's own longhand in the file, which the rename then knows how to translate.
+1. **`RestructureOverlays`**, **`RestructureCallouts`**, **`JoinDropdownPlacement`**
+   and the heading-size **`AddAttribute`** — first, while the markup still says
+   `flux:`, because all four read Flux's own arrangement: where a dropdown keeps
+   its trigger, what a modal close button wraps, which of a callout's two lines it
+   wrote as an attribute, which two attributes a placement was spread across, and
+   which headings named no size at all. Each ends by putting Flux's own longhand
+   in the file, which the rename then knows how to translate.
 2. **`MapComponentTags`** — the dotted icon form is folded into an attribute while
    the suffix is still there to read, then tag names, then attributes and values.
 3. **`MergeBrandVariants`**, **`RestructureBrandLogo`**, **`RestoreButtonRow`**,
@@ -727,6 +728,54 @@ stack, alongside the rest of the
 [Blade rewriting](/docs/development/internals/blade-rewriting) tools.
 `PreserveTextAlignment` uses the same pairing to find the wrapper an element
 inherited its alignment from.
+
+### A placement is one word, not two
+
+Flux takes a menu's placement as two attributes and joins them itself, with a
+space, on the way to its custom element:
+
+```blade
+@props([
+    'position' => 'bottom',
+    'align' => 'start',
+])
+
+<ui-dropdown position="{{ $position }} {{ $align }}" {{ $attributes }} data-flux-dropdown>
+```
+
+Sheaf takes one value and hands it straight to Alpine Anchor as a modifier:
+
+```blade
+x-anchor.{{ $position }}.offset.{{ $offset }}="$refs.button;"
+```
+
+So a rename alone leaves `position="bottom"` behind as a placement that is valid
+and centred, and `align` — a prop Sheaf never declares — falls out of
+`{{ $attributes }}` onto the panel wrapper as a stray, long-deprecated HTML
+`align`. Every dropdown in the kit writes both attributes, so every dropdown
+opened centred on its trigger. Most of them sit in chrome the stubs replace
+wholesale, which hid it; the member-role picker in the team members table is
+where it shows, a right-aligned trigger with a panel hanging under its middle.
+
+`JoinDropdownPlacement` merges the pair: it reads both, writes
+`position="{position}-{align}"`, and takes the `align` off. This is an action
+rather than a `VALUES` entry because `VALUES` rewrites a value in place and
+cannot consume a second attribute.
+
+It runs before the rename, which is also what makes the defaults Flux's: a tag
+writing only one of the two is still a Flux tag at that point, so the missing
+half is `position="bottom"` or `align="start"` rather than anything Sheaf would
+have fallen back to. A tag that writes neither is left as it is.
+
+`align="center"` merges to the bare direction rather than to a `-center` suffix.
+Sheaf's own default is `bottom-center`, which is not an Alpine Anchor placement
+at all and resolves to plain `bottom` — so the centring this fixes is an accident
+of that fallback, and the placements worth writing are the four directions plus
+`-start` and `-end`.
+
+A bound `:position` or `:align` holds an expression rather than a placement, so
+there is nothing to join. Those are left alone and reported, the way an unmapped
+tag is.
 
 ### Alignment is not only a rename
 

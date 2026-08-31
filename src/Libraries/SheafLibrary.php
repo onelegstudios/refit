@@ -17,6 +17,7 @@ use Onelegstudios\Refit\Plan\Actions\ApplyThemeBeforePaint;
 use Onelegstudios\Refit\Plan\Actions\BindModalState;
 use Onelegstudios\Refit\Plan\Actions\CarryOtpValue;
 use Onelegstudios\Refit\Plan\Actions\FollowSidebarCollapse;
+use Onelegstudios\Refit\Plan\Actions\JoinDropdownPlacement;
 use Onelegstudios\Refit\Plan\Actions\MapComponentTags;
 use Onelegstudios\Refit\Plan\Actions\MergeBrandVariants;
 use Onelegstudios\Refit\Plan\Actions\MuteSecondaryText;
@@ -224,6 +225,13 @@ final class SheafLibrary implements Library
         // by putting Flux's longhand in the file, which the rename then knows.
         $plan->add(Stage::Reconcile, new RestructureOverlays);
         $plan->add(Stage::Reconcile, new RestructureCallouts);
+
+        // And a placement Flux writes as two attributes and joins itself, with a
+        // space, on the way to its custom element. Sheaf takes the one hyphenated
+        // value Alpine Anchor reads, so the pair has to become one before the
+        // rename — `position="bottom"` on its own is a valid, centred placement,
+        // and the `align` beside it falls through to the wrapper as stray HTML.
+        $plan->add(Stage::Reconcile, new JoinDropdownPlacement);
 
         // The same move for a value that was never written down at all. Both
         // libraries name a heading's sizes with the same words and put them at
