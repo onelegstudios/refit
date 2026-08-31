@@ -392,6 +392,30 @@ it('translates and prefixes every icon name when Phosphor is asked for', functio
         ->toContain('ps:eye-slash');
 })->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
 
+it('keeps the document outline the kit wrote', function (): void {
+    $root = sheafKit('livewire');
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'library' => 'sheaf',
+            'icons' => 'heroicons',
+        ]),
+    ])->assertSuccessful();
+
+    $project = (new ProjectDetector)->detect($root);
+
+    // Sheaf matches the level against h1..h6 and silently renders an <h2> for
+    // anything else, so an untranslated `level="1"` leaves the settings pages
+    // with no <h1> at all and nothing on the page to say so.
+    expect($project->get('resources/views/partials/settings-heading.blade.php'))
+        ->toContain('level="h1"')
+        ->not->toContain('level="1"')
+        ->and($project->get('resources/views/pages/settings/two-factor/⚡recovery-codes.blade.php'))
+        ->toContain('level="h3"')
+        ->not->toContain('level="3"');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+
 it('keeps the auth pages centred once Sheaf owns their alignment', function (): void {
     $root = sheafKit('livewire');
 

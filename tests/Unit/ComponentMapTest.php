@@ -108,6 +108,81 @@ it('translates variant values per component', function (): void {
         ->toBe('<x-ui.button variant="ghost" />');
 });
 
+it('names a heading\'s level the way Sheaf reads it', function (): void {
+    // Flux casts the level to an integer and switches on it; Sheaf matches it
+    // against `h1` through `h6` and falls back to `h2`. So every `level="1"` was
+    // rendering an `<h2>`, and the settings pages had no `<h1>` at all.
+    expect(mapTags('<flux:heading size="xl" level="1">Settings</flux:heading>'))
+        ->toBe('<x-ui.heading size="xl" level="h1">Settings</x-ui.heading>')
+        // The recovery-codes panel, which flattened into the level above it.
+        ->and(mapTags('<flux:heading size="lg" level="3">2FA recovery codes</flux:heading>'))
+        ->toBe('<x-ui.heading size="lg" level="h3">2FA recovery codes</x-ui.heading>');
+});
+
+it('leaves a heading that already names its level alone', function (): void {
+    // Idempotence is not the point — refit runs once — but a project that has
+    // already moved to Sheaf's spelling must not have it translated twice.
+    expect(mapTags('<flux:heading level="h4">Nested</flux:heading>'))
+        ->toBe('<x-ui.heading level="h4">Nested</x-ui.heading>');
+});
+
+it('lists every heading level, not only the two the kit writes', function (): void {
+    // The argument for going past what the kit writes: Sheaf discards a level it
+    // does not recognise instead of passing it through, so a gap in this column
+    // costs a page its <h1> with nothing in the rendered markup to show for it.
+    // Read through the accessor rather than the constant, because PHP folds the
+    // numeric keys down to ints on the way in — the lookup coerces back the same
+    // way, and that round trip is the part worth pinning.
+    $levels = array_map(
+        static fn (int $level): ?string => ComponentMap::value('flux:heading', 'level', (string) $level),
+        range(1, 6),
+    );
+
+    expect($levels)->toBe(['h1', 'h2', 'h3', 'h4', 'h5', 'h6']);
+});
+
+it('reports a bound level it has no way of reading', function (): void {
+    // `:level="$depth"` lands in the same silent fallback, and the value pass
+    // reads literals only — so the one thing refit can do is say so.
+    $report = new Report;
+    $action = new MapComponentTags;
+
+    (fn (): string => $this->transform('<flux:heading :level="$depth" />', 'resources/views/a.blade.php', new Project(
+        root: sys_get_temp_dir(),
+        componentStyle: ComponentStyle::SingleFile,
+        features: [],
+        libraries: [],
+        chiselPending: false,
+    ), $report))->call($action);
+
+    (fn () => $this->finish($report))->call($action);
+
+    expect($report->warnings())->toHaveCount(1)
+        ->and($report->warnings()[0])->toContain(':level')
+        ->toContain('<x-ui.heading>')
+        ->toContain('resources/views/a.blade.php')
+        ->toContain('names heading levels');
+});
+
+it('says nothing about the bound values it has no opinion on', function (): void {
+    // Sheaf sends a variant it does not know through to classes, so a bound one
+    // is not a gap — warning about it would be noise.
+    $report = new Report;
+    $action = new MapComponentTags;
+
+    (fn (): string => $this->transform('<flux:button :variant="$style" />', 'resources/views/a.blade.php', new Project(
+        root: sys_get_temp_dir(),
+        componentStyle: ComponentStyle::SingleFile,
+        features: [],
+        libraries: [],
+        chiselPending: false,
+    ), $report))->call($action);
+
+    (fn () => $this->finish($report))->call($action);
+
+    expect($report->warnings())->toBe([]);
+});
+
 it('names a callout\'s danger after the state Sheaf files it under', function (): void {
     // Sheaf's alert knows info, success, warning and error, and falls back to
     // blue for anything else — so the kit's danger callouts came out as calm

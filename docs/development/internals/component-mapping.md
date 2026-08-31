@@ -130,7 +130,7 @@ Sheaf's translation table, and the same discipline as
 [`IconMap`](/docs/development/internals/icon-pipeline): curated, commented where a
 call was close, and reported rather than guessed at when there is no answer.
 
-Six kinds of entry:
+Seven kinds of entry:
 
 - **`TAGS`** — `flux:callout` to `x-ui.alerts`, `flux:menu.item` to
   `x-ui.dropdown.item`, `flux:main` to `x-ui.layout.main`.
@@ -149,7 +149,11 @@ Six kinds of entry:
 - **`VALUES`** — keyed by the *Flux* tag, so the pass looks a Sheaf tag back up
   through the map. Only the variants the kit actually writes are listed; Sheaf
   passes an unknown variant through to classes rather than throwing, so guessing
-  would be worse than doing nothing.
+  would be worse than doing nothing. A heading's `level` is the exception, and
+  lists all six because Sheaf *discards* a level it does not recognise.
+- **`BOUND_VALUES`** — why a bound value is worth a word, for the few where it is.
+  `VALUES` reads literals, so `:level="$depth"` goes untranslated however complete
+  the table is, and a warning is all refit has left.
 - **`UNMAPPED`** — a tag with no counterpart, and the sentence explaining why.
 - **`SUPPORTING`** — the components refit writes itself, which no Flux tag becomes:
   `field`, `label` and `error`. They are in the map because the install list is
@@ -785,6 +789,33 @@ say about contrast — by carrying an `opacity-`, or by flagging a colour of its
 with `!`. That second guard is what keeps the kit's four `!text-green-600` success
 messages from being dimmed. Sheaf's own component directory is skipped, as it is
 for alignment.
+
+### A level is a name, not a number
+
+Flux numbers a heading's level, casts it to an integer and switches on it. Sheaf
+names them, matching `level` against `h1` through `h6` and falling back to `h2`
+for anything else — so `level="1"` is not passed through, it is thrown away, and
+the heading renders as an `<h2>` like every other one on the page.
+
+The kit writes the attribute five times as `level="1"`, once per variant, in
+`partials/settings-heading.blade.php`, and three times as `level="3"` in the
+two-factor recovery codes panel. Untranslated, the settings pages have no `<h1>`
+at all and the recovery-codes heading sits at the same level as the section it
+belongs under. Both files are rewritten in place rather than replaced from a stub,
+so the fix has to live in the rewrite.
+
+`VALUES` is the right shape for it — keyed by tag, attribute and value — and this
+is the one entry that lists more than the kit writes. Everywhere else the argument
+runs the other way: Sheaf sends an unknown variant through to classes, so a gap in
+the table shows up on the page. Here the fallback is silent and `h2` is a
+plausible tag to find, so a missing level is invisible short of a screen reader or
+an outline check. That asymmetry is the whole reason all six are listed.
+
+What the table cannot reach is a bound level. `:level="$depth"` carries a PHP
+expression, the value pass reads literals, and the fallback stays as quiet as
+before — so `BOUND_VALUES` gives the sweep a sentence to say about it, in the same
+spirit as `UNMAPPED`. The kit writes no bound levels, so an ordinary run produces
+no such warning.
 
 ### An overlay has to clear what it opens over
 
