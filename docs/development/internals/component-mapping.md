@@ -147,8 +147,11 @@ Seven kinds of entry:
   here for the narrower reason that a nav item is the only thing that has one:
   Flux's `current` is Sheaf's `active`, and keying it by the Sheaf tag also
   collects `flux:sidebar.item`, which renames into `x-ui.navlist.item` and
-  carries most of the kit's ten. Keyed by the *Sheaf* name, because this pass
-  runs after the tag rename over a tree that already says `x-ui.`.
+  carries most of the kit's ten. `rounded` is there on the milder argument that
+  it is an ordinary enough word to want back later, and only a badge means a
+  shape by it: Flux's `rounded` is Sheaf's `pill`. Keyed by the *Sheaf* name,
+  because this pass runs after the tag rename over a tree that already says
+  `x-ui.`.
 - **`VALUES`** — keyed by the *Flux* tag, so the pass looks a Sheaf tag back up
   through the map. Only the variants the kit actually writes are listed; Sheaf
   passes an unknown variant through to classes rather than throwing, so guessing
@@ -156,8 +159,10 @@ Seven kinds of entry:
   lists all six because Sheaf *discards* a level it does not recognise. A
   heading's `size` looks like a second exception and is not one: `base` is listed
   because refit writes that value into the tree itself, before this pass runs. A
-  badge's `variant` is the case where the table has nothing to say at all — the
-  value that matters is the one neither library writes down, so it is added after
+  badge's `variant` is down to a single row for a third reason: of Flux's two
+  variants one is a colour Sheaf spells the same, and the other is a shape
+  wearing a variant's clothes, unwritten into `rounded` before this pass runs.
+  What is left is the value neither library writes down, and that is added after
   this pass rather than translated by it.
 - **`BOUND_VALUES`** — why a bound value is worth a word, for the few where it is.
   `VALUES` reads literals, so `:level="$depth"` goes untranslated however complete
@@ -190,13 +195,14 @@ Unlike the Flux manifest this needs no licence and no sidecar install —
 
 Inside `Stage::Reconcile`, and it matters:
 
-1. **`RestructureOverlays`**, **`RestructureCallouts`**, **`JoinDropdownPlacement`**
-   and the heading-size **`AddAttribute`** — first, while the markup still says
-   `flux:`, because all four read Flux's own arrangement: where a dropdown keeps
-   its trigger, what a modal close button wraps, which of a callout's two lines it
-   wrote as an attribute, which two attributes a placement was spread across, and
-   which headings named no size at all. Each ends by putting Flux's own longhand
-   in the file, which the rename then knows how to translate.
+1. **`RestructureOverlays`**, **`RestructureCallouts`**, **`JoinDropdownPlacement`**,
+   **`ShapeBadgePills`** and the heading-size **`AddAttribute`** — first, while the
+   markup still says `flux:`, because all five read Flux's own arrangement: where a
+   dropdown keeps its trigger, what a modal close button wraps, which of a
+   callout's two lines it wrote as an attribute, which two attributes a placement
+   was spread across, which of two names a badge gave its shape, and which headings
+   named no size at all. Each ends by putting Flux's own longhand in the file,
+   which the rename then knows how to translate.
 2. **`MapComponentTags`** — the dotted icon form is folded into an attribute while
    the suffix is still there to read, then tag names, then attributes and values.
 3. **The badge-variant `AddAttribute`** — the same move as the heading's, from the
@@ -956,6 +962,43 @@ Flux's own vocabulary and let `VALUES` translate it; a badge has nothing to
 write, so the value it adds is Sheaf's `outline` and the tag it adds it to is
 already `x-ui.badge`. A project that wrote `variant="solid"` out by hand still
 gets Sheaf's solid, through `VALUES` and the skip.
+
+The one variant that skip would get wrong is Flux's other one, and it is not a
+variant at all. Flux has two names for how round a badge is — `rounded`, the
+current prop, and `variant="pill"`, an alias its own component unwrites before it
+reads anything else:
+
+```php
+if ($variant === 'pill') { $rounded = true; $variant = null; }
+```
+
+Both spellings break, and quietly, at opposite ends. `rounded` is not a Sheaf
+prop, so it falls out of `{{ $attributes }}` onto the wrapper as a stray HTML
+attribute and the badge keeps its square corners — the same failure as the
+`align` on a dropdown. `variant="pill"` is not a Sheaf variant, so it falls off
+the end of the match into the solid branch, and it takes the tint down with it,
+because a badge that carries *any* variant is one `AddAttribute` steps over.
+
+`VALUES` cannot fix the second, and the reason is worth stating because it is the
+mirror of the dropdown's. There, one value had to be assembled out of two
+attributes; here one value has to be spent on two, since Flux's `pill` means a
+shape *and* a return to the tinted default at once. A value table rewrites a
+value in place, so it can say either half and not both: mapped to Sheaf's `pill`
+it rounds a badge that stayed solid, mapped to `outline` it tints one that stayed
+square.
+
+So `ShapeBadgePills` splits it, doing to the markup what Flux's component does to
+its props, and each half then lands in the pass that already handles it — the
+rename for the shape, through the `rounded => pill` row in `TAG_ATTRIBUTES`, and
+the variant `AddAttribute` for the tint, which now sees a badge with no variant
+left on it. `<flux:badge variant="pill">` comes out
+`<x-ui.badge variant="outline" pill>`, and Flux's current `<flux:badge rounded>`
+takes the same route from one step further along.
+
+Nothing in the kit writes either spelling, so this is a no-op on an ordinary run.
+It earns its pass on the `rounded` half: that is Flux's live vocabulary rather
+than its legacy, a customising project is fairly likely to have written it, and
+the table row that fixes it costs a line whatever is decided about the alias.
 
 ### An overlay has to clear what it opens over
 

@@ -92,6 +92,25 @@ it('marks the nav item you are on with the prop Sheaf reads', function (): void 
         ->toBe('<x-ui.navlist.item :active="request()->routeIs(\'settings.*\')" />');
 });
 
+it('spells a badge\'s roundness in the prop Sheaf declares', function (): void {
+    // Flux calls it `rounded` and Sheaf calls it `pill`, so left alone the
+    // attribute falls out of `{{ $attributes }}` onto the wrapper as stray HTML
+    // and the badge keeps its square corners.
+    expect(mapTags('<flux:badge rounded>Owner</flux:badge>'))
+        ->toBe('<x-ui.badge pill>Owner</x-ui.badge>')
+        // Which is also where Flux's older `variant="pill"` arrives, since
+        // ShapeBadgePills has already unwritten it into `rounded`.
+        ->and(mapTags('<flux:badge :rounded="$isOwner" />'))
+        ->toBe('<x-ui.badge :pill="$isOwner" />');
+});
+
+it('leaves `rounded` alone on a tag that is not a badge', function (): void {
+    // Tag-keyed rather than global: `rounded` is an ordinary enough word that a
+    // component may want it back later, and only the badge means the shape by it.
+    expect(mapTags('<flux:avatar rounded />'))
+        ->toBe('<x-ui.avatar rounded />');
+});
+
 it('keeps the colon on a bound attribute it renames', function (): void {
     expect(mapTags('<flux:button :icon-trailing="$icon" />'))
         ->toBe('<x-ui.button :iconAfter="$icon" />');
