@@ -430,7 +430,7 @@ class RefitCommand extends Command
 
         $this->removePublishedConfig();
 
-        $this->components->info('Run: composer remove --dev onelegstudios/laravel-refit');
+        $this->components->info('Run: composer remove --dev onelegstudios/refit');
     }
 
     /**

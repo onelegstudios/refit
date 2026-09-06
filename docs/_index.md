@@ -12,7 +12,7 @@ set and a list of structural tasks, shows you exactly what it intends to change,
 and applies it.
 
 ```bash
-composer require --dev onelegstudios/laravel-refit
+composer require --dev onelegstudios/refit
 php artisan refit
 ```
 

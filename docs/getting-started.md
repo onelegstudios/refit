@@ -11,7 +11,7 @@ order: 2
 Install refit as a dev dependency, right after `laravel new`:
 
 ```bash
-composer require --dev onelegstudios/laravel-refit
+composer require --dev onelegstudios/refit
 ```
 
 It registers a single command and nothing else — no routes, no published views,
@@ -91,7 +91,7 @@ php artisan refit --dry-run
    config on its way out and prints the removal command:
 
    ```bash
-   composer remove --dev onelegstudios/laravel-refit
+   composer remove --dev onelegstudios/refit
    ```
 
 ## Next steps

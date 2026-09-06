@@ -1,13 +1,13 @@
 {
   "$schema": "https://getcomposer.org/schema.json",
-  "name": "onelegstudios/laravel-refit",
+  "name": "onelegstudios/refit",
   "description": "Refit the starter - One-time scaffolding for Laravel's Livewire starter kit.",
   "keywords": [
     "laravel",
     "onelegstudios",
-    "laravel-refit"
+    "refit"
   ],
-  "homepage": "https://github.com/onelegstudios/laravel-refit",
+  "homepage": "https://github.com/onelegstudios/refit",
   "license": "MIT",
   "authors": [
     {

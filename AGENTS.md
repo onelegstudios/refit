@@ -4,14 +4,14 @@ This repository is a Laravel package. Keep the package focused, idiomatic, and e
 
 The package hasn't been released yet. We don't even have v0.1.0, so changes to the core logic are okay.
 
-`onelegstudios/laravel-refit` is a dev-only Laravel package (PHP 8.3+, Laravel 13) that customises a freshly installed Livewire + Flux starter kit. A single interactive command, `php artisan refit`, picks an icon set and a list of structural tasks, shows the plan, and applies it.
+`onelegstudios/refit` is a dev-only Laravel package (PHP 8.3+, Laravel 13) that customises a freshly installed Livewire + Flux starter kit. A single interactive command, `php artisan refit`, picks an icon set and a list of structural tasks, shows the plan, and applies it.
 
 It is one-time scaffolding: it rewrites files in place, the changes are one-way and not idempotent, and the command offers to uninstall itself when it finishes.
 
 ## Package Conventions
 
 - Use Laravel-native package APIs and the existing service provider shape before adding abstractions.
-- Keep package names, namespaces, Composer metadata, publish tags, documentation, and examples aligned with `onelegstudios/laravel-refit`.
+- Keep package names, namespaces, Composer metadata, publish tags, documentation, and examples aligned with `onelegstudios/refit`.
 - Add only the files and dependencies needed for the package behavior being implemented.
 - Prefer explicit Laravel package code over helper abstractions unless the extension point is real.
 - Keep tests focused on observable package behavior through public APIs, service provider wiring, commands, routes, published resources, and documentation promises.

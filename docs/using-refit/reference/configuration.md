@@ -127,7 +127,7 @@ is on its way out the file is a config entry pointing at classes that will not b
 autoloadable any more — and prints the command that finishes the job:
 
 ```bash
-composer remove --dev onelegstudios/laravel-refit
+composer remove --dev onelegstudios/refit
 ```
 
 Nothing else refit wrote depends on the package staying installed. The generated
