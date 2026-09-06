@@ -35,6 +35,7 @@ use Onelegstudios\Refit\Plan\Actions\RewriteIconNames;
 use Onelegstudios\Refit\Plan\Actions\RewriteToastCalls;
 use Onelegstudios\Refit\Plan\Actions\RunProcess;
 use Onelegstudios\Refit\Plan\Actions\ScopeCollapseToSidebar;
+use Onelegstudios\Refit\Plan\Actions\ShapeBadgePills;
 use Onelegstudios\Refit\Plan\Actions\ShapeSegmentedGroups;
 use Onelegstudios\Refit\Plan\Actions\SizeNavItemIcons;
 use Onelegstudios\Refit\Plan\Actions\SwitchIconSet;
@@ -254,6 +255,15 @@ final class SheafLibrary implements Library
             self::HEADING_SIZE,
             self::HEADING_DEFAULT,
         ));
+
+        // And Flux's own backwards compatibility, unwritten the way Flux's badge
+        // unwrites it: `variant="pill"` is an alias for `rounded`, and it means
+        // a shape and a return to the tinted default at once. Splitting it into
+        // the one word Flux still spells it with lets the rename translate the
+        // shape and the variant AddAttribute below supply the tint, rather than
+        // a value table having to say both in a single rewrite and saying
+        // neither.
+        $plan->add(Stage::Reconcile, new ShapeBadgePills);
 
         $plan->add(Stage::Reconcile, new MapComponentTags);
 

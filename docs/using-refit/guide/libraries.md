@@ -318,6 +318,15 @@ its colour list, so `zinc` falls to the same default in both and the variant is
 the whole of the difference. Sheaf's outline adds a thin border Flux does not
 draw, which is the one place the match is close rather than exact.
 
+**Badge shape.** Flux has two names for how round a badge is: `rounded`, and the
+older `variant="pill"` that its own component treats as an alias for it. Sheaf
+spells it `pill`, as a prop of its own rather than a variant, so refit renames
+`rounded` to it and rewrites the alias into `rounded` first — which also hands
+the badge back its tint, since Flux's `pill` meant both at once. The kit writes
+neither spelling, so this only shows up in a project that has written a pill
+badge of its own; left alone, `rounded` lands on the wrapper as stray HTML and
+`variant="pill"` comes out solid and square.
+
 **Text alignment.** The kit centres its auth headings by putting `text-center` on
 a wrapping div. Sheaf's heading and text declare `text-start` themselves, so refit
 restates the alignment on the tag as `text-center!`.

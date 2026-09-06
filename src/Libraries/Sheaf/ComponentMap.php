@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Onelegstudios\Refit\Libraries\Sheaf;
 
 use Onelegstudios\Refit\Icons\IconMap;
+use Onelegstudios\Refit\Plan\Actions\ShapeBadgePills;
 use Onelegstudios\Refit\Plan\Actions\WrapControlsInFields;
 
 /**
@@ -209,6 +210,14 @@ final class ComponentMap
         // as well, and URL equality against `route('teams.index')` does not.
         'x-ui.navlist.item' => ['current' => 'active'],
         'x-ui.navbar.item' => ['current' => 'active'],
+        // How round a badge is. Flux calls it `rounded`; Sheaf declares `pill`,
+        // and spends `rounded` nowhere — so left alone it falls out of
+        // `{{ $attributes }}` onto the wrapper as a stray HTML attribute and the
+        // badge stays square. Tag-keyed rather than global because `rounded` is
+        // an ordinary enough word to want back later. {@see ShapeBadgePills}
+        // writes Flux's older `variant="pill"` into this spelling first, so both
+        // of Flux's names for the shape arrive here as one.
+        'x-ui.badge' => ['rounded' => 'pill'],
     ];
 
     /**
@@ -299,13 +308,15 @@ final class ComponentMap
         // Sheaf's `outline` is the tint, and an `AddAttribute` after the rename
         // writes it onto every badge that named no variant.
         //
-        // So `solid` is the entry that matters: a badge that asked for Flux's
-        // solid keeps it, and the pass over it is what stops the tint being
-        // added on top.
+        // So `solid` is the only entry: a badge that asked for Flux's solid keeps
+        // it, and the pass over it is what stops the tint being added on top.
+        // Flux's other variant is `pill`, which is not a colour at all — it is a
+        // backwards-compatible alias for `rounded`, and {@see ShapeBadgePills}
+        // unwrites it into that before this table is ever asked, the same way
+        // Flux's own component does.
         'flux:badge' => [
             'variant' => [
                 'solid' => 'solid',
-                'pill' => 'soft',
             ],
         ],
         // Sheaf names the red one after the state rather than the consequence,
