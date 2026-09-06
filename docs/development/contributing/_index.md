@@ -26,4 +26,4 @@ see [Internals](/docs/development/internals).
 - Keep tests on observable behaviour through public APIs — commands, the
   registry, published resources, and the plans a project produces.
 - Package names, namespaces, Composer metadata, publish tags and examples all say
-  `onelegstudios/laravel-refit`.
+  `onelegstudios/refit`.

@@ -3,11 +3,11 @@
 </div>
 
 <p align="center">
-    <a href="https://packagist.org/packages/onelegstudios/laravel-refit"><img src="https://img.shields.io/packagist/v/onelegstudios/laravel-refit.svg?style=flat-square" alt="Packagist"></a>
-    <a href="https://packagist.org/packages/onelegstudios/laravel-refit"><img src="https://img.shields.io/packagist/php-v/onelegstudios/laravel-refit.svg?style=flat-square" alt="PHP from Packagist"></a>
-    <a href="https://packagist.org/packages/onelegstudios/laravel-refit"><img src="https://badge.laravel.cloud/badge/onelegstudios/laravel-refit?style=flat" alt="Laravel versions"></a>
-    <a href="https://github.com/onelegstudios/laravel-refit/actions"><img alt="GitHub Workflow Status (main)" src="https://img.shields.io/github/actions/workflow/status/onelegstudios/laravel-refit/tests.yml?branch=main&label=Tests&style=flat-square"></a>
-    <a href="https://packagist.org/packages/onelegstudios/laravel-refit"><img src="https://img.shields.io/packagist/dt/onelegstudios/laravel-refit.svg?style=flat-square" alt="Total Downloads"></a>
+    <a href="https://packagist.org/packages/onelegstudios/refit"><img src="https://img.shields.io/packagist/v/onelegstudios/refit.svg?style=flat-square" alt="Packagist"></a>
+    <a href="https://packagist.org/packages/onelegstudios/refit"><img src="https://img.shields.io/packagist/php-v/onelegstudios/refit.svg?style=flat-square" alt="PHP from Packagist"></a>
+    <a href="https://packagist.org/packages/onelegstudios/refit"><img src="https://badge.laravel.cloud/badge/onelegstudios/refit?style=flat" alt="Laravel versions"></a>
+    <a href="https://github.com/onelegstudios/refit/actions"><img alt="GitHub Workflow Status (main)" src="https://img.shields.io/github/actions/workflow/status/onelegstudios/refit/tests.yml?branch=main&label=Tests&style=flat-square"></a>
+    <a href="https://packagist.org/packages/onelegstudios/refit"><img src="https://img.shields.io/packagist/dt/onelegstudios/refit.svg?style=flat-square" alt="Total Downloads"></a>
 </p>
 
 Refit the starter. One-time scaffolding for Laravel's Livewire starter kit.
@@ -23,7 +23,7 @@ itself when it is done.
 Install it as a dev dependency, right after `laravel new`:
 
 ```bash
-composer require --dev onelegstudios/laravel-refit
+composer require --dev onelegstudios/refit
 ```
 
 ## Usage

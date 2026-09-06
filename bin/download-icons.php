@@ -495,7 +495,7 @@ function request(string $url, array $headers = []): ?string
 {
     $token = getenv('GITHUB_TOKEN') ?: getenv('GH_TOKEN');
 
-    $headers[] = 'User-Agent: onelegstudios-laravel-refit';
+    $headers[] = 'User-Agent: onelegstudios-refit';
 
     if ($token !== false && $token !== '') {
         $headers[] = "Authorization: Bearer {$token}";

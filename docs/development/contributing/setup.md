@@ -7,8 +7,8 @@ order: 1
 # Setup
 
 ```bash
-git clone git@github.com:onelegstudios/laravel-refit.git
-cd laravel-refit
+git clone git@github.com:onelegstudios/refit.git
+cd refit
 composer install
 ```
 
