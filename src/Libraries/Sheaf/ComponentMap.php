@@ -289,6 +289,19 @@ final class ComponentMap
                 'xl' => 'xl',
             ],
         ],
+        // A badge's variant is the one column where the interesting half is the
+        // value neither library writes. Flux leaves `variant` null and draws a
+        // translucent tinted chip; Sheaf defaults to `solid` and paints white on
+        // near-black. Neither has a grey in its colour list, so `color="zinc"`
+        // and no colour at all come out of the same fallback in both — which
+        // makes the kit's `color="zinc"` a restatement of Flux's default rather
+        // than a colour to translate, and leaves nothing here for it to do.
+        // Sheaf's `outline` is the tint, and an `AddAttribute` after the rename
+        // writes it onto every badge that named no variant.
+        //
+        // So `solid` is the entry that matters: a badge that asked for Flux's
+        // solid keeps it, and the pass over it is what stops the tint being
+        // added on top.
         'flux:badge' => [
             'variant' => [
                 'solid' => 'solid',

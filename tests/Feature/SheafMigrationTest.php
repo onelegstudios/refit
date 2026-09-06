@@ -457,6 +457,44 @@ it('gives every heading the size it was already rendering at', function (): void
         ->toContain('<x-ui.heading size="xs"');
 })->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
 
+it('keeps a badge the quiet chip Flux drew', function (): void {
+    $root = sheafKit('livewire-teams');
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'library' => 'sheaf',
+            'icons' => 'heroicons',
+        ]),
+    ])->assertSuccessful();
+
+    $project = (new ProjectDetector)->detect($root);
+
+    // Flux's badge defaults to a translucent tinted chip and Sheaf's to a solid
+    // one, so a rename alone turns the role labels in the members table from
+    // grey pills into white-on-near-black — the loudest thing in the row.
+    expect($project->get('resources/views/pages/teams/⚡edit.blade.php'))
+        ->toContain('<x-ui.badge variant="outline" color="zinc">')
+        ->and($project->get('resources/views/pages/teams/⚡index.blade.php'))
+        ->toContain('<x-ui.badge variant="outline" color="zinc">');
+
+    // The colour is left where it is because it does nothing in either library:
+    // neither colour list has a grey, so `zinc` answers out of the same fallback
+    // an uncoloured badge does. Which is why the badges that name no colour are
+    // the same finding rather than a separate one — the passkey chips on the
+    // security page went solid too.
+    expect($project->get('resources/views/pages/settings/⚡security.blade.php'))
+        ->toContain('<x-ui.badge variant="outline" size="sm">');
+
+    // And none of the kit's badges may be left taking Sheaf's default, since
+    // that default is the solid one.
+    foreach ($project->blades() as $path) {
+        foreach ((new TagParser)->parse($project->get($path), 'x-ui.badge') as $tag) {
+            expect($tag->has('variant'))->toBeTrue();
+        }
+    }
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire-teams')), 'Run `composer fixtures`.');
+
 it('keeps the auth pages centred once Sheaf owns their alignment', function (): void {
     $root = sheafKit('livewire');
 

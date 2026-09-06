@@ -155,7 +155,10 @@ Seven kinds of entry:
   would be worse than doing nothing. A heading's `level` is the exception, and
   lists all six because Sheaf *discards* a level it does not recognise. A
   heading's `size` looks like a second exception and is not one: `base` is listed
-  because refit writes that value into the tree itself, before this pass runs.
+  because refit writes that value into the tree itself, before this pass runs. A
+  badge's `variant` is the case where the table has nothing to say at all — the
+  value that matters is the one neither library writes down, so it is added after
+  this pass rather than translated by it.
 - **`BOUND_VALUES`** — why a bound value is worth a word, for the few where it is.
   `VALUES` reads literals, so `:level="$depth"` goes untranslated however complete
   the table is, and a warning is all refit has left.
@@ -196,7 +199,11 @@ Inside `Stage::Reconcile`, and it matters:
    in the file, which the rename then knows how to translate.
 2. **`MapComponentTags`** — the dotted icon form is folded into an attribute while
    the suffix is still there to read, then tag names, then attributes and values.
-3. **`MergeBrandVariants`**, **`RestructureBrandLogo`**, **`RestoreButtonRow`**,
+3. **The badge-variant `AddAttribute`** — the same move as the heading's, from the
+   other side of the rename. Flux has no word for the variant its badge defaults
+   to, so there is no Flux longhand to write out and let the rename translate;
+   the value written is Sheaf's own, onto a tag that already says `x-ui.`.
+4. **`MergeBrandVariants`**, **`RestructureBrandLogo`**, **`RestoreButtonRow`**,
    **`PlaceDropdownChildren`**, **`PreserveTextAlignment`**,
    **`MuteSecondaryText`**, **`PromoteContentsToLabel`**,
    **`WrapControlsInFields`**, **`ShapeSegmentedGroups`**,
@@ -206,14 +213,14 @@ Inside `Stage::Reconcile`, and it matters:
    to shape rather than two. `MuteSecondaryText` follows `PreserveTextAlignment`
    because both append to the same `class` attribute on the same tags; either
    order works, and each tolerates the other having created the attribute first.
-4. **`RebindAppearanceToTheme`**, **`ApplyThemeBeforePaint`** and
+5. **`RebindAppearanceToTheme`**, **`ApplyThemeBeforePaint`** and
    **`ScopeCollapseToSidebar`** — anywhere, in practice. None of the three reads a
    tag: one rewrites Alpine expressions, one writes a script into the head, and
    the third re-keys a class inside components Sheaf's own CLI wrote, which never
    said `flux:` to begin with. All three have to be in the reconcile stage rather
    than the write stage, though, because the files they edit are still moving
    until then.
-5. **The icon sweeps** — last, so they run against the tags the migration
+6. **The icon sweeps** — last, so they run against the tags the migration
    produced. This is why `planMigration()` is called before `planIcons()` in
    `RefitCommand::build()`.
 
@@ -907,6 +914,48 @@ A bound `:size` is skipped for the same reason, and is left out of
 `BOUND_VALUES` deliberately: Sheaf falls back to `text-base` for a size word it
 does not know, so an untranslated one is visibly the wrong size on the page. That
 is the ordinary variant argument, and only `level` escapes it.
+
+### A default is a decision neither library wrote down
+
+Flux's badge declares `variant` as `null` and Sheaf's declares it as `'solid'`,
+and those two words are the whole finding. Flux's null takes a branch that paints
+a translucent tint — `bg-zinc-400/15` behind `text-zinc-700` — and Sheaf's solid
+takes one that paints `text-white` on `bg-neutral-900`. Every badge in the kit
+names no variant, so every badge in the kit inverts on a rename.
+
+The colour is the part worth being careful about, because it is what the defect
+looks like from the outside. Four of the kit's badges say `color="zinc"`, and it
+is tempting to read those as a colour that failed to translate. They are not:
+neither library has a grey in its colour list. Flux's seventeen colours run `red`
+through `rose` and so do Sheaf's, and `zinc` — like `neutral`, `gray`, `slate`
+and `stone` — misses both and lands in each library's `default` arm. In Flux that
+arm *is* the grey pill, so `color="zinc"` restates the default it already had. In
+Sheaf it is the neutral chip, which under `variant="outline"` is the grey pill
+again.
+
+That is why the fix leaves `color` alone and adds `variant`, and why it covers
+all seven of the kit's badges rather than the four that name a colour. The three
+that name none had the identical defect with nothing in the markup to hint at it.
+
+`outline` is the nearest tint Sheaf has, and it is not exact: alongside Flux's
+translucent wash it draws a 1px `border-neutral-900` in light and `border-white`
+in dark, which Flux does not. The alternative was to strip the variant question
+and restate Flux's classes by hand — `bg-zinc-400/15 text-zinc-700` and their
+dark counterparts — and that trades a visible border for an invisible fight over
+precedence: Sheaf's badge merges with `$attributes->class(...)`, which
+concatenates rather than resolves, so two competing `bg-*` utilities are settled
+by Tailwind's source order and not by the attribute. `YieldIconColour` exists
+because of exactly that, one component over. A border refit can describe beats a
+tie it has to win.
+
+The mechanism is the heading's, run from the other end. `AddAttribute` skips a
+tag that already carries the attribute, so it writes the tint only where nothing
+was said — and after `MapComponentTags` rather than before it, because Flux has
+no word for the variant it defaults to. The heading could write `size="base"` in
+Flux's own vocabulary and let `VALUES` translate it; a badge has nothing to
+write, so the value it adds is Sheaf's `outline` and the tag it adds it to is
+already `x-ui.badge`. A project that wrote `variant="solid"` out by hand still
+gets Sheaf's solid, through `VALUES` and the skip.
 
 ### An overlay has to clear what it opens over
 

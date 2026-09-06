@@ -308,6 +308,16 @@ at different points on the scale: Flux's `size="lg"` is `text-base` and Sheaf's 
 default out before the rename and translates it with the rest. Left alone every
 sized heading in the kit grows one step and every bare one grows another.
 
+**Badge weight.** Flux's badge draws a translucent tinted chip when no `variant`
+is named; Sheaf's defaults to `solid` and paints white on near-black. Refit adds
+`variant="outline"`, Sheaf's nearest tint, to every badge that named no variant
+of its own — the role labels in the team members table and the passkey chips on
+the security page, which would otherwise be the loudest thing on either. The
+`color="zinc"` on four of them is left where it is: neither library has a grey in
+its colour list, so `zinc` falls to the same default in both and the variant is
+the whole of the difference. Sheaf's outline adds a thin border Flux does not
+draw, which is the one place the match is close rather than exact.
+
 **Text alignment.** The kit centres its auth headings by putting `text-center` on
 a wrapping div. Sheaf's heading and text declare `text-start` themselves, so refit
 restates the alignment on the tag as `text-center!`.
