@@ -88,6 +88,14 @@ final class SheafLibrary implements Library
     /** Flux's own prop default, which `ComponentMap::VALUES` then translates to Sheaf's `xs`. */
     private const string HEADING_DEFAULT = 'base';
 
+    /** The tag whose unwritten variant the migration writes out. Sheaf's name, since it runs after the rename. */
+    private const string BADGE_TAG = 'x-ui.badge';
+
+    private const string BADGE_VARIANT = 'variant';
+
+    /** Sheaf's word for the tinted chip Flux draws when no variant is named at all. */
+    private const string BADGE_TINT = 'outline';
+
     public function key(): string
     {
         return self::KEY;
@@ -248,6 +256,30 @@ final class SheafLibrary implements Library
         ));
 
         $plan->add(Stage::Reconcile, new MapComponentTags);
+
+        // The heading move again, for a default that runs the other way. Flux's
+        // badge leaves `variant` null and draws a translucent tinted chip;
+        // Sheaf's defaults to `solid` and paints white on near-black. Neither
+        // library has a grey in its colour list, so both answer `color="zinc"`
+        // out of the same fallback the colourless badge takes — which makes this
+        // one difference of defaults, not a colour to translate, and puts all
+        // seven of the kit's badges behind it rather than the four that name a
+        // colour. `outline` is Sheaf's nearest tint, close enough on text and
+        // background and a 1px border louder.
+        //
+        // Keyed off the Sheaf tag rather than the Flux one, which is the
+        // opposite of the heading's `size` and for the reason that case gave:
+        // there the value written out was Flux's own word and the rename could
+        // translate it, and here Flux has no word at all for the variant it
+        // defaults to. So the value is Sheaf's, and it is written onto a tag
+        // that already says `x-ui.`. A badge that named its own variant keeps
+        // it — `AddAttribute` passes over a tag that carries the attribute
+        // already, so Flux's explicit `solid` still arrives as Sheaf's.
+        $plan->add(Stage::Reconcile, new AddAttribute(
+            self::BADGE_TAG,
+            self::BADGE_VARIANT,
+            self::BADGE_TINT,
+        ));
 
         // All of these read the tags the rename produced, so all of them come
         // after it. Each is a place where Sheaf's component renders what Flux's
