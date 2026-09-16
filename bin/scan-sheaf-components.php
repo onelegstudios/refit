@@ -506,19 +506,39 @@ function request(string $url): string
     $headers = ['User-Agent: onelegstudios-laravel-refit', 'Accept: application/vnd.github+json'];
     $token = getenv('GITHUB_TOKEN') ?: getenv('GH_TOKEN');
 
-    if (is_string($token) && $token !== '') {
+    // Only the API reads the token; raw.githubusercontent.com is public.
+    if (is_string($token) && $token !== '' && str_starts_with($url, 'https://api.github.com/')) {
         $headers[] = 'Authorization: Bearer '.$token;
     }
 
-    $body = @file_get_contents($url, false, stream_context_create([
+    $context = stream_context_create([
         'http' => ['header' => implode("\r\n", $headers), 'timeout' => 30, 'ignore_errors' => true],
-    ]));
+    ]);
 
-    if ($body === false) {
-        throw new RuntimeException("Unable to reach [{$url}].");
+    // A run makes a few hundred requests, so ride out a dropped connection or a
+    // throttled response rather than failing the check on it.
+    $status = 'no response';
+
+    for ($attempt = 1; $attempt <= 4; $attempt++) {
+        if ($attempt > 1) {
+            sleep(2 ** ($attempt - 1));
+        }
+
+        $http_response_header = [];
+        $body = @file_get_contents($url, false, $context);
+        $status = $http_response_header[0] ?? 'no response';
+        $code = preg_match('#^HTTP/\S+\s+(\d{3})#', $status, $matches) === 1 ? (int) $matches[1] : 0;
+
+        if ($body !== false && $code >= 200 && $code < 300) {
+            return $body;
+        }
+
+        if ($code >= 400 && $code < 500 && ! in_array($code, [403, 429], true)) {
+            break;
+        }
     }
 
-    return $body;
+    throw new RuntimeException("Unable to reach [{$url}] ({$status}).");
 }
 
 /**
