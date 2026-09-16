@@ -42,10 +42,11 @@ use Onelegstudios\Refit\Project\Project;
  * sidebar wants, and re-keying it would change how a collapsed sidebar looks
  * rather than what it manages to show.
  *
- * Like the OTP patch, this edits files `sheaf:install` copied into the project,
- * which is what makes them the project's; a later install overwrites it. It
- * matches on the variant rather than on a line, so a Sheaf that has fixed this
- * upstream — or spelled it some other way — has nothing here to change.
+ * Like the nav item icon and colour fixes, this edits files `sheaf:install`
+ * copied into the project, which is what makes them the project's; a later
+ * install overwrites it. It matches on the variant rather than on a line, so a
+ * Sheaf that has fixed this upstream — or spelled it some other way — has nothing
+ * here to change.
  */
 final class ScopeCollapseToSidebar extends BladeSweep
 {

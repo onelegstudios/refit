@@ -1279,29 +1279,6 @@ it('gives the two-factor errors the heading Sheaf reads them from', function (st
     ['livewire-class-components', 'resources/views/livewire/settings/two-factor/recovery-codes.blade.php'],
 ])->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
 
-it('plans the OTP autofill patch only for a kit that has an OTP', function (): void {
-    // Sheaf's OTP is hostile to password managers in three ways Flux's was not,
-    // and all three live in the component `sheaf:install` copies into the project
-    // — so this is the one action that edits Sheaf's own source.
-    expect(implode("\n", reconcileSteps(sheafKit('livewire'))))
-        ->toContain('patch  Sheaf\'s OTP');
-
-    // A kit built without two-factor never installs the component, and there is
-    // nothing to patch.
-    $root = sheafKit('livewire');
-
-    foreach ((array) glob($root.'/resources/views/pages/**/*two-factor*.blade.php') as $path) {
-        @unlink((string) $path);
-    }
-
-    file_put_contents(
-        $root.'/resources/views/pages/settings/⚡two-factor-setup-modal.blade.php',
-        "<div>no otp here</div>\n",
-    );
-
-    expect(implode("\n", reconcileSteps($root)))->not->toContain('patch  Sheaf\'s OTP');
-})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
-
 it('keeps the browser\'s own defaults dark once Flux stops declaring it', function (): void {
     $root = sheafKit('livewire');
 

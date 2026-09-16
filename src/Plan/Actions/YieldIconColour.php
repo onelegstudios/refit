@@ -45,7 +45,7 @@ use Onelegstudios\Refit\Project\Project;
  * — the class lands as `[:where(&amp;)]:text-neutral-700` and names no rule
  * Tailwind wrote. {@see SizeNavItemIcons} is the same trap, one component over.
  *
- * The fourth place refit edits Sheaf's own source, for the reason the other three
+ * The third place refit edits Sheaf's own source, for the reason the other two
  * give: `sheaf:install` copies these files into the project, which is what makes
  * them the project's to fix, and no caller can reach a class the component writes
  * for itself. It matches on the call rather than on a line, so a Sheaf that has

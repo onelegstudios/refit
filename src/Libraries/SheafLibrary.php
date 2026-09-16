@@ -10,7 +10,6 @@ use Onelegstudios\Refit\Icons\IconStrategy;
 use Onelegstudios\Refit\Libraries\Sheaf\ComponentMap;
 use Onelegstudios\Refit\Libraries\Sheaf\Components;
 use Onelegstudios\Refit\Libraries\Sheaf\LayoutStubs;
-use Onelegstudios\Refit\Plan\Actions\AcceptOtpAutofill;
 use Onelegstudios\Refit\Plan\Actions\AddAttribute;
 use Onelegstudios\Refit\Plan\Actions\AddressModalDispatches;
 use Onelegstudios\Refit\Plan\Actions\ApplyThemeBeforePaint;
@@ -332,29 +331,21 @@ final class SheafLibrary implements Library
         // so a sidebar of labels and no glyphs is how the icon choice shows it.
         $plan->add(Stage::Reconcile, new SizeNavItemIcons);
 
-        // The same kind of size, on a button. The rename carries an outline
-        // weight across, and Sheaf draws it a step larger than Flux did.
-        $plan->add(Stage::Reconcile, new SizeOutlineButtonIcons);
-
         // A fourth, in the component that one hands the class to. Sheaf's icon
         // colours itself at a specificity the caller cannot beat, and Tailwind
         // sorts the tie in the component's favour — so the two-factor QR asks to
         // stay dark on its light disc and comes out white on white.
         $plan->add(Stage::Reconcile, new YieldIconColour);
 
+        // The same kind of size as the nav items', on a button. The rename carries
+        // an outline weight across, and Sheaf draws it a step larger than Flux did.
+        $plan->add(Stage::Reconcile, new SizeOutlineButtonIcons);
+
         // After the field wrapping rather than beside it, because that sweep reads
         // the OTP's `name` to key the error it writes and this one takes the same
         // attribute off — Sheaf spends it on every digit box, so a form posts one
         // digit under it and the challenge rejects every code.
         $plan->add(Stage::Reconcile, new CarryOtpValue);
-
-        // And the other half of the same page. Sheaf's OTP is hostile to password
-        // managers in three ways Flux's was not, all of them inside the component
-        // `sheaf:install` has just copied into the project — the last of the four
-        // places refit edits Sheaf's own source, until the fix lands upstream.
-        if (AcceptOtpAutofill::used($project)) {
-            $plan->add(Stage::Reconcile, new AcceptOtpAutofill);
-        }
 
         // The same list, one step further along: this one reads not just the
         // renamed tag but the `name` -> `id` pairing the rename performed, since

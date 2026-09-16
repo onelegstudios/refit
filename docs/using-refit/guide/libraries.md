@@ -192,9 +192,9 @@ in the document loses its labels, the settings sub-navigation out in the main
 column included — three rows with no icon in them, and so three rows of nothing.
 Refit re-keys those rules onto the same sidebar-and-collapse selector it points
 the kit's own at, which leaves a collapsed sidebar looking exactly as it did and
-the settings menu where it was. This is one of four places refit edits Sheaf's own
-components — the nav item icons, the colour those icons paint over their caller's,
-and the OTP box a password manager cannot fill are the others — so a later
+the settings menu where it was. This is one of three places refit edits Sheaf's own
+components — the nav item icons and the colour those icons paint over their
+caller's are the others — so a later
 `sheaf:install` puts the leak back.
 
 **Nav item icons, when the icons are Phosphor.** Sheaf's `navlist.item` and

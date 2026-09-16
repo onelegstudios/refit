@@ -480,61 +480,6 @@ Tailwind's ordering rather than by ours. Only the OTP is touched, and only when 
 already asks to be centred and names no width of its own — `w-fit` on an input or a
 select would shrink a control meant to fill its field, and Flux centred neither.
 
-### A box a password manager cannot fill
-
-One of the four places refit edits Sheaf's own source rather than the kit's — the
-[collapse that the whole page answers](#a-collapse-the-whole-page-answers-for), the
-[icon class that is escaped twice](#a-class-escaped-twice-is-not-a-class) and the
-[colour that wins a tie it should lose](#a-colour-that-wins-a-tie-it-should-lose)
-are the others — and, with it, a stopgap rather than a translation.
-
-Flux's `<ui-otp>` and Sheaf's `x-ui.otp` disagree on the three things that decide
-whether a password manager can fill a code, and Sheaf takes the losing side of
-each:
-
-| | Flux | Sheaf |
-| --- | --- | --- |
-| Which box claims the code | `one-time-code` on the first input, `off` on the rest | `one-time-code` on all six |
-| A multi-character value | distributed across the boxes | truncated to its last character |
-| How the caret is held | `tabindex` | every box ahead of it is `disabled` |
-
-A password manager sets `.value` and dispatches `input`, never `paste` — so
-Sheaf's `handlePaste`, the only code it has that spreads a code out, never runs.
-A filled `123456` reaches `handleInput`, which keeps the `6` and drops the rest;
-and a fill that goes box by box instead cannot write to boxes two through six at
-all, because a disabled input is one an extension cannot touch. Either way one
-digit lands. What follows looks like the keyboard locking up: `handleInput`
-enables and focuses the next box a frame later, `x-on:focus` re-selects it a frame
-after that, and the page goes on stealing focus every frame while the extension is
-still trying to drive the field.
-
-None of that is reachable from the page, so `AcceptOtpAutofill` patches the
-component `sheaf:install` copied into the project — giving `one-time-code` to the
-first box from `setupInputs()`, spreading a multi-character value through a new
-`fillFrom()` that `handlePaste` shares, and holding the caret with `tabIndex`
-rather than `disabled`. The three places that read the disabled flag back —
-`clear()`, `handleClick()` and the availability pass itself — change with it.
-
-Every edit is anchored on the lines it replaces, matched per line and trimmed so
-Sheaf's indentation inside the `x-data` attribute is not what decides whether it
-lands, and re-indented onto wherever it was found. A block refit no longer
-recognises is named in a warning rather than guessed at, and the rest still apply:
-a partial patch beats no patch and beats a wrong one.
-
-Each edit also names a line only a fixed component has — the `tabIndex`
-assignment, the `fillFrom(value, index)` call, and so on. Where that line is
-already there, the edit is skipped without a word: that is both a second run and
-Sheaf's own source, which now carries the fix in
-[sheafui/components](https://github.com/sheafui/components). Without the check a
-fixed component read as drift, and the one anchor it still has —
-`handlePaste(e) {` — collected a second `fillFrom()`. Today only the
-`autocomplete="off"` in `input.blade.php` still lands on a fresh install; upstream
-leaves `one-time-code` on every box until `setupInputs()` runs.
-
-It is planned only for a project that writes an OTP, read before the rename while
-the tag is still `<flux:otp`. Once no supported Sheaf install predates the fix,
-the `index.blade.php` half of this action can go.
-
 ### A button is a row, minus one box
 
 Both libraries build a button as a flex row, and the difference between them is a
@@ -642,8 +587,9 @@ collapsed sidebar included. That is already what the page outside the sidebar
 wants, and re-keying it would change how a collapsed sidebar looks rather than
 what it manages to show.
 
-Like the OTP patch, this edits files `sheaf:install` copied into the project,
-which is what makes them the project's, and a later install overwrites it. It
+Like the nav item icon and colour fixes, this edits files `sheaf:install` copied
+into the project, which is what makes them the project's, and a later install
+overwrites it. It
 matches on the variant rather than on a line, so a Sheaf that has fixed this
 upstream, or spelled it some other way, has nothing here to change.
 
@@ -735,7 +681,7 @@ nav items already use for their size and the `escape` argument they already need
 A zero-specificity rule loses to any class the view writes, whatever the order,
 and still beats plain inheritance — so an icon that asks for no colour is drawn in
 exactly the neutral pair it was, and no caller has to shout over the component
-with `!`. Like the other three, it matches on the call rather than on a line.
+with `!`. Like the other two, it matches on the call rather than on a line.
 
 ### A menu is a grid
 
