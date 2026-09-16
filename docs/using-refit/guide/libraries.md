@@ -277,8 +277,8 @@ draws an outline icon a step larger than Flux did beside a label, so those
 buttons also get `iconClasses="size-4!"`; icon-only buttons are the same size in
 both libraries and are left alone. Sidebar and header nav items keep
 `icon:variant` as written, because Sheaf hands it on to their icon. Anywhere else
-nothing reads it, so it is removed. With Phosphor, which has no outline weight,
-these icons draw Phosphor's regular weight.
+nothing reads it, so it is removed. With Phosphor, Sheaf draws `outline` as
+Phosphor's `regular` weight, which is Phosphor's name for the same outline style.
 
 **Callout headings.** Flux lets a callout carry its heading as an attribute and
 expands it into a `<flux:callout.heading>` child itself. Sheaf's alert only ever
