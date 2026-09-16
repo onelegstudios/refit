@@ -52,7 +52,13 @@ function sheafKit(string $kit, bool $withComponents = true): string
         // Stand in for what `sheaf:install` would have written, so the plan has
         // no work to do at the dependency stage and the test is about rewriting.
         foreach (Components::closure(ComponentMap::components()) as $component) {
-            @mkdir($root.'/'.SheafLibrary::COMPONENT_DIRECTORY.'/'.$component, 0755, true);
+            $base = $root.'/'.SheafLibrary::COMPONENT_DIRECTORY.'/'.$component;
+
+            @mkdir($base, 0755, true);
+
+            foreach (Components::components()[$component] ?? [''] as $part) {
+                touch($base.'/'.($part === '' ? 'index' : $part).'.blade.php');
+            }
         }
 
         // Including the halves it writes into resources/js and imports nowhere:
@@ -188,12 +194,35 @@ it('leaves the npm step out once the primitive is a dependency', function (): vo
     expect(implode("\n", installSteps($root)))->not->toContain('npm install');
 })->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
 
+it('reinstalls a component whose folder is there and whose files are not', function (): void {
+    $root = sheafKit('livewire');
+    $ui = $root.'/'.SheafLibrary::COMPONENT_DIRECTORY;
+
+    // A reset that removed the files and left the folders behind.
+    foreach ((array) glob($ui.'/button/*') as $file) {
+        unlink((string) $file);
+    }
+
+    // And one that took a single part, which is the OTP input refit patches.
+    unlink($ui.'/otp/input.blade.php');
+
+    $steps = implode("\n", installSteps($root));
+
+    // With --force, because Sheaf's "already exists" question has a default
+    // that is not one of its answers, and dies on it without a terminal.
+    expect($steps)->toContain('sheaf:install button --no-interaction --force')
+        ->toContain('sheaf:install otp --no-interaction --force')
+        ->not->toContain('sheaf:install navlist');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+
 it('plans a sheaf:install for every component it needs and does not have', function (): void {
     $root = sheafKit('livewire', withComponents: false);
     $steps = implode("\n", installSteps($root));
 
     expect($steps)->toContain('sheaf:install button')
-        ->toContain('sheaf:install navlist');
+        ->toContain('sheaf:install navlist')
+        // Nothing there to overwrite, so nothing to force.
+        ->not->toContain('--force');
 })->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
 
 it('installs what a component needs as well as the component', function (): void {

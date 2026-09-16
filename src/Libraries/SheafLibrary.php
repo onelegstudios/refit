@@ -460,8 +460,18 @@ final class SheafLibrary implements Library
         }
 
         foreach ($this->missingComponents($project) as $component) {
+            $command = ['php', 'artisan', 'sheaf:install', $component, '--no-interaction'];
+
+            // A folder with parts missing. Sheaf asks what to do about a component
+            // that already exists, and its default is not one of the answers — so
+            // without a terminal the install dies on `Unhandled match case
+            // 'prompt'`. `--force` is the only flag that skips the question.
+            if ($project->exists(self::COMPONENT_DIRECTORY.'/'.$component)) {
+                $command[] = '--force';
+            }
+
             $plan->add(Stage::Dependencies, new RunProcess(
-                ['php', 'artisan', 'sheaf:install', $component, '--no-interaction'],
+                $command,
                 sprintf('Installing Sheaf\'s "%s"', $component),
                 required: true,
             ));
@@ -538,12 +548,29 @@ final class SheafLibrary implements Library
     }
 
     /**
+     * Whether every part of a component Sheaf records is on disk.
+     *
      * Sheaf installs a component either as a directory of parts or as a single
-     * file, depending on how many pieces it has, so both shapes count as present.
+     * file, depending on how many pieces it has, so the component's own tag counts
+     * in either shape. The directory alone does not: an empty or half-emptied one
+     * — a reset that removed files and left folders — would otherwise skip the
+     * install and leave every view that uses the component unable to render.
      */
     private function hasComponent(Project $project, string $component): bool
     {
-        return $project->exists(self::COMPONENT_DIRECTORY.'/'.$component)
-            || $project->exists(self::COMPONENT_DIRECTORY.'/'.$component.'.blade.php');
+        $base = self::COMPONENT_DIRECTORY.'/'.$component;
+        $parts = Components::components()[$component] ?? [''];
+
+        foreach ($parts as $part) {
+            $present = $part === ''
+                ? $project->exists($base.'.blade.php') || $project->exists($base.'/index.blade.php')
+                : $project->exists($base.'/'.$part.'.blade.php');
+
+            if (! $present) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

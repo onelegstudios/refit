@@ -112,6 +112,12 @@ are not there. Being offline, or a Pro component wanting `php artisan sheaf:logi
 first, both land here. Fix it and run refit again — the plan is rebuilt from
 scratch each time, so the steps that did work are simply skipped.
 
+A component counts as installed only when every file Sheaf installs for it is on
+disk, not just its folder. A folder with files missing — left behind by a reset
+that removed files but not directories — is installed again with `--force`,
+because Sheaf's own "already exists" question cannot be answered without a
+terminal. That overwrites whatever parts of the component are still there.
+
 `npm install @sheaf/rover` is the one step that does not stop the run. Nothing is
 rewritten *onto* it, so a failure there is a warning in the notes and a select
 that will not open, rather than a migration you have to start over.
