@@ -60,6 +60,15 @@ and does nothing. Heroicons never showed it — its artwork carries its own
 nothing in front of them. See
 [Sheaf's components](/docs/using-refit/guide/libraries).
 
+**Weights are not translated yet.** Names are, but weights keep their Heroicons
+spelling, and Sheaf's icon component only passes Phosphor's own weights through
+(`thin`, `light`, `regular`, `bold`, `fill`, `duotone`). Anything else draws as
+`regular`, Phosphor's outline style. That is right for `outline`, and loses the
+solid look everywhere else: the kit's `variant="solid"` check in the two-factor
+setup, and the `micro` and `mini` weights Sheaf's buttons and dropdown items pick
+by default, all come out as outlines rather than Phosphor's `fill`. Change the
+weight on the ones you want filled.
+
 **Lucide is not offered under Sheaf.** It would need a third artwork mechanism —
 `blade-ui-kit/blade-icons` and the `bk:` name prefix — and a dependency you did
 not ask for. Nothing stops you doing it by hand afterwards.
