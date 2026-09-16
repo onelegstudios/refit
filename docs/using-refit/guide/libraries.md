@@ -264,6 +264,12 @@ same size is dropped, since Sheaf's full-width dialog already reaches it. Anythi
 else is moved whole, which Sheaf applies to the dialog as written. A modal that already has a
 `width`, or binds its `:class`, is left alone and named in `REFIT-NOTES.md`.
 
+**Subtle separators.** Sheaf's separator reserves its `variant` prop and reads
+nothing from it, so Flux's `variant="subtle"` would draw the settings headings'
+rule at full strength. Refit replaces the attribute with classes that paint
+Flux's fainter line (`bg-zinc-800/5`, `bg-white/10` in dark mode) onto the
+element Sheaf draws the line with.
+
 **Button icon weights.** The kit asks for outline icons on nine buttons with
 `icon:variant="outline"`, a spelling Sheaf's button does not read. Refit renames
 it to `iconVariant`, which Sheaf's button, dropdown item and badge declare. Sheaf

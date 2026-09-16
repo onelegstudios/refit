@@ -35,6 +35,7 @@ use Onelegstudios\Refit\Plan\Actions\RewriteIconNames;
 use Onelegstudios\Refit\Plan\Actions\RewriteToastCalls;
 use Onelegstudios\Refit\Plan\Actions\RunProcess;
 use Onelegstudios\Refit\Plan\Actions\ScopeCollapseToSidebar;
+use Onelegstudios\Refit\Plan\Actions\ShadeSubtleSeparators;
 use Onelegstudios\Refit\Plan\Actions\ShapeBadgePills;
 use Onelegstudios\Refit\Plan\Actions\ShapeSegmentedGroups;
 use Onelegstudios\Refit\Plan\Actions\SizeModalPanels;
@@ -299,13 +300,15 @@ final class SheafLibrary implements Library
         // looking broken: a brand the kit wrote out twice to choose between, a
         // logo slot whose classes are dropped, a button that stacks its own
         // contents, a menu panel that is a grid, text that no longer inherits its
-        // alignment, and a label that has no prop to land in.
+        // alignment, a separator that ignores its variant, and a label that has
+        // no prop to land in.
         $plan->add(Stage::Reconcile, new MergeBrandVariants);
         $plan->add(Stage::Reconcile, new RestructureBrandLogo);
         $plan->add(Stage::Reconcile, new RestoreButtonRow);
         $plan->add(Stage::Reconcile, new PlaceDropdownChildren);
         $plan->add(Stage::Reconcile, new PreserveTextAlignment);
         $plan->add(Stage::Reconcile, new MuteSecondaryText);
+        $plan->add(Stage::Reconcile, new ShadeSubtleSeparators);
         $plan->add(Stage::Reconcile, new PromoteContentsToLabel);
         $plan->add(Stage::Reconcile, new WrapControlsInFields);
         $plan->add(Stage::Reconcile, new ShapeSegmentedGroups);

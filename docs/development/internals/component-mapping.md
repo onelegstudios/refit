@@ -221,9 +221,9 @@ Inside `Stage::Reconcile`, and it matters:
 4. **`MergeBrandVariants`**, **`RestructureBrandLogo`**, **`RestoreButtonRow`**,
    **`PlaceDropdownChildren`**, **`PreserveTextAlignment`**,
    **`MuteSecondaryText`**, **`PromoteContentsToLabel`**,
-   **`WrapControlsInFields`**, **`ShapeSegmentedGroups`**,
+   **`ShadeSubtleSeparators`**, **`WrapControlsInFields`**, **`ShapeSegmentedGroups`**,
    **`FollowSidebarCollapse`** and **`RaiseSidebarDropdowns`** — after the
-   rename, because all eleven read the tags the rename produced.
+   rename, because all twelve read the tags the rename produced.
    `MergeBrandVariants` comes before `RestructureBrandLogo` so there is one brand
    to shape rather than two. `MuteSecondaryText` follows `PreserveTextAlignment`
    because both append to the same `class` attribute on the same tags; either

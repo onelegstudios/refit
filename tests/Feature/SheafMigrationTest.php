@@ -370,6 +370,35 @@ it('carries the kit\'s outline button icons across at Flux\'s size', function (s
     'Run `composer fixtures`.',
 );
 
+it('draws the settings heading\'s separator as faintly as Flux did', function (string $kit): void {
+    $root = sheafKit($kit);
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'library' => 'sheaf',
+            'icons' => 'heroicons',
+        ]),
+    ])->assertSuccessful();
+
+    $project = (new ProjectDetector)->detect($root);
+    $shaded = 0;
+
+    foreach ($project->blades() as $path) {
+        $source = $project->get($path);
+
+        // Sheaf reserves the variant and draws the line at full strength.
+        expect($source)->not->toMatch('/<x-ui\.separator[^>]*variant="subtle"/');
+
+        $shaded += substr_count($source, '[&>div:empty]:bg-zinc-800/5');
+    }
+
+    expect($shaded)->toBeGreaterThan(0);
+})->with(starterKits())->skip(
+    fn (): bool => ! is_dir(fixturePath('livewire')),
+    'Run `composer fixtures`.',
+);
+
 it('only ever produces components Sheaf actually ships', function (string $kit): void {
     $root = sheafKit($kit);
 
