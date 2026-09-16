@@ -15,11 +15,11 @@ use Onelegstudios\Refit\Project\Project;
  * tests is one more thing to keep in step — and none of Sheaf's source belongs in
  * this repository beyond the lines the patch has to name to replace them.
  *
- * @return array<string, array<string, array{string, string}>>
+ * @return array<string, array<string, array{string, string, string}>>
  */
 function otpPatches(): array
 {
-    /** @var array<string, array<string, array{string, string}>> */
+    /** @var array<string, array<string, array{string, string, string}>> */
     return (new ReflectionMethod(AcceptOtpAutofill::class, 'patches'))->invoke(null);
 }
 
@@ -27,14 +27,14 @@ function otpPatches(): array
  * A stand-in for the file Sheaf installs: every block the patch looks for, at the
  * depth Sheaf writes them, in one file.
  */
-function otpSourceFor(string $path, string $indent = '                '): string
+function otpSourceFor(string $path, string $indent = '                ', bool $fixed = false): string
 {
     $blocks = [];
 
-    foreach (otpPatches()[$path] as [$find, $ignored]) {
+    foreach (otpPatches()[$path] as [$find, $replace]) {
         $blocks[] = implode("\n", array_map(
             fn (string $line): string => $line === '' ? '' : $indent.$line,
-            explode("\n", $find),
+            explode("\n", $fixed ? $replace : $find),
         ));
     }
 
@@ -189,6 +189,32 @@ it('reports the blocks it no longer recognises rather than mangling them', funct
     // did are still applied — a partial patch beats no patch and beats a guess.
     expect($patched[$component])->toContain('input.locked = index >= enableCount;')
         ->toContain('this.fillFrom(value, index);');
+});
+
+it('leaves a component Sheaf has already fixed alone', function (): void {
+    $component = SheafLibrary::COMPONENT_DIRECTORY.'/otp/index.blade.php';
+    $box = SheafLibrary::COMPONENT_DIRECTORY.'/otp/input.blade.php';
+
+    // Sheaf's own source now carries every one of these edits. Its anchors are
+    // gone, and that is not drift to report — and `handlePaste(e) {` is still
+    // there, which is not a reason to write a second `fillFrom` above it.
+    $files = [
+        $component => otpSourceFor($component, fixed: true),
+        $box => otpSourceFor($box, fixed: true),
+    ];
+
+    $report = new Report;
+
+    expect(patchOtp($files, $report))->toBe($files)
+        ->and($report->warnings())->toBe([]);
+});
+
+it('changes nothing on a second run', function (): void {
+    $once = patchOtp(otpComponent());
+    $report = new Report;
+
+    expect(patchOtp($once, $report))->toBe($once)
+        ->and($report->warnings())->toBe([]);
 });
 
 it('says so when there is no component to patch', function (): void {

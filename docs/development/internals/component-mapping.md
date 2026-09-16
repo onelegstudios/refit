@@ -521,11 +521,19 @@ lands, and re-indented onto wherever it was found. A block refit no longer
 recognises is named in a warning rather than guessed at, and the rest still apply:
 a partial patch beats no patch and beats a wrong one.
 
+Each edit also names a line only a fixed component has — the `tabIndex`
+assignment, the `fillFrom(value, index)` call, and so on. Where that line is
+already there, the edit is skipped without a word: that is both a second run and
+Sheaf's own source, which now carries the fix in
+[sheafui/components](https://github.com/sheafui/components). Without the check a
+fixed component read as drift, and the one anchor it still has —
+`handlePaste(e) {` — collected a second `fillFrom()`. Today only the
+`autocomplete="off"` in `input.blade.php` still lands on a fresh install; upstream
+leaves `one-time-code` on every box until `setupInputs()` runs.
+
 It is planned only for a project that writes an OTP, read before the rename while
-the tag is still `<flux:otp`. A later `sheaf:install otp` overwrites it, which is
-the point at which to check whether
-[sheafui/components](https://github.com/sheafui/components) has fixed this
-upstream and this action can go.
+the tag is still `<flux:otp`. Once no supported Sheaf install predates the fix,
+the `index.blade.php` half of this action can go.
 
 ### A button is a row, minus one box
 

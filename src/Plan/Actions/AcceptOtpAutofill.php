@@ -17,10 +17,11 @@ use Onelegstudios\Refit\Project\Project;
  * class that sizes a nav item's icon, and let an icon's colour yield to the
  * caller's — and it is deliberate: `sheaf:install` copies these files into the
  * project, so they are the project's to fix, and nothing on the page can reach the
- * behaviour from outside. It is a stopgap until
- * the fix lands upstream — a later `sheaf:install` overwrites it, and every edit is
- * anchored on the lines it is replacing, so a version that has moved on is reported
- * rather than mangled.
+ * behaviour from outside. It is a stopgap for a component installed before the
+ * fix landed upstream — Sheaf's own source now carries it — so each edit also
+ * names a line that only a fixed component has, and a component that already
+ * says it is left alone. Every edit is anchored on the lines it is replacing, so a
+ * version that has moved on some other way is reported rather than mangled.
  *
  * Flux's `<ui-otp>` and Sheaf's `x-ui.otp` disagree on the three things that
  * decide whether autofill works, and Sheaf takes the losing side of each:
@@ -90,7 +91,13 @@ final class AcceptOtpAutofill implements Action
             $source = $project->get($path);
             $patched = $source;
 
-            foreach ($patches as $label => [$find, $replace]) {
+            foreach ($patches as $label => [$find, $replace, $fixed]) {
+                // Sheaf's own source, or an earlier run of this one, already
+                // does what this edit would.
+                if (self::contains($patched, $fixed)) {
+                    continue;
+                }
+
                 $spliced = self::splice($patched, $find, $replace);
 
                 if ($spliced === null) {
@@ -162,6 +169,23 @@ final class AcceptOtpAutofill implements Action
     }
 
     /**
+     * Is this run of lines anywhere in the source, ignoring indentation?
+     */
+    private static function contains(string $source, string $block): bool
+    {
+        $needle = self::lines($block);
+        $lines = explode("\n", $source);
+
+        foreach (array_keys($lines) as $start) {
+            if (self::matches($lines, $needle, $start)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Does the needle sit at this offset, ignoring indentation?
      *
      * @param  list<string>  $lines
@@ -219,9 +243,10 @@ final class AcceptOtpAutofill implements Action
      * The anchored replacements, keyed by file and then by what each one is for.
      *
      * Anchors are whole statements rather than fragments, so a near miss is a miss
-     * and gets reported instead of half-applying.
+     * and gets reported instead of half-applying. The third entry is what a fixed
+     * component says in place of the anchor: when it is there, the edit is done.
      *
-     * @return array<string, array<string, array{string, string}>>
+     * @return array<string, array<string, array{string, string, string}>>
      */
     private static function patches(): array
     {
@@ -244,6 +269,7 @@ final class AcceptOtpAutofill implements Action
                         input.setAttribute('autocomplete', index === 0 ? 'one-time-code' : 'off');
                     });
                     JS,
+                    "input.setAttribute('autocomplete', index === 0 ? 'one-time-code' : 'off');",
                 ],
                 'holding the caret' => [
                     <<<'JS'
@@ -259,6 +285,7 @@ final class AcceptOtpAutofill implements Action
                         input.tabIndex = index >= enableCount ? -1 : 0;
                     });
                     JS,
+                    'input.tabIndex = index >= enableCount ? -1 : 0;',
                 ],
                 'a code filled into one box' => [
                     <<<'JS'
@@ -278,6 +305,7 @@ final class AcceptOtpAutofill implements Action
                         return;
                     }
                     JS,
+                    'this.fillFrom(value, index);',
                 ],
                 'spreading a code across the boxes' => [
                     <<<'JS'
@@ -324,6 +352,7 @@ final class AcceptOtpAutofill implements Action
                     // Handle paste: distribute valid chars across remaining inputs
                     handlePaste(e) {
                     JS,
+                    'fillFrom(text, startIndex) {',
                 ],
                 'clearing the boxes' => [
                     <<<'JS'
@@ -343,6 +372,11 @@ final class AcceptOtpAutofill implements Action
                     // Resetting the state is what puts the tab order back, now
                     // that nothing is disabled.
                     this._state = '';
+                    JS,
+                    <<<'JS'
+                    this._inputs.forEach(input => {
+                        input.value = '';
+                    });
                     JS,
                 ],
                 'clicking a box' => [
@@ -378,6 +412,7 @@ final class AcceptOtpAutofill implements Action
 
                     this.focusAndSelect(this._inputs[Math.min(order, furthest)]);
                     JS,
+                    'const furthest = Math.min(this._state.length, this.length - 1);',
                 ],
             ],
             self::BOX => [
@@ -387,6 +422,7 @@ final class AcceptOtpAutofill implements Action
                     {{-- setupInputs() gives this to the first box alone. --}}
                     autocomplete="off"
                     BLADE,
+                    'autocomplete="off"',
                 ],
             ],
         ];
