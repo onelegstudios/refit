@@ -1067,10 +1067,14 @@ the end of the body — so the kit's `max-w-lg` sizes nothing, and every panel
 falls back to Sheaf's `width="sm"`.
 
 `SizeModalPanels` runs after the rename and moves the class into `width`. Sheaf's
-width `match` names seventeen sizes and ends in `default => $width`, so a lone
+width `match` names seventeen sizes and ends in `default => $width`, so a
 `max-w-*` it names is written as the name, and any other class list is written
-verbatim and lands on the panel — the same place Flux put it. The two-factor
-setup's `max-w-md md:min-w-md` takes the second path.
+verbatim and lands on the panel — the same place Flux put it.
+
+The two-factor setup's `max-w-md md:min-w-md` still comes out as `width="md"`.
+Sheaf's panel is `w-full` inside a `p-4` container, so from `md` up it has 736px
+to fill and reaches any size up to `2xl` unasked; a minimum of the same size at
+such a breakpoint is dropped rather than forcing the fall-through.
 
 The third is the only one that is deleted rather than translated, and only because
 something else is already doing its job: `<flux:modal.trigger>` becomes

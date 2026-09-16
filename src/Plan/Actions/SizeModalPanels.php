@@ -24,9 +24,14 @@ use Onelegstudios\Refit\Project\Project;
  *
  * Sheaf sizes the panel from `width`: a named size (`lg`) becomes its
  * `max-w-lg`, and anything it does not name falls through its `match` to the
- * panel's class list as written. So a class that is exactly one of those sizes
- * becomes the name, and any other class moves over whole — Flux gave every
- * class on the tag to the panel, and this keeps it that way.
+ * panel's class list as written. So a `max-w-*` Sheaf names becomes the name.
+ *
+ * A `min-w-*` of the same size behind a breakpoint says nothing Sheaf's panel
+ * does not already do: it is `w-full` inside a `p-4` container, so from `md` up
+ * — 736px of room — any size up to `2xl` is reached without being asked for.
+ * That is the two-factor setup's `md:min-w-md`, and it is dropped. Any other
+ * class list moves over whole, through the fall-through, so nothing Flux gave
+ * the panel is lost.
  *
  * A modal that already names a `width`, or binds its classes, has made a choice
  * refit cannot fold into Sheaf's. Those are left alone and reported.
@@ -48,6 +53,20 @@ final class SizeModalPanels extends BladeSweep
         'xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl', '6xl', '7xl', 'full',
         'screen-sm', 'screen-md', 'screen-lg', 'screen-xl', 'screen-2xl',
     ];
+
+    /**
+     * Sizes Sheaf's `w-full` panel reaches by itself from the breakpoints below.
+     *
+     * @var list<string>
+     */
+    private const array FILLED_SIZES = ['xs', 'sm', 'md', 'lg', 'xl', '2xl'];
+
+    /**
+     * Breakpoints with at least 736px of room inside the panel's container.
+     *
+     * @var list<string>
+     */
+    private const array ROOMY_BREAKPOINTS = ['md', 'lg', 'xl', '2xl'];
 
     /**
      * The files with a modal whose size refit could not move.
@@ -108,13 +127,47 @@ final class SizeModalPanels extends BladeSweep
     }
 
     /**
-     * The name Sheaf gives a lone `max-w-*` class, or the classes as written.
+     * The name Sheaf gives the modal's `max-w-*`, or the classes as written.
      */
     private function width(string $classes): string
     {
-        $size = str_starts_with($classes, 'max-w-') ? substr($classes, strlen('max-w-')) : null;
+        $tokens = preg_split('/\s+/', $classes) ?: [];
+        $size = null;
+        $rest = [];
 
-        return in_array($size, self::WIDTHS, true) ? $size : $classes;
+        foreach ($tokens as $token) {
+            if ($size === null && str_starts_with($token, 'max-w-') && in_array(substr($token, 6), self::WIDTHS, true)) {
+                $size = substr($token, 6);
+            } else {
+                $rest[] = $token;
+            }
+        }
+
+        if ($size === null) {
+            return $classes;
+        }
+
+        foreach ($rest as $token) {
+            if (! $this->alreadyFilled($token, $size)) {
+                return $classes;
+            }
+        }
+
+        return $size;
+    }
+
+    /**
+     * Whether a class only asks for the width Sheaf's panel already takes.
+     */
+    private function alreadyFilled(string $token, string $size): bool
+    {
+        if (! in_array($size, self::FILLED_SIZES, true)) {
+            return false;
+        }
+
+        [$breakpoint, $utility] = array_pad(explode(':', $token, 2), 2, null);
+
+        return in_array($breakpoint, self::ROOMY_BREAKPOINTS, true) && $utility === 'min-w-'.$size;
     }
 
     private function noteSkipped(string $path): void

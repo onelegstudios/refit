@@ -259,8 +259,9 @@ real work, and becomes `$modal.open(…)` instead.
 **Modal widths.** Flux puts a modal's `class` on the dialog, so the kit sizes its
 modals with `class="max-w-lg"`. Sheaf puts `class` on a wrapper the dialog is
 teleported out of, and sizes the dialog from `width` instead. Refit moves the
-class across: a lone `max-w-lg` becomes `width="lg"`, and anything else is moved
-whole, which Sheaf applies to the dialog as written. A modal that already has a
+class across: `max-w-lg` becomes `width="lg"`, and a breakpoint `min-w-*` of the
+same size is dropped, since Sheaf's full-width dialog already reaches it. Anything
+else is moved whole, which Sheaf applies to the dialog as written. A modal that already has a
 `width`, or binds its `:class`, is left alone and named in `REFIT-NOTES.md`.
 
 **Callout headings.** Flux lets a callout carry its heading as an attribute and

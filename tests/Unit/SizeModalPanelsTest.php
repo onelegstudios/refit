@@ -34,11 +34,27 @@ it('names the size Sheaf gives a lone max-width class', function (): void {
         ->toBe('<x-ui.modal id="delete-team" width="lg">');
 });
 
+it('drops a minimum width Sheaf\'s full-width panel already reaches', function (): void {
+    // The two-factor setup. From md up the panel's container has 736px of room,
+    // so `w-full max-w-md` is already 28rem.
+    expect(sizeModals('<x-ui.modal id="two-factor-setup-modal" class="max-w-md md:min-w-md">'))
+        ->toBe('<x-ui.modal id="two-factor-setup-modal" width="md">')
+        ->and(sizeModals('<x-ui.modal class="lg:min-w-2xl max-w-2xl">'))
+        ->toBe('<x-ui.modal width="2xl">');
+});
+
 it('moves any other classes over whole, which Sheaf puts on the panel', function (): void {
     // Sheaf's width match falls through to the value as written, which is the
     // panel Flux gave every class to.
-    expect(sizeModals('<x-ui.modal id="two-factor-setup-modal" class="max-w-md md:min-w-md">'))
-        ->toBe('<x-ui.modal id="two-factor-setup-modal" width="max-w-md md:min-w-md">');
+    expect(sizeModals('<x-ui.modal class="max-w-md p-8">'))
+        ->toBe('<x-ui.modal width="max-w-md p-8">')
+        // Below md there is not room for it, so the minimum does real work.
+        ->and(sizeModals('<x-ui.modal class="max-w-md sm:min-w-md">'))
+        ->toBe('<x-ui.modal width="max-w-md sm:min-w-md">')
+        ->and(sizeModals('<x-ui.modal class="max-w-md md:min-w-lg">'))
+        ->toBe('<x-ui.modal width="max-w-md md:min-w-lg">')
+        ->and(sizeModals('<x-ui.modal class="w-96">'))
+        ->toBe('<x-ui.modal width="w-96">');
 });
 
 it('leaves a modal with no classes alone', function (): void {
