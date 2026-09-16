@@ -1059,6 +1059,19 @@ reaches the instance directly. That is the same reasoning `BindModalState` uses 
 `$modal.open(modalId)`, and it is what makes both work for the teams variants,
 where the id is a bound expression rather than a literal.
 
+### A modal's class never reaches its panel
+
+Flux renders a modal's `class` onto the dialog. Sheaf renders it onto an
+inline wrapper that stays where the tag was written, and teleports the panel to
+the end of the body — so the kit's `max-w-lg` sizes nothing, and every panel
+falls back to Sheaf's `width="sm"`.
+
+`SizeModalPanels` runs after the rename and moves the class into `width`. Sheaf's
+width `match` names seventeen sizes and ends in `default => $width`, so a lone
+`max-w-*` it names is written as the name, and any other class list is written
+verbatim and lands on the panel — the same place Flux put it. The two-factor
+setup's `max-w-md md:min-w-md` takes the second path.
+
 The third is the only one that is deleted rather than translated, and only because
 something else is already doing its job: `<flux:modal.trigger>` becomes
 `<x-ui.modal.trigger>`, which opens the modal by id on a click of its own. The

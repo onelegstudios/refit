@@ -256,6 +256,13 @@ puts on the button inside it — and the `x-data=""` that was only there to give
 magic a scope — are both taken off. A dispatch with no trigger around it is doing
 real work, and becomes `$modal.open(…)` instead.
 
+**Modal widths.** Flux puts a modal's `class` on the dialog, so the kit sizes its
+modals with `class="max-w-lg"`. Sheaf puts `class` on a wrapper the dialog is
+teleported out of, and sizes the dialog from `width` instead. Refit moves the
+class across: a lone `max-w-lg` becomes `width="lg"`, and anything else is moved
+whole, which Sheaf applies to the dialog as written. A modal that already has a
+`width`, or binds its `:class`, is left alone and named in `REFIT-NOTES.md`.
+
 **Callout headings.** Flux lets a callout carry its heading as an attribute and
 expands it into a `<flux:callout.heading>` child itself. Sheaf's alert only ever
 reads the child, and declares no prop for one — so a rename alone drops the word

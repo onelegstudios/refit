@@ -37,6 +37,7 @@ use Onelegstudios\Refit\Plan\Actions\RunProcess;
 use Onelegstudios\Refit\Plan\Actions\ScopeCollapseToSidebar;
 use Onelegstudios\Refit\Plan\Actions\ShapeBadgePills;
 use Onelegstudios\Refit\Plan\Actions\ShapeSegmentedGroups;
+use Onelegstudios\Refit\Plan\Actions\SizeModalPanels;
 use Onelegstudios\Refit\Plan\Actions\SizeNavItemIcons;
 use Onelegstudios\Refit\Plan\Actions\SwitchIconSet;
 use Onelegstudios\Refit\Plan\Actions\WireSheafRuntimes;
@@ -351,6 +352,11 @@ final class SheafLibrary implements Library
         // renamed tag but the `name` -> `id` pairing the rename performed, since
         // an unpaired modal has no open state worth binding.
         $plan->add(Stage::Reconcile, new BindModalState);
+
+        // And the size the kit gave every modal. Flux hands a modal's class to
+        // the dialog; Sheaf hands it to a wrapper the dialog is teleported out
+        // of, so each panel fell back to Sheaf's narrow default.
+        $plan->add(Stage::Reconcile, new SizeModalPanels);
 
         // And the modals the kit closes from PHP rather than from a click. The
         // event name is already Sheaf's; the argument naming which modal it means

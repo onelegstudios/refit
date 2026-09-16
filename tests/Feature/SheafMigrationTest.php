@@ -294,6 +294,41 @@ it('gives the kit\'s toasts something that is listening for them', function (str
     'Run `composer fixtures`.',
 );
 
+it('sizes every modal panel through the width Sheaf reads', function (string $kit): void {
+    $root = sheafKit($kit);
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'library' => 'sheaf',
+            'icons' => 'heroicons',
+        ]),
+    ])->assertSuccessful();
+
+    $project = (new ProjectDetector)->detect($root);
+    $parser = new TagParser;
+    $sized = 0;
+
+    foreach ($project->blades() as $path) {
+        foreach ($parser->parse($project->get($path), 'x-ui.modal') as $tag) {
+            if ($tag->name !== 'x-ui.modal') {
+                continue;
+            }
+
+            // Sheaf puts `class` on a wrapper the panel is teleported out of, so
+            // a max-width left there sizes nothing.
+            expect((string) $tag->attribute('class')?->value)->not->toContain('max-w-');
+
+            $sized += $tag->has('width') ? 1 : 0;
+        }
+    }
+
+    expect($sized)->toBeGreaterThan(0);
+})->with(starterKits())->skip(
+    fn (): bool => ! is_dir(fixturePath('livewire')),
+    'Run `composer fixtures`.',
+);
+
 it('only ever produces components Sheaf actually ships', function (string $kit): void {
     $root = sheafKit($kit);
 
