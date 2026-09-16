@@ -6,6 +6,7 @@ namespace Onelegstudios\Refit\Libraries\Sheaf;
 
 use Onelegstudios\Refit\Icons\IconMap;
 use Onelegstudios\Refit\Plan\Actions\ShapeBadgePills;
+use Onelegstudios\Refit\Plan\Actions\SizeOutlineButtonIcons;
 use Onelegstudios\Refit\Plan\Actions\WrapControlsInFields;
 
 /**
@@ -165,13 +166,11 @@ final class ComponentMap
     /**
      * Flux attributes Sheaf has no use for, removed rather than renamed.
      *
-     * `icon:variant` is the pass-through weight for a component's icon. Sheaf's
-     * button spells that `iconVariant`, but refit deliberately does not translate
-     * it: Sheaf picks a weight to suit the button's size when none is given, and
-     * the kit's only value, `outline`, is a Heroicons word that means nothing to
-     * the Phosphor set. Left in place, it renders onto the `<button>` as a literal
-     * `icon:variant="outline"` that nothing reads. Matched bound or not, and
-     * whatever its value.
+     * `icon:variant` is the pass-through weight for a component's icon. The tags
+     * that declare an `iconVariant` get it renamed through {@see TAG_ATTRIBUTES};
+     * on any other Sheaf tag nothing reads it, and left in place it renders as a
+     * literal `icon:variant="…"` attribute on the element. Matched bound or not,
+     * and whatever its value.
      *
      * @var list<string>
      */
@@ -242,7 +241,14 @@ final class ComponentMap
         // an ordinary enough word to want back later. {@see ShapeBadgePills}
         // writes Flux's older `variant="pill"` into this spelling first, so both
         // of Flux's names for the shape arrive here as one.
-        'x-ui.badge' => ['rounded' => 'pill'],
+        'x-ui.badge' => ['rounded' => 'pill', 'icon:variant' => 'iconVariant'],
+        // The weight of the component's own icon. Flux passes it through as
+        // `icon:variant`; these three declare it as a prop, and read nothing from
+        // the Flux spelling. The kit asks for `outline` on nine buttons, which
+        // Sheaf draws as Heroicons' outline set — at `size-5` rather than Flux's
+        // `size-4`, which {@see SizeOutlineButtonIcons} restores.
+        'x-ui.button' => ['icon:variant' => 'iconVariant'],
+        'x-ui.dropdown.item' => ['icon:variant' => 'iconVariant'],
     ];
 
     /**
@@ -394,11 +400,13 @@ final class ComponentMap
      */
     public static function dropped(string $tag, string $flux): bool
     {
-        if (in_array($tag, self::FORWARDS_ICON_ATTRIBUTES, true)) {
+        $bare = ltrim($flux, ':');
+
+        if (in_array($tag, self::FORWARDS_ICON_ATTRIBUTES, true) || self::tagAttribute($tag, $bare) !== null) {
             return false;
         }
 
-        return in_array(ltrim($flux, ':'), self::DROPPED, true);
+        return in_array($bare, self::DROPPED, true);
     }
 
     public static function attribute(string $flux): ?string

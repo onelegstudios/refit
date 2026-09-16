@@ -137,16 +137,21 @@ it('leaves `name` alone on every component that is not a modal', function (): vo
         ->toBe('<x-ui.input name="code" wire:model="code" />');
 });
 
-it('takes the icon weight off, which Sheaf never reads in that spelling', function (): void {
-    // Sheaf's button reads `iconVariant` and picks a weight from its size when
-    // none is given, so the Flux form would only render as a stray attribute.
+it('passes the icon weight to the Sheaf props that read it', function (): void {
+    // Sheaf's button, dropdown item and badge declare `iconVariant`, and read
+    // nothing from Flux's pass-through spelling.
     expect(mapTags('<flux:button icon="trash" icon:variant="outline">Delete</flux:button>'))
-        ->toBe('<x-ui.button icon="trash">Delete</x-ui.button>')
-        ->and(mapTags("<flux:button\n    icon=\"eye\"\n    :icon:variant=\"\$weight\"\n/>"))
-        ->toBe("<x-ui.button\n    icon=\"eye\"\n/>")
-        // A nav item hands `icon:*` to its icon, so there the weight is read.
+        ->toBe('<x-ui.button icon="trash" iconVariant="outline">Delete</x-ui.button>')
+        ->and(mapTags('<flux:menu.item icon="cog" :icon:variant="$weight" />'))
+        ->toBe('<x-ui.dropdown.item icon="cog" :iconVariant="$weight" />')
+        // A nav item hands `icon:*` to its icon, so there it stays as written.
         ->and(mapTags('<flux:navlist.item icon="home" icon:variant="solid" />'))
-        ->toBe('<x-ui.navlist.item icon="home" icon:variant="solid" />')
+        ->toBe('<x-ui.navlist.item icon="home" icon:variant="solid" />');
+});
+
+it('takes the icon weight off a Sheaf tag that reads it nowhere', function (): void {
+    expect(mapTags("<flux:input\n    icon=\"eye\"\n    icon:variant=\"outline\"\n/>"))
+        ->toBe("<x-ui.input\n    icon=\"eye\"\n/>")
         // Only on Sheaf tags; anything the map did not rename keeps it.
         ->and(mapTags('<x-thing icon:variant="outline" />'))
         ->toBe('<x-thing icon:variant="outline" />');

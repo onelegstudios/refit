@@ -39,6 +39,7 @@ use Onelegstudios\Refit\Plan\Actions\ShapeBadgePills;
 use Onelegstudios\Refit\Plan\Actions\ShapeSegmentedGroups;
 use Onelegstudios\Refit\Plan\Actions\SizeModalPanels;
 use Onelegstudios\Refit\Plan\Actions\SizeNavItemIcons;
+use Onelegstudios\Refit\Plan\Actions\SizeOutlineButtonIcons;
 use Onelegstudios\Refit\Plan\Actions\SwitchIconSet;
 use Onelegstudios\Refit\Plan\Actions\WireSheafRuntimes;
 use Onelegstudios\Refit\Plan\Actions\WrapControlsInFields;
@@ -327,6 +328,10 @@ final class SheafLibrary implements Library
         // it behind the dimensions its artwork carries; Phosphor's carries none,
         // so a sidebar of labels and no glyphs is how the icon choice shows it.
         $plan->add(Stage::Reconcile, new SizeNavItemIcons);
+
+        // The same kind of size, on a button. The rename carries an outline
+        // weight across, and Sheaf draws it a step larger than Flux did.
+        $plan->add(Stage::Reconcile, new SizeOutlineButtonIcons);
 
         // A fourth, in the component that one hands the class to. Sheaf's icon
         // colours itself at a specificity the caller cannot beat, and Tailwind

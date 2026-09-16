@@ -149,7 +149,10 @@ Eight kinds of entry:
   collects `flux:sidebar.item`, which renames into `x-ui.navlist.item` and
   carries most of the kit's ten. `rounded` is there on the milder argument that
   it is an ordinary enough word to want back later, and only a badge means a
-  shape by it: Flux's `rounded` is Sheaf's `pill`. Keyed by the *Sheaf* name,
+  shape by it: Flux's `rounded` is Sheaf's `pill`. `icon:variant` becomes
+  `iconVariant` on the button, dropdown item and badge, the three that declare
+  it — and `SizeOutlineButtonIcons` then restores the `size-4` Flux gave a
+  labelled outline icon, which Sheaf would draw at `size-5`. Keyed by the *Sheaf* name,
   because this pass runs after the tag rename over a tree that already says
   `x-ui.`.
 - **`VALUES`** — keyed by the *Flux* tag, so the pass looks a Sheaf tag back up
@@ -165,12 +168,11 @@ Eight kinds of entry:
   What is left is the value neither library writes down, and that is added after
   this pass rather than translated by it.
 - **`DROPPED`** — Flux attributes removed rather than renamed. `icon:variant` is
-  the only one: Sheaf's button reads `iconVariant` and picks a weight from its
-  size when given none, and the kit's `outline` is a Heroicons word Phosphor does
-  not know, so translating it would be worse than letting it go. Left alone it
-  renders onto the `<button>` as a stray attribute. The two nav items are exempt
-  through `FORWARDS_ICON_ATTRIBUTES`, because they hand every `icon:*` on to their
-  icon and there the weight is read.
+  the only one, and only on a tag that neither renames it through
+  `TAG_ATTRIBUTES` nor reads it: left alone it renders onto the element as a
+  stray attribute. The two nav items are exempt through
+  `FORWARDS_ICON_ATTRIBUTES`, because they hand every `icon:*` on to their icon
+  and there the weight is read.
 - **`BOUND_VALUES`** — why a bound value is worth a word, for the few where it is.
   `VALUES` reads literals, so `:level="$depth"` goes untranslated however complete
   the table is, and a warning is all refit has left.

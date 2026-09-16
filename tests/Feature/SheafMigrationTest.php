@@ -329,7 +329,7 @@ it('sizes every modal panel through the width Sheaf reads', function (string $ki
     'Run `composer fixtures`.',
 );
 
-it('leaves no icon:variant for Sheaf to render as a stray attribute', function (string $kit): void {
+it('carries the kit\'s outline button icons across at Flux\'s size', function (string $kit): void {
     $root = sheafKit($kit);
 
     $this->artisan('refit', [
@@ -341,10 +341,30 @@ it('leaves no icon:variant for Sheaf to render as a stray attribute', function (
     ])->assertSuccessful();
 
     $project = (new ProjectDetector)->detect($root);
+    $parser = new TagParser;
+    $outlined = [];
 
     foreach ($project->blades() as $path) {
+        // Sheaf's button never reads the Flux spelling.
         expect($project->get($path))->not->toContain('icon:variant');
+
+        foreach ($parser->parse($project->get($path), 'x-ui.button') as $tag) {
+            if ($tag->attribute('iconVariant')?->value === 'outline') {
+                $outlined[] = $tag->attribute('iconClasses')?->value;
+            }
+        }
     }
+
+    // WorkOS handles two-factor and passkeys itself, so those kits write none.
+    if (str_contains($kit, 'workos')) {
+        expect($outlined)->toBe([]);
+
+        return;
+    }
+
+    // The two labelled recovery-codes buttons shrink to size-4; the icon-only
+    // passkey delete keeps Sheaf's size-5, as it had Flux's.
+    expect($outlined)->toContain('size-4!')->toContain(null);
 })->with(starterKits())->skip(
     fn (): bool => ! is_dir(fixturePath('livewire')),
     'Run `composer fixtures`.',

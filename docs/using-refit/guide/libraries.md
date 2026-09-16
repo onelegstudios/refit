@@ -264,12 +264,15 @@ same size is dropped, since Sheaf's full-width dialog already reaches it. Anythi
 else is moved whole, which Sheaf applies to the dialog as written. A modal that already has a
 `width`, or binds its `:class`, is left alone and named in `REFIT-NOTES.md`.
 
-**Button icon weights.** Both libraries pick a solid `micro` or `mini` icon to
-suit a button's size when none is asked for. The kit asks for `outline` on nine
-buttons with `icon:variant`, a spelling Sheaf's button does not read, so those
-nine draw Sheaf's size-based weight instead and come out a little heavier. Refit
-removes the attribute rather than leave it on the `<button>` as stray HTML.
-Sidebar and header nav items keep theirs, because Sheaf hands it on to their icon.
+**Button icon weights.** The kit asks for outline icons on nine buttons with
+`icon:variant="outline"`, a spelling Sheaf's button does not read. Refit renames
+it to `iconVariant`, which Sheaf's button, dropdown item and badge declare. Sheaf
+draws an outline icon a step larger than Flux did beside a label, so those
+buttons also get `iconClasses="size-4!"`; icon-only buttons are the same size in
+both libraries and are left alone. Sidebar and header nav items keep
+`icon:variant` as written, because Sheaf hands it on to their icon. Anywhere else
+nothing reads it, so it is removed. With Phosphor, which has no outline weight,
+these icons draw Phosphor's regular weight.
 
 **Callout headings.** Flux lets a callout carry its heading as an attribute and
 expands it into a `<flux:callout.heading>` child itself. Sheaf's alert only ever
