@@ -2,10 +2,11 @@
 
 declare(strict_types=1);
 
-use Onelegstudios\Refit\Icons\IconPlanner;
 use Onelegstudios\Refit\Icons\IconScanner;
 use Onelegstudios\Refit\Icons\IconStrategy;
-use Onelegstudios\Refit\Icons\OverrideGenerator;
+use Onelegstudios\Refit\Libraries\Flux\IconPlanner;
+use Onelegstudios\Refit\Libraries\Flux\OverrideGenerator;
+use Onelegstudios\Refit\Libraries\FluxLibrary;
 use Onelegstudios\Refit\Plan\Applier;
 use Onelegstudios\Refit\Plan\Plan;
 use Onelegstudios\Refit\Plan\Report;
@@ -19,7 +20,10 @@ function planIcons(string $root, IconStrategy $strategy): array
     $plan = new Plan;
     $report = new Report;
 
-    (new IconPlanner)->contribute($plan, (new ProjectDetector)->detect($root), $strategy, $report);
+    $vocabulary = (new FluxLibrary)->vocabulary();
+
+    (new IconPlanner($vocabulary, new IconScanner($vocabulary)))
+        ->contribute($plan, (new ProjectDetector)->detect($root), $strategy, $report);
 
     return [$plan, $report];
 }
@@ -84,7 +88,7 @@ it('writes an override for every icon when going all Lucide', function (string $
         glob($root.'/resources/views/flux/icon/*.blade.php') ?: [],
     );
 
-    $remaining = array_keys((new IconScanner)->scan($project));
+    $remaining = array_keys(fluxScanner()->scan($project));
 
     // Every name still referenced must resolve to an override we wrote —
     // including `loading`, which keeps Flux's name but gets Lucide artwork.
@@ -106,7 +110,7 @@ it('overrides the Flux spinner in place, still spinning', function (): void {
     // usages have to keep the name the override is written at.
     expect($project->get('resources/views/flux/icon/loading.blade.php'))
         ->toContain("Flux::classes('shrink-0 animate-spin')")
-        ->and(array_keys((new IconScanner)->scan($project)))->toContain('loading')
+        ->and(array_keys(fluxScanner()->scan($project)))->toContain('loading')
         ->and($plan->describe())->not->toContain('loader-circle.blade.php');
 });
 
@@ -207,7 +211,11 @@ it('reports an icon whose Lucide artwork is missing rather than failing', functi
     $plan = new Plan;
     $report = new Report;
 
-    (new IconPlanner(generator: new OverrideGenerator(iconDirectory: iconsWithout('mail'))))
+    (new IconPlanner(
+        (new FluxLibrary)->vocabulary(),
+        fluxScanner(),
+        new OverrideGenerator(iconDirectory: iconsWithout('mail')),
+    ))
         ->contribute($plan, $project, IconStrategy::Lucide, $report);
 
     (new Applier)->apply($plan, $project, $report);

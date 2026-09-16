@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
+    <head>
+        @include('partials.head')
+    </head>
+    <body class="min-h-screen bg-white dark:bg-zinc-800">
+        <x-ui.layout>
+            {{-- No border and no tint restated here. Sheaf's sidebar paints its
+                 own surface twice — the panel, and the sticky brand row above it
+                 — and only the panel takes attributes, so the kit's zinc-50 lands
+                 on one of the two and leaves the row white behind the logo. Flux's
+                 `sticky` and `collapsible` go with them: Sheaf spells those
+                 `sticky-header` and `collapsable`, so both were rendering as
+                 literal attributes on the div. --}}
+            <x-ui.sidebar>
+                <x-slot:brand>
+                    <x-app-logo href="{{ route('dashboard') }}" wire:navigate />
+                </x-slot:brand>
+__TEAM_SWITCHER__
+                <x-ui.navlist>
+                    <x-ui.navlist.group :label="__('Platform')">
+                        <x-ui.navlist.item
+                            icon="home"
+                            :label="__('Dashboard')"
+                            :href="route('dashboard')"
+                            :active="request()->routeIs('dashboard')"
+                            wire:navigate
+                        />
+                    </x-ui.navlist.group>
+                </x-ui.navlist>
+
+                <x-ui.sidebar.push />
+
+                <x-ui.navlist>
+                    <x-ui.navlist.item
+                        icon="folder"
+                        :label="__('Repository')"
+                        href="https://github.com/laravel/livewire-starter-kit"
+                        target="_blank"
+                    />
+
+                    <x-ui.navlist.item
+                        icon="book-open"
+                        :label="__('Documentation')"
+                        href="https://laravel.com/docs/starter-kits#livewire"
+                        target="_blank"
+                    />
+                </x-ui.navlist>
+
+                {{-- Every nav group above sits in a navlist's gutter of 2. The menu
+                     is the last row of the same column, so it sits in one too —
+                     without it the trigger runs edge to edge and the sidebar's
+                     rows no longer line up.
+
+                     The kit handed the menu over to the header below lg, because
+                     that is where Flux's sidebar stopped being on screen. Sheaf's
+                     is on screen from md, so the handover moves with it: below md
+                     the header's copy, from md up this one, in the rail. --}}
+                <x-ui.navlist class="max-md:hidden">
+                    <x-desktop-user-menu :name="auth()->user()->name" />
+                </x-ui.navlist>
+            </x-ui.sidebar>
+
+            {{-- Sheaf's main is a plain block, so nothing inside it can size
+                 itself against the screen the main fills. The kit's dashboard
+                 does exactly that, and collapses to the height of its own borders.
+                 A column gives the page a height to grow into. --}}
+            <x-ui.layout.main class="flex flex-col">
+                {{-- The kit hid this bar at lg, where Flux's sidebar stopped
+                     stashing itself. Sheaf's sidebar stops one breakpoint earlier:
+                     it is an overlay below md and a 4rem rail from md up, already
+                     collapsed and carrying its own toggle. So the bar the overlay
+                     needs is only wanted below md — left at lg it would put a
+                     second toggle and a second menu above a sidebar that is
+                     already there. --}}
+                <x-ui.layout.header class="md:hidden">
+                    {{-- Sheaf's toggle draws its own glyph and takes no icon. --}}
+                    <x-ui.sidebar.toggle class="md:hidden" />
+
+                    <div class="flex-1"></div>
+
+                    <x-desktop-user-menu :name="auth()->user()->name" />
+                </x-ui.layout.header>
+
+                {{-- Sheaf pads main's children by 2 with a selector a plain utility
+                     loses to, so the 6/8 the kit's own main gave its pages comes
+                     back important. --}}
+                <div class="flex flex-1 flex-col p-6! lg:p-8!">
+                    {{ $slot }}
+                </div>
+            </x-ui.layout.main>
+        </x-ui.layout>
+__CREATE_TEAM_MODAL__
+        @persist('toast')
+            <x-ui.toast />
+        @endpersist
+    </body>
+</html>

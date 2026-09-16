@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Onelegstudios\Refit\Project;
 
+use Onelegstudios\Refit\Contracts\Library;
 use Symfony\Component\Finder\Finder;
 
 /**
@@ -12,23 +13,67 @@ use Symfony\Component\Finder\Finder;
  * Everything refit knows about the application before it starts planning. Paths
  * are resolved against the project root so the whole package can be pointed at a
  * fixture directory during tests.
+ *
+ * `target` is the one field disk cannot answer — it is the library the user chose
+ * to end on, attached by {@see targeting()} once that question has been asked.
+ * Carrying it here rather than threading it through every signature keeps the
+ * `Task` contract to the two arguments it has always had.
  */
 final class Project
 {
     /**
      * @param  list<Feature>  $features
+     * @param  list<LibraryInstall>  $libraries
      */
     public function __construct(
         public readonly string $root,
         public readonly ComponentStyle $componentStyle,
         public readonly array $features,
-        public readonly bool $fluxPro,
+        public readonly array $libraries,
         public readonly bool $chiselPending,
+        public readonly ?Library $target = null,
     ) {}
 
     public function has(Feature $feature): bool
     {
         return in_array($feature, $this->features, strict: true);
+    }
+
+    /**
+     * The installed footprint of one library, or null when it is not installed.
+     */
+    public function library(string $key): ?LibraryInstall
+    {
+        foreach ($this->libraries as $library) {
+            if ($library->key === $key) {
+                return $library;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Is the user leaving this project on the named library?
+     */
+    public function targets(string $key): bool
+    {
+        return $this->target?->key() === $key;
+    }
+
+    /**
+     * The same project, with the chosen target attached.
+     */
+    public function targeting(Library $library): self
+    {
+        return new self(
+            root: $this->root,
+            componentStyle: $this->componentStyle,
+            features: $this->features,
+            libraries: $this->libraries,
+            chiselPending: $this->chiselPending,
+            target: $library,
+        );
     }
 
     /**
@@ -79,6 +124,52 @@ final class Project
 
         foreach ($finder as $file) {
             $paths[] = 'resources/views/'.str_replace(
+                DIRECTORY_SEPARATOR,
+                '/',
+                $file->getRelativePathname(),
+            );
+        }
+
+        return $paths;
+    }
+
+    /**
+     * Every Livewire component class in the application, as project-relative paths.
+     *
+     * The other half of where a component's PHP lives. Volt keeps it inside the
+     * view, so {@see blades()} already covers four of the five kits; the
+     * class-components kit puts it in `app/Livewire` instead, which nothing else
+     * in refit has ever needed to read.
+     *
+     * Deliberately only `app/Livewire`, not all of `app`. Everything that rewrites
+     * PHP here rewrites it into `$this->dispatch(...)`, which is a promise about
+     * the class it lands in — and `app/Livewire` is the one directory where
+     * Laravel guarantees that promise holds. A `Flux::toast()` in a controller is
+     * reported rather than rewritten, because there is no `$this` there to
+     * dispatch from.
+     *
+     * Scanned live, for the same reason as {@see blades()}.
+     *
+     * @return list<string>
+     */
+    public function livewireClasses(): array
+    {
+        $directory = $this->path('app/Livewire');
+
+        if (! is_dir($directory)) {
+            return [];
+        }
+
+        $finder = Finder::create()
+            ->files()
+            ->in($directory)
+            ->name('*.php')
+            ->sortByName();
+
+        $paths = [];
+
+        foreach ($finder as $file) {
+            $paths[] = 'app/Livewire/'.str_replace(
                 DIRECTORY_SEPARATOR,
                 '/',
                 $file->getRelativePathname(),

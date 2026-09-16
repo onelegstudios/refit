@@ -1,7 +1,7 @@
 ---
 title: Tasks
 description: The structural and cleanup tasks refit offers once the icon set is chosen.
-order: 3
+order: 4
 ---
 
 # Tasks
@@ -263,6 +263,19 @@ Every variant ships this on line 6 of `resources/css/app.css`:
 It points at a directory that only exists with a Flux Pro licence. The task is
 offered only when Flux Pro is absent, so buying a licence later is never quietly
 broken.
+
+It is also only offered while the project is
+[staying on Flux](/docs/using-refit/guide/libraries). A project that is leaving
+loses the whole stylesheet reference on its way out, and being asked to trim one
+line off a file that is about to lose several would only be confusing.
+
+## What is not a task
+
+Removing Flux is not on this list. Choosing a target other than Flux is already
+the decision, so the leftovers — the `@source` lines, the Blade directives, the
+`resources/views/flux` overrides — come out as part of that run rather than as
+something to tick separately. See
+[Leaving a library](/docs/using-refit/guide/libraries).
 
 ## Adding tasks of your own
 

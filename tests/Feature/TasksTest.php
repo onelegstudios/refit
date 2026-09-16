@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use Onelegstudios\Refit\Contracts\Task;
+use Onelegstudios\Refit\Libraries\FluxLibrary;
+use Onelegstudios\Refit\Libraries\SheafLibrary;
 use Onelegstudios\Refit\Plan\Applier;
 use Onelegstudios\Refit\Plan\Plan;
 use Onelegstudios\Refit\Plan\Report;
@@ -53,10 +55,23 @@ it('registers the configured tasks', function (): void {
 
 it('only offers tasks that fit the detected kit', function (): void {
     $refit = app(Refit::class);
-    $keys = array_map(fn (Task $task): string => $task->key(), $refit->tasksFor(detectFixture('livewire')));
+    $project = detectFixture('livewire')->targeting(new FluxLibrary);
+    $keys = array_map(fn (Task $task): string => $task->key(), $refit->tasksFor($project));
 
     expect($keys)->toContain('partials-to-components')
         ->and($keys)->toContain('remove-flux-pro-source');
+});
+
+it('stops offering the Flux Pro cleanup once the project is leaving Flux', function (): void {
+    $refit = app(Refit::class);
+    $sheaf = array_map(
+        fn (Task $task): string => $task->key(),
+        $refit->tasksFor(detectFixture('livewire')->targeting(new SheafLibrary)),
+    );
+
+    // The whole stylesheet reference goes in Flux's teardown, and trimming one
+    // @source line off a file that is losing both would only be confusing.
+    expect($sheaf)->not->toContain('remove-flux-pro-source');
 });
 
 it('turns partials into components and rewrites the includes', function (): void {
@@ -380,8 +395,8 @@ it('does not offer the Flux Pro cleanup when Flux Pro is installed', function ()
 
     file_put_contents($root.'/composer.lock', '{"packages":[{"name":"livewire/flux-pro"}]}');
 
-    $project = (new ProjectDetector)->detect($root);
+    $project = (new ProjectDetector)->detect($root)->targeting(new FluxLibrary);
 
-    expect($project->fluxPro)->toBeTrue()
+    expect($project->library(FluxLibrary::KEY)?->pro)->toBeTrue()
         ->and((new RemoveFluxProSource)->appliesTo($project))->toBeFalse();
 });

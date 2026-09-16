@@ -1,0 +1,111 @@
+@props([
+    'name' => null,
+])
+
+{{-- Sheaf's sidebar is `scrollable` by default, and an `overflow-y` of auto makes
+     the `overflow-x: visible` beside it compute to auto as well — so the sidebar
+     clips on both axes. A panel rendered in place is therefore cut off at the
+     sidebar's 256px, and this one is free to grow past that for a long address.
+     `portal` teleports it to the body, which is what Sheaf's docs ask for whenever
+     a dropdown lives in a navlist. --}}
+<x-ui.dropdown position="bottom-start" portal {{ $attributes }}>
+    <x-slot:button>
+        {{-- Sheaf dresses a nav item the same way in a navlist and in a navbar:
+             neutral text at normal weight, a box radius, a row of py-1, and a
+             hover tinted with the primary. A ghost button is none of those — it
+             is taller, squarer, darker, heavier, and hovers neutral — so the
+             trigger is dressed to match whichever nav it was dropped into.
+
+             What Sheaf sets from inside `:where()` carries no specificity and
+             gives way to a plain utility. The rest of the button's own classes
+             rank exactly as high as ours, so those have to be marked.
+
+             The trailing chevron ends the row rather than trailing the name, the
+             way a navlist item ends on its badge. Sheaf files a button's trailing
+             icon under `data-slot="left-icon"` — the names are the wrong way
+             round in the component, not here. In a header the button is only as
+             wide as its content, so there is no free space and the margin is
+             inert: the chevron keeps hugging the name.
+
+             A collapsed sidebar is 64px of icons, and Sheaf empties a navlist item
+             down to one: the label goes, and the icon centres inside a padding of
+             2. The trigger does the same, down to the size of the box — an avatar
+             of 8 in a padding of 0.5 measures the same 36px as an icon of 5 in a
+             padding of 2 — so the avatar keeps the column the icons above it stand
+             in, and hovers the same square they do. The width has to go with it,
+             or the tint would run the full 48px of the row while theirs does not.
+
+             Sheaf stamps the collapse on the layout, which is an ancestor of the
+             header as well, and this is the header's menu too — at tablet the
+             header layout's bar is on screen with the sidebar already collapsed
+             under it. So the selector asks for the sidebar by name, and the
+             header's copy keeps its own name at every width. --}}
+        <x-ui.button
+            variant="ghost"
+            iconAfter="chevron-up-down"
+            class="h-auto w-full justify-start rounded-box py-1 ps-3! pe-1! font-normal! text-neutral-600! hover:bg-[--alpha(var(--color-primary)_/5%)]! hover:text-[var(--color-primary)]! dark:text-neutral-400! [&>[data-slot=left-icon]]:ms-auto
+                   [[data-collapsed]_[data-slot=sidebar]_&]:w-auto [[data-collapsed]_[data-slot=sidebar]_&]:justify-center [[data-collapsed]_[data-slot=sidebar]_&]:p-0.5! [[data-collapsed]_[data-slot=sidebar]_&]:[&>[data-slot=left-icon]]:hidden"
+            data-test="sidebar-menu-button"
+        >
+            {{-- Sheaf wraps a button's slot in a plain inline span, so the avatar
+                 and the name need a row of their own to sit on. --}}
+            <span class="flex min-w-0 items-center gap-2">
+                <x-ui.avatar
+                    size="sm"
+                    class="shrink-0"
+                    :name="auth()->user()->name"
+                    :initials="auth()->user()->initials()"
+                />
+
+                <span class="truncate [[data-collapsed]_[data-slot=sidebar]_&]:hidden">{{ $name ?? auth()->user()->name }}</span>
+            </span>
+        </x-ui.button>
+    </x-slot:button>
+
+    {{-- Sheaf sizes a menu panel by what is in it, from a floor of 40, so it opens
+         narrower than the row it belongs to — 209 against a 239 sidebar row on a
+         stock kit, and narrower still for a short name and address. The kit had
+         the same habit from a floor of 48, so this is not restoring it: the floor
+         moves up to the width of a sidebar row, and the panel is left free to
+         grow past it the way both would.
+
+         And once teleported the panel is a child of the body, where it no longer
+         outranks the sidebar the way a descendant did: Sheaf's panel is `z-50` and
+         Sheaf's sidebar carries an inline `z-index:99`, so the sidebar paints over
+         the whole menu and the trigger looks dead. The `!` is load-bearing —
+         `z-50` is on the panel's own class list, and a plain utility here is only
+         a specificity tie. --}}
+    <x-slot:menu class="z-[100]! min-w-60">
+        <div class="col-span-full flex items-center gap-2 px-1 py-1.5 text-start text-sm">
+            <x-ui.avatar
+                :name="auth()->user()->name"
+                :initials="auth()->user()->initials()"
+            />
+            <div class="grid flex-1 text-start text-sm leading-tight">
+                <x-ui.heading class="truncate">{{ auth()->user()->name }}</x-ui.heading>
+                <x-ui.text class="truncate">{{ auth()->user()->email }}</x-ui.text>
+            </div>
+        </div>
+
+        <x-ui.dropdown.separator />
+
+        <x-ui.dropdown.item :href="route('profile.edit')" icon="cog" wire:navigate>
+            {{ __('Settings') }}
+        </x-ui.dropdown.item>
+
+        <x-ui.dropdown.separator />
+
+        <form method="POST" action="{{ route('logout') }}" class="contents">
+            @csrf
+            <x-ui.dropdown.item
+                as="button"
+                type="submit"
+                icon="arrow-right-start-on-rectangle"
+                class="w-full cursor-pointer"
+                data-test="logout-button"
+            >
+                {{ __('Log out') }}
+            </x-ui.dropdown.item>
+        </form>
+    </x-slot:menu>
+</x-ui.dropdown>

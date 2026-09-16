@@ -1,0 +1,567 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Onelegstudios\Refit\Libraries;
+
+use Onelegstudios\Refit\Contracts\Library;
+use Onelegstudios\Refit\Icons\IconMap;
+use Onelegstudios\Refit\Icons\IconStrategy;
+use Onelegstudios\Refit\Libraries\Sheaf\ComponentMap;
+use Onelegstudios\Refit\Libraries\Sheaf\Components;
+use Onelegstudios\Refit\Libraries\Sheaf\LayoutStubs;
+use Onelegstudios\Refit\Plan\Actions\AddAttribute;
+use Onelegstudios\Refit\Plan\Actions\AddressModalDispatches;
+use Onelegstudios\Refit\Plan\Actions\ApplyThemeBeforePaint;
+use Onelegstudios\Refit\Plan\Actions\BindModalState;
+use Onelegstudios\Refit\Plan\Actions\CarryOtpValue;
+use Onelegstudios\Refit\Plan\Actions\FollowSidebarCollapse;
+use Onelegstudios\Refit\Plan\Actions\JoinDropdownPlacement;
+use Onelegstudios\Refit\Plan\Actions\MapComponentTags;
+use Onelegstudios\Refit\Plan\Actions\MergeBrandVariants;
+use Onelegstudios\Refit\Plan\Actions\MuteSecondaryText;
+use Onelegstudios\Refit\Plan\Actions\OrderThemeImport;
+use Onelegstudios\Refit\Plan\Actions\PlaceDropdownChildren;
+use Onelegstudios\Refit\Plan\Actions\PreserveTextAlignment;
+use Onelegstudios\Refit\Plan\Actions\PromoteContentsToLabel;
+use Onelegstudios\Refit\Plan\Actions\RaiseSidebarDropdowns;
+use Onelegstudios\Refit\Plan\Actions\RebindAppearanceToTheme;
+use Onelegstudios\Refit\Plan\Actions\RestoreButtonRow;
+use Onelegstudios\Refit\Plan\Actions\RestructureBrandLogo;
+use Onelegstudios\Refit\Plan\Actions\RestructureCallouts;
+use Onelegstudios\Refit\Plan\Actions\RestructureOverlays;
+use Onelegstudios\Refit\Plan\Actions\RewriteIconNames;
+use Onelegstudios\Refit\Plan\Actions\RewriteToastCalls;
+use Onelegstudios\Refit\Plan\Actions\RunProcess;
+use Onelegstudios\Refit\Plan\Actions\ScopeCollapseToSidebar;
+use Onelegstudios\Refit\Plan\Actions\ShadeSubtleSeparators;
+use Onelegstudios\Refit\Plan\Actions\ShapeBadgePills;
+use Onelegstudios\Refit\Plan\Actions\ShapeSegmentedGroups;
+use Onelegstudios\Refit\Plan\Actions\SizeModalPanels;
+use Onelegstudios\Refit\Plan\Actions\SizeNavItemIcons;
+use Onelegstudios\Refit\Plan\Actions\SizeOutlineButtonIcons;
+use Onelegstudios\Refit\Plan\Actions\SwitchIconSet;
+use Onelegstudios\Refit\Plan\Actions\WireSheafRuntimes;
+use Onelegstudios\Refit\Plan\Actions\WrapControlsInFields;
+use Onelegstudios\Refit\Plan\Actions\YieldIconColour;
+use Onelegstudios\Refit\Plan\Plan;
+use Onelegstudios\Refit\Plan\Report;
+use Onelegstudios\Refit\Plan\Stage;
+use Onelegstudios\Refit\Project\LibraryInstall;
+use Onelegstudios\Refit\Project\Project;
+use Onelegstudios\Refit\Support\Composer;
+
+/**
+ * Sheaf UI — the first alternative target.
+ *
+ * Sheaf is distributed the way shadcn/ui is: a CLI copies component source into
+ * the application, under `resources/views/components/ui/`, and the code is then
+ * the user's. That is the opposite of Flux, which resolves everything out of a
+ * vendor package, and it decides most of what this class does differently:
+ *
+ * - refit installs components by running Sheaf's own CLI rather than writing any
+ *   component itself, so nothing here authors a substitute for something Sheaf
+ *   ships;
+ * - there is no override directory and no internal-icon manifest, because
+ *   Sheaf's components are ordinary application Blade that the icon scanner
+ *   already reads;
+ * - the chrome is a genuine rewrite rather than a rename, because Sheaf's sidebar
+ *   sits inside an `<x-ui.layout>` root that Flux has no counterpart for.
+ */
+final class SheafLibrary implements Library
+{
+    public const string KEY = 'sheaf';
+
+    public const string PACKAGE = 'sheaf/cli';
+
+    /** Where the CLI installs components, relative to the project root. */
+    public const string COMPONENT_DIRECTORY = 'resources/views/components/ui';
+
+    /** Written by `sheaf:init`, and the honest signal that it has been run. */
+    public const string THEME_STYLESHEET = 'resources/css/theme.css';
+
+    /** The component whose runtime is built on an npm primitive Sheaf never installs. */
+    private const string PRIMITIVE_COMPONENT = 'select';
+
+    /** The tag whose unwritten size the migration writes out. Flux's name, since it runs before the rename. */
+    private const string HEADING_TAG = 'flux:heading';
+
+    private const string HEADING_SIZE = 'size';
+
+    /** Flux's own prop default, which `ComponentMap::VALUES` then translates to Sheaf's `xs`. */
+    private const string HEADING_DEFAULT = 'base';
+
+    /** The tag whose unwritten variant the migration writes out. Sheaf's name, since it runs after the rename. */
+    private const string BADGE_TAG = 'x-ui.badge';
+
+    private const string BADGE_VARIANT = 'variant';
+
+    /** Sheaf's word for the tinted chip Flux draws when no variant is named at all. */
+    private const string BADGE_TINT = 'outline';
+
+    public function key(): string
+    {
+        return self::KEY;
+    }
+
+    public function label(): string
+    {
+        return 'Sheaf UI — replace Flux entirely';
+    }
+
+    public function hint(): string
+    {
+        return 'Installs Sheaf\'s components and rewrites every view onto them.';
+    }
+
+    public function vocabulary(): Vocabulary
+    {
+        return new Vocabulary(
+            prefix: 'x-ui.',
+            iconTag: 'x-ui.icon',
+            iconTagAttribute: 'name',
+            // Sheaf takes a trailing icon through `iconAfter`; the leading one is
+            // just `icon`. Both spellings are produced by the migration, so only
+            // these two ever appear in a Sheaf tree.
+            nameAttributes: ['icon', 'iconAfter'],
+            // Sheaf has no `<x-ui.icon.home />` form — every icon is named through
+            // an attribute, which is why the migration collapses Flux's dotted
+            // tags rather than renaming them.
+            dottedIconTag: null,
+            // Sheaf's icon component supports Heroicons' solid, mini and micro
+            // weights natively, so nothing has to drop `variant="solid"` the way
+            // the Lucide path does. Deliberately absent, not overlooked.
+            variantAttribute: null,
+            iconVariantAttribute: null,
+        );
+    }
+
+    public function detect(string $root): ?LibraryInstall
+    {
+        $composer = new Composer($root);
+        $installed = is_dir($root.'/'.self::COMPONENT_DIRECTORY);
+
+        if (! $composer->has(self::PACKAGE) && ! $installed) {
+            return null;
+        }
+
+        return new LibraryInstall(key: self::KEY);
+    }
+
+    /**
+     * Nothing to refuse over.
+     *
+     * Sheaf not being installed is not a reason to stop — it is the first thing
+     * the plan does about it. Both commands land in `Stage::Dependencies`, where
+     * the user sees them in the preview and agrees to them along with everything
+     * else, so refusing would only be making them run by hand what they had
+     * already said yes to.
+     */
+    public function preflight(Project $project): array
+    {
+        return [];
+    }
+
+    /**
+     * Sheaf's icon component reads Heroicons out of the box and can add Phosphor
+     * at init time. Lucide would need a third artwork mechanism — blade-icons and
+     * the `bk:` name prefix — so it is not offered here.
+     */
+    public function iconStrategies(): array
+    {
+        return [IconStrategy::Heroicons, IconStrategy::Phosphor];
+    }
+
+    public function planIcons(Plan $plan, Project $project, IconStrategy $strategy, Report $report): void
+    {
+        // The kit vendors a handful of Lucide icons as Flux overrides. Those
+        // overrides go with Flux, so their usages have to name something the icon
+        // set actually has. Four entries, and the table already exists.
+        $renames = [];
+
+        foreach (array_keys(IconMap::LUCIDE_TO_HEROICONS) as $lucide) {
+            $heroicon = IconMap::toHeroicons($lucide);
+
+            if ($heroicon !== null) {
+                $renames[$lucide] = $heroicon;
+            }
+        }
+
+        if ($renames !== []) {
+            $plan->add(Stage::Reconcile, new RewriteIconNames(
+                $renames,
+                'the kit\'s vendored Lucide names to Heroicons',
+                $this->vocabulary(),
+            ));
+        }
+
+        if ($strategy !== IconStrategy::Phosphor) {
+            $report->note('Icons stay on Heroicons, which is what Sheaf\'s icon component reads by default.');
+
+            return;
+        }
+
+        // When refit is the one running `sheaf:init`, it passes --with-phosphor
+        // itself. This note is for the project that was initialised before refit
+        // ever saw it, where the flag is no longer on offer.
+        if ($project->exists(self::THEME_STYLESHEET)) {
+            $report->note(
+                'Sheaf was already initialised, so refit could not pass --with-phosphor to `sheaf:init`. '
+                .'Install the Phosphor icons yourself with `composer require wireui/phosphoricons`, '
+                .'or the ps: names will not resolve.',
+            );
+        }
+
+        // After the Lucide reconcile above, so the four names it produces are
+        // Heroicons by the time the table is asked about them.
+        $plan->add(Stage::Reconcile, new SwitchIconSet(
+            'ps:',
+            IconMap::HEROICONS_TO_PHOSPHOR,
+            'Phosphor',
+            $this->vocabulary(),
+        ));
+    }
+
+    public function planMigration(Plan $plan, Project $project, IconStrategy $strategy, Report $report): void
+    {
+        $this->planInstall($plan, $project, $strategy);
+
+        $stubs = new LayoutStubs;
+
+        $stubs->contribute($plan, $project, $report);
+
+        // Ahead of the rename, because all of these read Flux's own arrangement —
+        // where a dropdown keeps its trigger, what a modal close button wraps,
+        // and which of a callout's two lines it wrote as an attribute. Each ends
+        // by putting Flux's longhand in the file, which the rename then knows.
+        $plan->add(Stage::Reconcile, new RestructureOverlays);
+        $plan->add(Stage::Reconcile, new RestructureCallouts);
+
+        // And a placement Flux writes as two attributes and joins itself, with a
+        // space, on the way to its custom element. Sheaf takes the one hyphenated
+        // value Alpine Anchor reads, so the pair has to become one before the
+        // rename — `position="bottom"` on its own is a valid, centred placement,
+        // and the `align` beside it falls through to the wrapper as stray HTML.
+        $plan->add(Stage::Reconcile, new JoinDropdownPlacement);
+
+        // The same move for a value that was never written down at all. Both
+        // libraries name a heading's sizes with the same words and put them at
+        // different points on the scale, so the value table translates the ones
+        // the kit writes — but the kit leaves `size` off 56 of its headings, and
+        // the two defaults disagree too: Flux's bare heading is `text-sm`,
+        // Sheaf's is `text-base`. Writing Flux's own default out makes the
+        // silent case a written one, and the rename then translates it with the
+        // rest.
+        $plan->add(Stage::Reconcile, new AddAttribute(
+            self::HEADING_TAG,
+            self::HEADING_SIZE,
+            self::HEADING_DEFAULT,
+        ));
+
+        // And Flux's own backwards compatibility, unwritten the way Flux's badge
+        // unwrites it: `variant="pill"` is an alias for `rounded`, and it means
+        // a shape and a return to the tinted default at once. Splitting it into
+        // the one word Flux still spells it with lets the rename translate the
+        // shape and the variant AddAttribute below supply the tint, rather than
+        // a value table having to say both in a single rewrite and saying
+        // neither.
+        $plan->add(Stage::Reconcile, new ShapeBadgePills);
+
+        $plan->add(Stage::Reconcile, new MapComponentTags);
+
+        // The heading move again, for a default that runs the other way. Flux's
+        // badge leaves `variant` null and draws a translucent tinted chip;
+        // Sheaf's defaults to `solid` and paints white on near-black. Neither
+        // library has a grey in its colour list, so both answer `color="zinc"`
+        // out of the same fallback the colourless badge takes — which makes this
+        // one difference of defaults, not a colour to translate, and puts all
+        // seven of the kit's badges behind it rather than the four that name a
+        // colour. `outline` is Sheaf's nearest tint, close enough on text and
+        // background and a 1px border louder.
+        //
+        // Keyed off the Sheaf tag rather than the Flux one, which is the
+        // opposite of the heading's `size` and for the reason that case gave:
+        // there the value written out was Flux's own word and the rename could
+        // translate it, and here Flux has no word at all for the variant it
+        // defaults to. So the value is Sheaf's, and it is written onto a tag
+        // that already says `x-ui.`. A badge that named its own variant keeps
+        // it — `AddAttribute` passes over a tag that carries the attribute
+        // already, so Flux's explicit `solid` still arrives as Sheaf's.
+        $plan->add(Stage::Reconcile, new AddAttribute(
+            self::BADGE_TAG,
+            self::BADGE_VARIANT,
+            self::BADGE_TINT,
+        ));
+
+        // All of these read the tags the rename produced, so all of them come
+        // after it. Each is a place where Sheaf's component renders what Flux's
+        // rendered, but differently enough that a rename alone leaves the view
+        // looking broken: a brand the kit wrote out twice to choose between, a
+        // logo slot whose classes are dropped, a button that stacks its own
+        // contents, a menu panel that is a grid, text that no longer inherits its
+        // alignment, a separator that ignores its variant, and a label that has
+        // no prop to land in.
+        $plan->add(Stage::Reconcile, new MergeBrandVariants);
+        $plan->add(Stage::Reconcile, new RestructureBrandLogo);
+        $plan->add(Stage::Reconcile, new RestoreButtonRow);
+        $plan->add(Stage::Reconcile, new PlaceDropdownChildren);
+        $plan->add(Stage::Reconcile, new PreserveTextAlignment);
+        $plan->add(Stage::Reconcile, new MuteSecondaryText);
+        $plan->add(Stage::Reconcile, new ShadeSubtleSeparators);
+        $plan->add(Stage::Reconcile, new PromoteContentsToLabel);
+        $plan->add(Stage::Reconcile, new WrapControlsInFields);
+        $plan->add(Stage::Reconcile, new ShapeSegmentedGroups);
+
+        // The same after-the-rename group, for a difference a rename can never
+        // see: the kit styles its collapsed sidebar rows against an attribute
+        // Flux stamps and Sheaf does not, in class names rather than in tags. So
+        // the rules survive intact and every one of them is inert.
+        $plan->add(Stage::Reconcile, new FollowSidebarCollapse);
+
+        // And the same question asked from the other side. Sheaf's own components
+        // spell the collapse as a `:has()` with nothing in front of it, which is a
+        // question the whole document answers — so a collapsed sidebar empties the
+        // settings sub-navigation out in the main column too.
+        $plan->add(Stage::Reconcile, new ScopeCollapseToSidebar);
+
+        // And a third read of Sheaf's own source, for a size that is written and
+        // then escaped away: the nav items hand their icon a class through a bag
+        // that gets HTML-escaped twice on the way to the `<svg>`. Heroicons hid
+        // it behind the dimensions its artwork carries; Phosphor's carries none,
+        // so a sidebar of labels and no glyphs is how the icon choice shows it.
+        $plan->add(Stage::Reconcile, new SizeNavItemIcons);
+
+        // A fourth, in the component that one hands the class to. Sheaf's icon
+        // colours itself at a specificity the caller cannot beat, and Tailwind
+        // sorts the tie in the component's favour — so the two-factor QR asks to
+        // stay dark on its light disc and comes out white on white.
+        $plan->add(Stage::Reconcile, new YieldIconColour);
+
+        // The same kind of size as the nav items', on a button. The rename carries
+        // an outline weight across, and Sheaf draws it a step larger than Flux did.
+        $plan->add(Stage::Reconcile, new SizeOutlineButtonIcons);
+
+        // After the field wrapping rather than beside it, because that sweep reads
+        // the OTP's `name` to key the error it writes and this one takes the same
+        // attribute off — Sheaf spends it on every digit box, so a form posts one
+        // digit under it and the challenge rejects every code.
+        $plan->add(Stage::Reconcile, new CarryOtpValue);
+
+        // The same list, one step further along: this one reads not just the
+        // renamed tag but the `name` -> `id` pairing the rename performed, since
+        // an unpaired modal has no open state worth binding.
+        $plan->add(Stage::Reconcile, new BindModalState);
+
+        // And the size the kit gave every modal. Flux hands a modal's class to
+        // the dialog; Sheaf hands it to a wrapper the dialog is teleported out
+        // of, so each panel fell back to Sheaf's narrow default.
+        $plan->add(Stage::Reconcile, new SizeModalPanels);
+
+        // And the modals the kit closes from PHP rather than from a click. The
+        // event name is already Sheaf's; the argument naming which modal it means
+        // is not, and Livewire sends that argument as the detail the listener
+        // reads — so the invitation sends and the dialog stays open.
+        $plan->add(Stage::Reconcile, new AddressModalDispatches);
+
+        // Also after the rename — it reads `x-ui.dropdown`, which does not exist
+        // until MapComponentTags has run. The chrome refit writes lands in the
+        // sidebar already lifted; the kit components it merely puts there have to
+        // be lifted where they live.
+        if (($sidebar = $stubs->sidebarComponents($project)) !== []) {
+            $plan->add(Stage::Reconcile, new RaiseSidebarDropdowns($sidebar));
+        }
+
+        // The other half of a toast. The rename gets the container right on its
+        // own, and would leave every call that fills it raising a Flux event
+        // nothing answers any more — a form that saves and says nothing.
+        if (RewriteToastCalls::used($project)) {
+            $plan->add(Stage::Reconcile, new RewriteToastCalls);
+        }
+
+        // Independent of all of the above: light/dark is the one part of the kit
+        // that lives in JavaScript, so it survives the rename untouched and
+        // pointed at a magic that is about to stop existing.
+        $plan->add(Stage::Reconcile, new RebindAppearanceToTheme);
+
+        // And the other half of the same feature. Sheaf's runtime only registers
+        // itself on `alpine:init`, which is a frame after the first paint, so
+        // without this the hardcoded `dark` class is what the reader sees first
+        // and the correction is what they see next.
+        $plan->add(Stage::Reconcile, new ApplyThemeBeforePaint);
+    }
+
+    /**
+     * Nothing to take out.
+     *
+     * Sheaf's components are copied into `resources/views/components/ui` and are
+     * the user's own files from that moment on, so a project leaving Sheaf is not
+     * a project refit should be deleting application Blade from. There is no
+     * override directory to unwind and no Blade directive to strip; `sheaf/cli`
+     * and `theme.css` are a dependency decision, and refit says rather than does
+     * those — the same line it draws around `composer remove livewire/flux`.
+     *
+     * Reachable only from a Sheaf project targeting something else, which refit
+     * has no migration for yet. Empty because there is nothing to do, not because
+     * it is waiting to be filled in.
+     */
+    public function planTeardown(Plan $plan, Project $project, Report $report): void
+    {
+        //
+    }
+
+    /**
+     * Put Sheaf in the project, to whatever extent it is not there already.
+     *
+     * Three steps, in the only order they work in, and each skipped when it has
+     * already been done — so this is as happy running against a bare kit as
+     * against one where somebody has been using Sheaf for a month.
+     *
+     * All three are `required`, because everything after them rewrites views onto
+     * what they install. A failure here stops the run before a single file has
+     * changed, which is the whole reason the dependency stage runs first.
+     */
+    private function planInstall(Plan $plan, Project $project, IconStrategy $strategy): void
+    {
+        if (! (new Composer($project->root))->has(self::PACKAGE)) {
+            $plan->add(Stage::Dependencies, new RunProcess(
+                ['composer', 'require', self::PACKAGE, '--no-interaction'],
+                'Installing Sheaf\'s CLI',
+                required: true,
+            ));
+        }
+
+        if (! $project->exists(self::THEME_STYLESHEET)) {
+            $plan->add(Stage::Dependencies, new RunProcess(
+                $this->initCommand($strategy),
+                'Initialising Sheaf',
+                required: true,
+            ));
+        }
+
+        // `sheaf:init` writes its import above Tailwind's, which is far enough up
+        // the file to push Tailwind's theme variables out of `@layer theme` — and
+        // an unlayered `:root` beats the `.dark` overrides that make the accent
+        // and primary colours flip. Planned blind when refit is the one running
+        // the init, because the line it moves does not exist yet.
+        $ordered = $project->exists(OrderThemeImport::STYLESHEET)
+            && ! OrderThemeImport::misordered($project->get(OrderThemeImport::STYLESHEET));
+
+        if (! $project->exists(self::THEME_STYLESHEET) || ! $ordered) {
+            $plan->add(Stage::Write, new OrderThemeImport);
+        }
+
+        foreach ($this->missingComponents($project) as $component) {
+            $command = ['php', 'artisan', 'sheaf:install', $component, '--no-interaction'];
+
+            // A folder with parts missing. Sheaf asks what to do about a component
+            // that already exists, and its default is not one of the answers — so
+            // without a terminal the install dies on `Unhandled match case
+            // 'prompt'`. `--force` is the only flag that skips the question.
+            if ($project->exists(self::COMPONENT_DIRECTORY.'/'.$component)) {
+                $command[] = '--force';
+            }
+
+            $plan->add(Stage::Dependencies, new RunProcess(
+                $command,
+                sprintf('Installing Sheaf\'s "%s"', $component),
+                required: true,
+            ));
+        }
+
+        // The one dependency Sheaf's own installer does not resolve. The select's
+        // runtime is written against `$rover`, an Alpine plugin published on npm
+        // and named nowhere in the component's manifest — so `sheaf:install
+        // select` succeeds, the component is complete on disk, and the control
+        // still cannot open. Not `required`, because a project can be rewritten
+        // fine without it: WireSheafRuntimes checks before it registers anything,
+        // and says what is missing when it cannot.
+        if (in_array(self::PRIMITIVE_COMPONENT, Components::closure(ComponentMap::components()), true)
+            && ! WireSheafRuntimes::primitiveInstalled($project)) {
+            $plan->add(Stage::Dependencies, new RunProcess(
+                ['npm', 'install', WireSheafRuntimes::PRIMITIVE],
+                sprintf('Installing Sheaf\'s "%s" primitive', WireSheafRuntimes::PRIMITIVE),
+                timeout: 600,
+            ));
+        }
+
+        // After all of those, and unconditionally: the runtimes it has to import
+        // are files the installs above have not written yet, so there is nothing
+        // to inspect at planning time. The action is a no-op when they all turn
+        // out to be imported already.
+        $plan->add(Stage::Write, new WireSheafRuntimes);
+    }
+
+    /**
+     * `sheaf:init` and the flags this kit's answers imply.
+     *
+     * Both are one-time decisions baked in at init, which is why the icon answer
+     * has to reach this far. Dark mode is not a guess either — every layout the
+     * kit ships puts `class="dark"` on the `<html>` element.
+     *
+     * @return list<string>
+     */
+    private function initCommand(IconStrategy $strategy): array
+    {
+        $command = ['php', 'artisan', 'sheaf:init', '--skip-prompts', '--with-dark-mode'];
+
+        if ($strategy === IconStrategy::Phosphor) {
+            $command[] = '--with-phosphor';
+        }
+
+        return $command;
+    }
+
+    /**
+     * Sheaf components this project needs and does not already have.
+     *
+     * The closure of what the map names, not just the map's own list. Sheaf's
+     * CLI resolves only the dependencies a component's config declares, and those
+     * configs under-declare: `dropdown` names `icon` alone, while its item writes
+     * `<x-ui.kbd>` and `<x-ui.button>`. Installing the dropdown and trusting the
+     * CLI therefore leaves a user menu that throws on the first render. Refit
+     * asks for every component in the graph by name instead.
+     *
+     * @return list<string>
+     */
+    private function missingComponents(Project $project): array
+    {
+        $needed = [];
+
+        foreach (Components::closure(ComponentMap::components()) as $component) {
+            if ($this->hasComponent($project, $component)) {
+                continue;
+            }
+
+            $needed[] = $component;
+        }
+
+        return $needed;
+    }
+
+    /**
+     * Whether every part of a component Sheaf records is on disk.
+     *
+     * Sheaf installs a component either as a directory of parts or as a single
+     * file, depending on how many pieces it has, so the component's own tag counts
+     * in either shape. The directory alone does not: an empty or half-emptied one
+     * — a reset that removed files and left folders — would otherwise skip the
+     * install and leave every view that uses the component unable to render.
+     */
+    private function hasComponent(Project $project, string $component): bool
+    {
+        $base = self::COMPONENT_DIRECTORY.'/'.$component;
+        $parts = Components::components()[$component] ?? [''];
+
+        foreach ($parts as $part) {
+            $present = $part === ''
+                ? $project->exists($base.'.blade.php') || $project->exists($base.'/index.blade.php')
+                : $project->exists($base.'/'.$part.'.blade.php');
+
+            if (! $present) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+}

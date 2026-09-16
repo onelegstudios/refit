@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Onelegstudios\Refit\Icons;
 
+use Onelegstudios\Refit\Libraries\Flux\OwnedIcons;
+use Onelegstudios\Refit\Libraries\Vocabulary;
+
 /**
  * Curated translations between the icon sets the starter kit uses.
  *
@@ -11,96 +14,14 @@ namespace Onelegstudios\Refit\Icons;
  * is Lucide's `log-out`, and `magnifying-glass` is `search`. The set covers every
  * name the five starter kit variants reference, plus the ones Flux's own stubs
  * render. Anything outside it is reported rather than guessed at.
+ *
+ * Set to set only. Which attribute carries a name, and which names a library
+ * draws itself, are facts about a library rather than about an icon set — those
+ * live in {@see Vocabulary} and
+ * {@see OwnedIcons}.
  */
 final class IconMap
 {
-    /**
-     * Attributes that carry an icon name on any Flux component.
-     *
-     * `icon:variant` is deliberately absent — it takes an appearance keyword such
-     * as `outline`, not a name, and translating it would corrupt the tag.
-     *
-     * @var list<string>
-     */
-    public const array NAME_ATTRIBUTES = [
-        'icon',
-        'icon-leading',
-        'icon-trailing',
-        'icon:leading',
-        'icon:trailing',
-    ];
-
-    /**
-     * The generic icon component, which names its icon through `name`.
-     *
-     * The kit writes all three forms: `<flux:icon.key />`, `icon="key"`, and
-     * `<flux:icon name="key" />`.
-     */
-    public const string ICON_TAG = 'flux:icon';
-
-    /**
-     * The attribute {@see ICON_TAG} uses, which is a name *only* on that tag.
-     *
-     * Treating `name` as an icon everywhere would rewrite the `name="email"` on
-     * every `<flux:input>` in the kit.
-     */
-    public const string ICON_TAG_ATTRIBUTE = 'name';
-
-    /**
-     * Every attribute worth parsing, before the per-tag rules are applied.
-     *
-     * @var list<string>
-     */
-    public const array CANDIDATE_ATTRIBUTES = [
-        'icon',
-        'icon-leading',
-        'icon-trailing',
-        'icon:leading',
-        'icon:trailing',
-        'name',
-    ];
-
-    /**
-     * Does this attribute name an icon, given the tag it sits on?
-     */
-    public static function namesAnIcon(string $tag, string $attribute): bool
-    {
-        if (in_array($attribute, self::NAME_ATTRIBUTES, true)) {
-            return true;
-        }
-
-        return $tag === self::ICON_TAG && $attribute === self::ICON_TAG_ATTRIBUTE;
-    }
-
-    /**
-     * Names Flux owns rather than resolving from an icon set, and the Lucide
-     * artwork that stands in for each one.
-     *
-     * `flux:icon.loading` is Flux's own spinner, not a Heroicon, and Flux renders
-     * it from inside `flux:button` as well as from application code. So it is
-     * overridden in place rather than renamed: an override at Flux's own name
-     * reaches both, where a rename would only reach the views refit can rewrite
-     * and leave the two spinners drawn differently.
-     *
-     * Lucide's `loader-circle` is a still drawing, so the override also needs the
-     * class in {@see EXTRA_CLASSES} to keep spinning.
-     *
-     * @var array<string, string>
-     */
-    public const array FLUX_OWNED = [
-        'loading' => 'loader-circle',
-    ];
-
-    /**
-     * Classes an override needs on top of the ones the kit's template applies,
-     * keyed by the name the override file is written at.
-     *
-     * @var array<string, string>
-     */
-    public const array EXTRA_CLASSES = [
-        'loading' => 'animate-spin',
-    ];
-
     /**
      * @var array<string, string>
      */
@@ -150,6 +71,75 @@ final class IconMap
     ];
 
     /**
+     * Heroicons to Phosphor, for the Sheaf projects that ask for Phosphor only.
+     *
+     * Needed for the same reason the Lucide table is: the two sets agree on
+     * `check` and `folder` and disagree on nearly everything with more than one
+     * word in it. Heroicons' `finger-print` is Phosphor's `fingerprint`, its
+     * `x-mark` is `x`, and every chevron is a caret. A bare prefix would have
+     * turned half the kit into components that do not exist.
+     *
+     * Names spelled the same in both sets are listed mapping to themselves, so
+     * that being in the table is what decides a name gets the prefix, and a name
+     * refit has never heard of is left as the Heroicon it already is.
+     *
+     * Verified against `wireui/phosphoricons`, in every weight it ships.
+     *
+     * @var array<string, string>
+     */
+    public const array HEROICONS_TO_PHOSPHOR = [
+        'arrow-path' => 'arrows-clockwise',
+        'arrow-right-start-on-rectangle' => 'sign-out',
+        'bars-2' => 'list',
+        'book-open' => 'book-open',
+        'calendar' => 'calendar-blank',
+        'check' => 'check',
+        'chevron-down' => 'caret-down',
+        'chevron-left' => 'caret-left',
+        'chevron-right' => 'caret-right',
+        'chevron-up' => 'caret-up',
+        'chevron-up-down' => 'caret-up-down',
+        'clipboard-document' => 'clipboard',
+        // Phosphor has no clipboard-with-a-tick, and this name only ever marks
+        // the copied half of a copy button, where the tick is the whole message.
+        'clipboard-document-check' => 'check',
+        'clock' => 'clock',
+        'cloud-arrow-up' => 'cloud-arrow-up',
+        // Phosphor draws no code-in-a-square; the code block is its nearest.
+        'code-bracket-square' => 'code-simple',
+        'cog' => 'gear',
+        'computer-desktop' => 'desktop',
+        'document' => 'file',
+        'document-duplicate' => 'copy',
+        'envelope' => 'envelope',
+        'exclamation-circle' => 'warning-circle',
+        'exclamation-triangle' => 'warning',
+        'eye' => 'eye',
+        'eye-dropper' => 'eyedropper',
+        'eye-slash' => 'eye-slash',
+        'finger-print' => 'fingerprint',
+        'folder' => 'folder',
+        'home' => 'house',
+        'information-circle' => 'info',
+        'key' => 'key',
+        'lock-closed' => 'lock-simple',
+        'magnifying-glass' => 'magnifying-glass',
+        'minus' => 'minus',
+        'moon' => 'moon',
+        'plus' => 'plus',
+        'qr-code' => 'qr-code',
+        'squares-2x2' => 'squares-four',
+        'sun' => 'sun',
+        'trash' => 'trash',
+        'user-plus' => 'user-plus',
+        'users' => 'users',
+        'x-circle' => 'x-circle',
+        'x-mark' => 'x',
+        // No entry for `slash`: Phosphor has no bare solidus, and a breadcrumb
+        // separator drawn as something else would read as a different control.
+    ];
+
+    /**
      * The reverse direction only needs to cover the Lucide icons the kit vendors
      * in, since everything else is already a Heroicon.
      *
@@ -164,7 +154,7 @@ final class IconMap
 
     public static function toLucide(string $heroicon): ?string
     {
-        return self::HEROICONS_TO_LUCIDE[$heroicon] ?? self::FLUX_OWNED[$heroicon] ?? null;
+        return self::HEROICONS_TO_LUCIDE[$heroicon] ?? null;
     }
 
     public static function toHeroicons(string $lucide): ?string
@@ -172,12 +162,9 @@ final class IconMap
         return self::LUCIDE_TO_HEROICONS[$lucide] ?? null;
     }
 
-    /**
-     * Is this a name Flux draws itself, which keeps its name when overridden?
-     */
-    public static function isFluxOwned(string $name): bool
+    public static function toPhosphor(string $heroicon): ?string
     {
-        return array_key_exists($name, self::FLUX_OWNED);
+        return self::HEROICONS_TO_PHOSPHOR[$heroicon] ?? null;
     }
 
     /**

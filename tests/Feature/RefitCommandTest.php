@@ -93,6 +93,7 @@ it('deletes the published config when it is asked to remove itself', function ()
     copy(dirname(__DIR__, 2).'/config/refit.php', $root.'/config/refit.php');
 
     $this->artisan('refit', ['--force' => true])
+        ->expectsQuestion('Which component library should this project end up on?', 'flux')
         ->expectsQuestion('The kit ships Heroicons with a few Lucide icons vendored in. What would you like?', 'keep')
         ->expectsQuestion('Which tasks would you like to run?', ['remove-flux-pro-source'])
         ->expectsQuestion('Apply these changes?', true)
@@ -109,6 +110,7 @@ it('leaves the published config alone when refit is staying', function (): void 
     copy(dirname(__DIR__, 2).'/config/refit.php', $root.'/config/refit.php');
 
     $this->artisan('refit', ['--force' => true])
+        ->expectsQuestion('Which component library should this project end up on?', 'flux')
         ->expectsQuestion('The kit ships Heroicons with a few Lucide icons vendored in. What would you like?', 'keep')
         ->expectsQuestion('Which tasks would you like to run?', ['remove-flux-pro-source'])
         ->expectsQuestion('Apply these changes?', true)

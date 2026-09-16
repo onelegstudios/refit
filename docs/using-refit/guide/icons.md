@@ -1,7 +1,7 @@
 ---
 title: Icons
-description: Heroicons, Lucide, and the icons Flux draws from inside its own components.
-order: 2
+description: Heroicons, Lucide, Phosphor, and the icons a library draws from inside its own components.
+order: 3
 ---
 
 # Icons
@@ -11,7 +11,11 @@ A fresh Livewire kit already speaks two icon sets. Flux resolves
 [Lucide](https://lucide.dev) icons in as `resources/views/flux/icon/*.blade.php`
 overrides for names Heroicons does not have.
 
-Refit offers three answers.
+Which answers refit offers depends on the
+[library you chose](/docs/using-refit/guide/libraries), because how an icon gets
+resolved is a fact about the library rather than about the icon set.
+
+## Staying on Flux
 
 | Choice | What happens |
 |---|---|
@@ -22,6 +26,52 @@ Refit offers three answers.
 The two directions are not symmetric. Going to Heroicons is subtraction: four
 files deleted, their usages renamed. Going to Lucide is generation: an override
 file per icon, written from artwork refit bundles.
+
+## Moving to Sheaf
+
+Sheaf resolves icons through an `<x-ui.icon>` component that lives in your own
+codebase, so there is no override directory and nothing to generate.
+
+| Choice | What happens |
+|---|---|
+| **Heroicons only** | What Sheaf reads by default, and where a Flux kit almost entirely is already. The four vendored Lucide names are pointed back at Heroicons |
+| **Phosphor only** | The same, then every icon name is translated to Phosphor's spelling of it and prefixed with `ps:`, which is how Sheaf picks its provider |
+
+The prefix on its own would not be enough. The two sets agree on `check` and
+`folder` and disagree on nearly everything longer: Heroicons' `finger-print` is
+Phosphor's `fingerprint`, `x-mark` is `x`, `cog` is `gear`, and every chevron is a
+caret. A name that is prefixed but not translated resolves to a component that
+does not exist, which takes the page down rather than losing an icon — so refit
+carries a table, the same way the Lucide direction does.
+
+A name outside that table keeps its Heroicons spelling and stays unprefixed, so
+it goes on being drawn by Heroicons, and it is reported with the files it was
+left in. A page with two icon sets on it looks inconsistent; a page with a
+missing component does not render.
+
+Phosphor needs `php artisan sheaf:init --with-phosphor`. Refit says so rather than
+running it, because it changes what Sheaf installs.
+
+Refit also patches the two components that would otherwise draw a Phosphor glyph at
+no size at all. Sheaf's `navlist.item` and `navbar.item` size their icon with a
+class that gets HTML-escaped twice on its way to the `<svg>`, so it names no rule
+and does nothing. Heroicons never showed it — its artwork carries its own
+`width`/`height` — and Phosphor's does not, which turns a sidebar into labels with
+nothing in front of them. See
+[Sheaf's components](/docs/using-refit/guide/libraries).
+
+**Weights are not translated yet.** Names are, but weights keep their Heroicons
+spelling, and Sheaf's icon component only passes Phosphor's own weights through
+(`thin`, `light`, `regular`, `bold`, `fill`, `duotone`). Anything else draws as
+`regular`, Phosphor's outline style. That is right for `outline`, and loses the
+solid look everywhere else: the kit's `variant="solid"` check in the two-factor
+setup, and the `micro` and `mini` weights Sheaf's buttons and dropdown items pick
+by default, all come out as outlines rather than Phosphor's `fill`. Change the
+weight on the ones you want filled.
+
+**Lucide is not offered under Sheaf.** It would need a third artwork mechanism —
+`blade-ui-kit/blade-icons` and the `bk:` name prefix — and a dependency you did
+not ask for. Nothing stops you doing it by hand afterwards.
 
 ## Where names are read from
 
@@ -43,6 +93,10 @@ An icon refit has no translation for is reported with the file it appears in,
 never silently dropped or guessed at.
 
 ## The icons Flux draws itself
+
+The rest of this page is about a Flux target. Sheaf's components are ordinary
+application Blade, so the scanner reads them like any other view and none of the
+machinery below applies.
 
 Going all-Lucide also covers the icons Flux renders from *inside* its own
 components — the chevron on a `flux:select`, the eye on a `viewable` input.

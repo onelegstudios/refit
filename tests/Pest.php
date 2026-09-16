@@ -2,11 +2,54 @@
 
 declare(strict_types=1);
 
+use Onelegstudios\Refit\Icons\IconMap;
+use Onelegstudios\Refit\Icons\IconScanner;
+use Onelegstudios\Refit\Libraries\Flux\OwnedIcons;
+use Onelegstudios\Refit\Libraries\FluxLibrary;
+use Onelegstudios\Refit\Libraries\Sheaf\Components;
+use Onelegstudios\Refit\Libraries\SheafLibrary;
 use Onelegstudios\Refit\Project\Project;
 use Onelegstudios\Refit\Project\ProjectDetector;
 use Onelegstudios\Refit\Tests\TestCase;
 
 uses(TestCase::class)->in(__DIR__);
+
+/**
+ * A scanner reading Flux's vocabulary, which is what most icon tests want.
+ */
+function fluxScanner(): IconScanner
+{
+    return new IconScanner((new FluxLibrary)->vocabulary());
+}
+
+function sheafScanner(): IconScanner
+{
+    return new IconScanner((new SheafLibrary)->vocabulary());
+}
+
+/**
+ * The Lucide artwork a name ends up drawn by, from either source.
+ *
+ * IconMap knows what a Heroicon is called in Lucide; OwnedIcons knows what to
+ * draw for the names Flux resolves from neither set.
+ */
+function artworkFor(string $name): ?string
+{
+    return IconMap::toLucide($name) ?? OwnedIcons::artwork($name);
+}
+
+/**
+ * Every tag a Sheaf install answers to, without the `x-ui.` prefix.
+ *
+ * Recorded from Sheaf's public registry by `composer sheaf:components`, so a
+ * test asserting against it is asserting against what Sheaf really ships.
+ *
+ * @return list<string>
+ */
+function sheafComponents(): array
+{
+    return Components::tags();
+}
 
 /**
  * The starter kit variations `composer fixtures` downloads.

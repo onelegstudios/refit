@@ -7,7 +7,7 @@ namespace Onelegstudios\Refit\Plan\Actions;
 use Onelegstudios\Refit\Blade\Attribute;
 use Onelegstudios\Refit\Blade\Tag;
 use Onelegstudios\Refit\Blade\TagRewriter;
-use Onelegstudios\Refit\Icons\IconMap;
+use Onelegstudios\Refit\Libraries\Vocabulary;
 use Onelegstudios\Refit\Plan\Report;
 use Onelegstudios\Refit\Project\Project;
 
@@ -33,12 +33,6 @@ use Onelegstudios\Refit\Project\Project;
  */
 final class DropSolidIconVariant extends BladeSweep
 {
-    /** An icon's own weight, meaningful on the icon component and nowhere else. */
-    private const string VARIANT = 'variant';
-
-    /** The weight a component hands down to the icons it renders itself. */
-    private const string ICON_VARIANT = 'icon:variant';
-
     private const string SOLID = 'solid';
 
     /**
@@ -46,6 +40,7 @@ final class DropSolidIconVariant extends BladeSweep
      */
     public function __construct(
         private readonly array $names,
+        private readonly Vocabulary $vocabulary,
         private readonly TagRewriter $rewriter = new TagRewriter,
     ) {}
 
@@ -54,19 +49,19 @@ final class DropSolidIconVariant extends BladeSweep
         return 'icons  drop variant="solid" (Lucide draws one weight)';
     }
 
-    protected function transform(string $source, Project $project, Report $report): string
+    protected function transform(string $source, string $path, Project $project, Report $report): string
     {
         return $this->rewriter->removeAttributes(
             $source,
-            'flux:',
-            fn (Tag $tag, Attribute $attribute): bool => self::asksForSolid($attribute)
+            $this->vocabulary->prefix,
+            fn (Tag $tag, Attribute $attribute): bool => $this->asksForSolid($attribute)
                 && $this->drawsLucide($tag, $attribute),
         );
     }
 
     private function drawsLucide(Tag $tag, Attribute $attribute): bool
     {
-        foreach (self::governs($tag, $attribute) as $name) {
+        foreach ($this->governs($tag, $attribute) as $name) {
             if (in_array($name, $this->names, true)) {
                 return true;
             }
@@ -75,9 +70,9 @@ final class DropSolidIconVariant extends BladeSweep
         return false;
     }
 
-    private static function asksForSolid(Attribute $attribute): bool
+    private function asksForSolid(Attribute $attribute): bool
     {
-        if (! in_array($attribute->name, [self::VARIANT, self::ICON_VARIANT], true)) {
+        if (! in_array($attribute->name, $this->vocabulary->variantAttributes(), true)) {
             return false;
         }
 
@@ -94,12 +89,12 @@ final class DropSolidIconVariant extends BladeSweep
      *
      * @return list<string>
      */
-    private static function governs(Tag $tag, Attribute $attribute): array
+    private function governs(Tag $tag, Attribute $attribute): array
     {
-        if ($attribute->name === self::ICON_VARIANT) {
+        if ($attribute->name === $this->vocabulary->iconVariantAttribute) {
             $names = [];
 
-            foreach (IconMap::NAME_ATTRIBUTES as $candidate) {
+            foreach ($this->vocabulary->nameAttributes as $candidate) {
                 $name = self::literal($tag, $candidate);
 
                 if ($name !== null) {
@@ -110,14 +105,16 @@ final class DropSolidIconVariant extends BladeSweep
             return $names;
         }
 
-        $suffix = $tag->nameAfter(IconMap::ICON_TAG.'.');
+        $suffix = $this->vocabulary->dottedIconTag === null
+            ? null
+            : $tag->nameAfter($this->vocabulary->dottedIconTag);
 
         if ($suffix !== null && $suffix !== '') {
             return [$suffix];
         }
 
-        $name = $tag->name === IconMap::ICON_TAG
-            ? self::literal($tag, IconMap::ICON_TAG_ATTRIBUTE)
+        $name = $tag->name === $this->vocabulary->iconTag
+            ? self::literal($tag, $this->vocabulary->iconTagAttribute)
             : null;
 
         return $name === null ? [] : [$name];

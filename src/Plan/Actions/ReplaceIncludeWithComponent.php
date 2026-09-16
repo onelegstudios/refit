@@ -26,7 +26,7 @@ final class ReplaceIncludeWithComponent extends BladeSweep
         return sprintf("rewrite @include('%s') -> <%s />", $this->view, $this->tag);
     }
 
-    protected function transform(string $source, Project $project, Report $report): string
+    protected function transform(string $source, string $path, Project $project, Report $report): string
     {
         $quoted = preg_quote($this->view, '/');
 

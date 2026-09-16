@@ -1,0 +1,291 @@
+{
+    "generated_at": "2026-08-15T22:26:11+00:00",
+    "source": "sheafui/components@master",
+    "components": {
+        "accordion": [
+            "",
+            "content",
+            "item",
+            "trigger"
+        ],
+        "alerts": [
+            "",
+            "description",
+            "heading"
+        ],
+        "autocomplete": [
+            "",
+            "item",
+            "items"
+        ],
+        "avatar": [
+            "",
+            "group"
+        ],
+        "badge": [
+            ""
+        ],
+        "brand": [
+            ""
+        ],
+        "breadcrumbs": [
+            "",
+            "item"
+        ],
+        "button": [
+            ""
+        ],
+        "card": [
+            ""
+        ],
+        "checkbox": [
+            "",
+            "group",
+            "indicator",
+            "label"
+        ],
+        "combobox": [
+            "",
+            "group",
+            "input",
+            "loading",
+            "option",
+            "options",
+            "separator",
+            "trigger"
+        ],
+        "description": [
+            ""
+        ],
+        "dropdown": [
+            "",
+            "checkbox-or-radio",
+            "group",
+            "item",
+            "separator",
+            "submenu"
+        ],
+        "empty": [
+            "",
+            "contents",
+            "media"
+        ],
+        "error": [
+            ""
+        ],
+        "field": [
+            ""
+        ],
+        "fieldset": [
+            ""
+        ],
+        "heading": [
+            ""
+        ],
+        "icon": [
+            "",
+            "loading"
+        ],
+        "input": [
+            "",
+            "extra-slot"
+        ],
+        "kbd": [
+            ""
+        ],
+        "key-value": [
+            "",
+            "actions",
+            "input",
+            "th",
+            "top-bar"
+        ],
+        "label": [
+            ""
+        ],
+        "layout": [
+            "",
+            "header",
+            "main"
+        ],
+        "link": [
+            ""
+        ],
+        "modal": [
+            "",
+            "backdrop",
+            "grab-handle",
+            "trigger"
+        ],
+        "navbar": [
+            "",
+            "item"
+        ],
+        "navlist": [
+            "",
+            "group",
+            "has-tooltip",
+            "item"
+        ],
+        "otp": [
+            "",
+            "input",
+            "separator"
+        ],
+        "popover": [
+            "",
+            "overlay",
+            "trigger"
+        ],
+        "radio": [
+            "group",
+            "indicator",
+            "item"
+        ],
+        "select": [
+            "",
+            "group",
+            "loading",
+            "option",
+            "options",
+            "pillbox-trigger",
+            "search",
+            "separator",
+            "trigger"
+        ],
+        "separator": [
+            ""
+        ],
+        "sidebar": [
+            "",
+            "push",
+            "toggle"
+        ],
+        "skeleton": [
+            "",
+            "text"
+        ],
+        "slider": [
+            ""
+        ],
+        "switch": [
+            ""
+        ],
+        "tabs": [
+            ""
+        ],
+        "tags-input": [
+            "",
+            "tag"
+        ],
+        "text": [
+            ""
+        ],
+        "textarea": [
+            ""
+        ],
+        "theme-switcher": [
+            ""
+        ],
+        "toast": [
+            "",
+            "item"
+        ],
+        "tooltip": [
+            "",
+            "content"
+        ]
+    },
+    "dependencies": {
+        "accordion": [
+            "icon"
+        ],
+        "alerts": [
+            "heading",
+            "icon"
+        ],
+        "autocomplete": [
+            "icon",
+            "input"
+        ],
+        "avatar": [
+            "button",
+            "icon"
+        ],
+        "badge": [
+            "button",
+            "icon"
+        ],
+        "breadcrumbs": [
+            "icon"
+        ],
+        "button": [
+            "icon"
+        ],
+        "checkbox": [
+            "icon"
+        ],
+        "combobox": [
+            "icon",
+            "text"
+        ],
+        "dropdown": [
+            "button",
+            "icon",
+            "kbd"
+        ],
+        "error": [
+            "icon"
+        ],
+        "input": [
+            "icon"
+        ],
+        "key-value": [
+            "button",
+            "icon"
+        ],
+        "modal": [
+            "button",
+            "icon"
+        ],
+        "navbar": [
+            "badge",
+            "button",
+            "icon"
+        ],
+        "navlist": [
+            "badge",
+            "button",
+            "icon"
+        ],
+        "otp": [
+            "separator"
+        ],
+        "radio": [
+            "icon"
+        ],
+        "select": [
+            "icon",
+            "text"
+        ],
+        "sidebar": [
+            "button",
+            "icon",
+            "navlist"
+        ],
+        "switch": [
+            "icon"
+        ],
+        "tabs": [
+            "button"
+        ],
+        "tags-input": [
+            "icon"
+        ],
+        "theme-switcher": [
+            "button",
+            "dropdown",
+            "icon"
+        ]
+    }
+}

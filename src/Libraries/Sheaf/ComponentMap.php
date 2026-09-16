@@ -1,0 +1,485 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Onelegstudios\Refit\Libraries\Sheaf;
+
+use Onelegstudios\Refit\Icons\IconMap;
+use Onelegstudios\Refit\Plan\Actions\ShapeBadgePills;
+use Onelegstudios\Refit\Plan\Actions\SizeOutlineButtonIcons;
+use Onelegstudios\Refit\Plan\Actions\WrapControlsInFields;
+
+/**
+ * Curated translations from Flux's components to Sheaf's.
+ *
+ * Semantic, not mechanical, in the same way {@see IconMap}
+ * is: Flux's `callout` is Sheaf's `alerts`, and Flux's `menu.*` is Sheaf's
+ * `dropdown.*`. The table covers every `<flux:*>` tag the five starter kit
+ * variants write. Anything outside it is reported rather than guessed at.
+ *
+ * Names are checked against `resources/sheaf/components.json`, which
+ * `composer sheaf:components` records from Sheaf's own registry — so a component
+ * renamed upstream fails CI rather than a user's view.
+ */
+final class ComponentMap
+{
+    /** Everything Sheaf's CLI installs answers to this. */
+    public const string PREFIX = 'x-ui.';
+
+    /**
+     * Flux tag mapped to its Sheaf equivalent.
+     *
+     * @var array<string, string>
+     */
+    public const array TAGS = [
+        // Text and layout primitives.
+        'flux:button' => 'x-ui.button',
+        'flux:heading' => 'x-ui.heading',
+        // Sheaf has no `subheading`, and its `text` is the primary style rather
+        // than Flux's muted one — so both land here and MuteSecondaryText
+        // restates the contrast as a class. Sheaf's `description` is a form
+        // element, not a text style: it belongs inside a field and stays out of
+        // this table.
+        'flux:subheading' => 'x-ui.text',
+        'flux:text' => 'x-ui.text',
+        'flux:link' => 'x-ui.link',
+        'flux:badge' => 'x-ui.badge',
+        'flux:separator' => 'x-ui.separator',
+        'flux:avatar' => 'x-ui.avatar',
+        'flux:tooltip' => 'x-ui.tooltip',
+        // Flux's longhand, and the shape RestructureOverlays has already rewritten
+        // the shorthand `content` attribute into by the time this rename runs.
+        'flux:tooltip.content' => 'x-ui.tooltip.content',
+        // Flux calls it a callout; Sheaf files it under the plural. Both of its
+        // parts are the longhand RestructureCallouts has already rewritten the
+        // shorthand `heading` and `text` attributes into by the time this
+        // rename runs — Sheaf's alert takes neither as a prop.
+        'flux:callout' => 'x-ui.alerts',
+        'flux:callout.heading' => 'x-ui.alerts.heading',
+        'flux:callout.text' => 'x-ui.alerts.description',
+
+        // Form controls.
+        'flux:input' => 'x-ui.input',
+        'flux:checkbox' => 'x-ui.checkbox',
+        // Sheaf ships no bare `radio` — an option is always `radio.item` inside
+        // a `radio.group`, which is the shape the kit already writes anyway.
+        'flux:radio' => 'x-ui.radio.item',
+        'flux:radio.group' => 'x-ui.radio.group',
+        'flux:select' => 'x-ui.select',
+        'flux:select.option' => 'x-ui.select.option',
+        'flux:otp' => 'x-ui.otp',
+
+        // Icons. The dotted form is handled separately — it becomes an attribute
+        // rather than a tag name — but Flux's own spinner has a direct
+        // counterpart, so it maps like any other tag.
+        'flux:icon' => 'x-ui.icon',
+        'flux:icon.loading' => 'x-ui.icon.loading',
+
+        // Overlays.
+        'flux:modal' => 'x-ui.modal',
+        'flux:modal.trigger' => 'x-ui.modal.trigger',
+        'flux:dropdown' => 'x-ui.dropdown',
+        // Sheaf takes a dropdown's contents as a named slot. RestructureOverlays
+        // has already lifted the trigger into <x-slot:button> by the time this
+        // rename runs, so the menu is all that is left to move.
+        'flux:menu' => 'x-slot:menu',
+        'flux:menu.item' => 'x-ui.dropdown.item',
+        'flux:menu.separator' => 'x-ui.dropdown.separator',
+        'flux:menu.heading' => 'x-ui.dropdown.group',
+        'flux:menu.radio.group' => 'x-ui.dropdown.group',
+
+        // Chrome. These appear only in the layout files, which refit replaces
+        // wholesale — but a project that has moved one somewhere else still gets
+        // a sensible rewrite rather than a warning.
+        'flux:sidebar' => 'x-ui.sidebar',
+        'flux:sidebar.toggle' => 'x-ui.sidebar.toggle',
+        'flux:sidebar.nav' => 'x-ui.navlist',
+        'flux:sidebar.item' => 'x-ui.navlist.item',
+        'flux:sidebar.group' => 'x-ui.navlist.group',
+        'flux:sidebar.brand' => 'x-ui.brand',
+        'flux:navlist' => 'x-ui.navlist',
+        'flux:navlist.item' => 'x-ui.navlist.item',
+        'flux:navlist.group' => 'x-ui.navlist.group',
+        'flux:navbar' => 'x-ui.navbar',
+        'flux:navbar.item' => 'x-ui.navbar.item',
+        'flux:brand' => 'x-ui.brand',
+        'flux:header' => 'x-ui.layout.header',
+        'flux:main' => 'x-ui.layout.main',
+        'flux:toast' => 'x-ui.toast',
+        // Flux's toast.group is the container the toasts render into, which is
+        // what Sheaf's bare `toast` is.
+        'flux:toast.group' => 'x-ui.toast',
+    ];
+
+    /**
+     * Flux tags with no Sheaf counterpart, and what to say about each.
+     *
+     * Kept as an explicit table rather than left to fall through the unknown-tag
+     * path, so the report can explain the gap instead of only naming it. All of
+     * these are chrome, and refit rewrites the chrome files from stubs, so an
+     * ordinary run never produces these warnings — they exist for the project
+     * that has moved layout markup somewhere unusual.
+     *
+     * @var array<string, string>
+     */
+    public const array UNMAPPED = [
+        'flux:profile' => 'Sheaf ships no profile component — the sidebar footer is ordinary markup.',
+        'flux:sidebar.profile' => 'Sheaf ships no profile component — the sidebar footer is ordinary markup.',
+        'flux:sidebar.header' => 'Sheaf\'s sidebar takes its header through <x-slot:brand> rather than a tag.',
+        'flux:sidebar.collapse' => 'Sheaf collapses the sidebar from <x-ui.sidebar.toggle> instead.',
+        'flux:spacer' => 'Inside a sidebar this is <x-ui.sidebar.push>; elsewhere it has no counterpart.',
+    ];
+
+    /**
+     * Sheaf components refit writes itself, that no Flux tag maps to.
+     *
+     * The three parts of the wrapper {@see WrapControlsInFields} puts around a
+     * control Sheaf will neither label nor error. Nothing in the kit writes any
+     * of these tags before refit does, so nothing in TAGS asks for them and the
+     * install list has to name them here — `bin/scan-sheaf-components.php` checks
+     * these against the registry alongside the mapped ones.
+     *
+     * @var list<string>
+     */
+    public const array SUPPORTING = ['error', 'field', 'label'];
+
+    /**
+     * Attributes Sheaf spells differently, keyed by the Flux name.
+     *
+     * Matched by name alone, across every Sheaf tag, because a prop belongs to
+     * the one component that declares it and no two here collide.
+     *
+     * @var array<string, string>
+     */
+    public const array ATTRIBUTES = [
+        'icon-trailing' => 'iconAfter',
+        'icon:trailing' => 'iconAfter',
+        'icon-leading' => 'icon',
+        'icon:leading' => 'icon',
+        // The eye on a password field. Both libraries draw it, so the rename is
+        // the whole of the fix — but `viewable` is not a Sheaf prop, so left
+        // alone it lands on the wrapper div and every password in the kit
+        // quietly loses its reveal button.
+        'viewable' => 'revealable',
+    ];
+
+    /**
+     * Flux attributes Sheaf has no use for, removed rather than renamed.
+     *
+     * `icon:variant` is the pass-through weight for a component's icon. The tags
+     * that declare an `iconVariant` get it renamed through {@see TAG_ATTRIBUTES};
+     * on any other Sheaf tag nothing reads it, and left in place it renders as a
+     * literal `icon:variant="…"` attribute on the element. Matched bound or not,
+     * and whatever its value.
+     *
+     * @var list<string>
+     */
+    public const array DROPPED = ['icon:variant'];
+
+    /**
+     * Sheaf tags that hand every `icon:*` attribute on to their icon.
+     *
+     * On these `icon:variant` is read — it becomes the icon's `variant` — so
+     * {@see DROPPED} leaves it where it is.
+     *
+     * @var list<string>
+     */
+    public const array FORWARDS_ICON_ATTRIBUTES = ['x-ui.navbar.item', 'x-ui.navlist.item'];
+
+    /**
+     * Attributes that only one component renames, keyed by the Sheaf tag.
+     *
+     * ATTRIBUTES cannot carry these, because it matches on the attribute name
+     * alone and `name` is the one word both libraries spend everywhere: it is the
+     * icon on `<x-ui.icon>`, the field on `<x-ui.input>`, the bag key on
+     * `<x-ui.error>`. Renaming it globally would rewrite all of those.
+     *
+     * A modal is the one place it means identity. Flux calls a modal and its
+     * trigger by `name`; Sheaf pairs them on `id`, and reads nothing from `name`
+     * — so the trigger opens `$modal.open(null)` and the modal sits waiting on a
+     * generated id that nothing will ever send. Both halves render, neither is
+     * wired to the other, and the button is simply dead: the kit's "Enable 2FA"
+     * and "Delete account" both land here.
+     *
+     * Keyed by the Sheaf name rather than the Flux one because this table is read
+     * after the tag rename, over a tree that already says `x-ui.` — the same
+     * vocabulary the tags it matches are in.
+     *
+     * @var array<string, array<string, string>>
+     */
+    public const array TAG_ATTRIBUTES = [
+        // `focusable` rides along because it is the same story in miniature: Flux
+        // spells it `focusable`, Sheaf declares `autofocus`, and the word is only
+        // a modal's to claim. Sheaf already defaults it on, so this changes no
+        // behaviour — it just stops the prop landing on the wrapper div as a
+        // stray HTML attribute.
+        'x-ui.modal' => ['name' => 'id', 'focusable' => 'autofocus'],
+        'x-ui.modal.trigger' => ['name' => 'id'],
+        // Where the bubble goes. Both libraries take the same four words for it
+        // and only the prop differs, so left alone every tooltip in a header
+        // points up and overlaps the bar it hangs from.
+        'x-ui.tooltip' => ['position' => 'placement'],
+        // The word above a group of nav items. Flux calls it the group's
+        // `heading`; Sheaf declares `label`, and reads nothing from `heading` —
+        // so left alone the "Platform" heading over the sidebar's links simply
+        // never renders.
+        'x-ui.navlist.group' => ['heading' => 'label'],
+        // Which nav item is the one you are on. Flux marks it `current`; Sheaf
+        // declares `active` and reads nothing from `current`, falling back to
+        // `url($href) === url()->current()` when nothing is passed. That
+        // fallback is why this hides: for an exact-match route it lands on the
+        // same answer, so the sidebar looks right while the prop does nothing.
+        // Where the two disagree it is a plain regression — the settings
+        // sidebar's `routeIs('teams.*')` covers `teams.edit` and `teams.create`
+        // as well, and URL equality against `route('teams.index')` does not.
+        'x-ui.navlist.item' => ['current' => 'active'],
+        'x-ui.navbar.item' => ['current' => 'active'],
+        // How round a badge is. Flux calls it `rounded`; Sheaf declares `pill`,
+        // and spends `rounded` nowhere — so left alone it falls out of
+        // `{{ $attributes }}` onto the wrapper as a stray HTML attribute and the
+        // badge stays square. Tag-keyed rather than global because `rounded` is
+        // an ordinary enough word to want back later. {@see ShapeBadgePills}
+        // writes Flux's older `variant="pill"` into this spelling first, so both
+        // of Flux's names for the shape arrive here as one.
+        'x-ui.badge' => ['rounded' => 'pill', 'icon:variant' => 'iconVariant'],
+        // The weight of the component's own icon. Flux passes it through as
+        // `icon:variant`; these three declare it as a prop, and read nothing from
+        // the Flux spelling. The kit asks for `outline` on nine buttons, which
+        // Sheaf draws as Heroicons' outline set — at `size-5` rather than Flux's
+        // `size-4`, which {@see SizeOutlineButtonIcons} restores.
+        'x-ui.button' => ['icon:variant' => 'iconVariant'],
+        'x-ui.dropdown.item' => ['icon:variant' => 'iconVariant'],
+    ];
+
+    /**
+     * Attribute values Sheaf spells differently, keyed by tag then attribute.
+     *
+     * Flux's `filled` is Sheaf's `solid` — the same 5% neutral wash, class for
+     * class — and Flux's `subtle` is Sheaf's `ghost`. Sheaf's `soft` reads like
+     * the match and is not one: it is transparent with muted text, so every
+     * modal's Cancel button lost its surface.
+     * Only the variants the kit actually writes are listed; an unrecognised value
+     * is left alone, because Sheaf passes unknown variants through to classes
+     * rather than throwing.
+     *
+     * `primary` is one of those, and deliberately: the word means the same thing
+     * in both libraries. It is the prominent button — every submit in the kit's
+     * auth pages, and the one Sheaf's component falls back to when no variant is
+     * given at all. Translating it to `solid` reads as a synonym and is not one:
+     * Sheaf's `solid` is a 5% neutral wash, the quiet secondary of the set, so
+     * the rename left "Log in" and "Register" looking like the button beside
+     * them rather than the one to press.
+     *
+     * A heading's `level` is the one column listed past what the kit writes, and
+     * for the opposite reason: Sheaf does not pass an unrecognised level through,
+     * it discards it. So the argument that stops the variant tables growing —
+     * guessing is worse than doing nothing — runs the other way here, and all six
+     * levels are listed even though the kit only ever writes two.
+     *
+     * A heading's `size` looks like the same exception and is not one. `base` is
+     * there because refit itself writes it into the tree first, so by the time
+     * this pass runs it is a value the file holds like any other.
+     *
+     * The value keys are `array-key` rather than `string` because of that column:
+     * PHP folds a numeric string key down to an int, so `'1'` is stored as `1`.
+     * {@see value()} still finds it — the lookup coerces the same way — but the
+     * type has to say so.
+     *
+     * @var array<string, array<string, array<array-key, string>>>
+     */
+    public const array VALUES = [
+        'flux:button' => [
+            'variant' => [
+                'filled' => 'solid',
+                'subtle' => 'ghost',
+                'danger' => 'danger',
+            ],
+        ],
+        // Flux numbers a heading's level and casts it to an integer; Sheaf names
+        // them, matching `level` against `h1` through `h6` and falling back to
+        // `h2` for everything else. So `level="1"` renders an `<h2>` — the
+        // settings pages lose the only `<h1>` in their outline, and the recovery
+        // codes panel's `level="3"` flattens into the same level as the headings
+        // around it. Nothing about the rendered page shows either, since `h2` is
+        // a plausible tag to find there.
+        //
+        // The size column is the same two libraries spelling the same words at
+        // different points on the scale. Flux has three outcomes — `xl` is
+        // `text-2xl`, `lg` is `text-base`, everything else is `text-sm` — and
+        // Sheaf has eight, so `lg` means `text-xl` there. Left alone every
+        // `size="lg"` heading in the kit grows two steps, from 16px to 20px.
+        // `xl` lands on `text-2xl` in both and is listed anyway, for the same
+        // reason `flux:button`'s `danger` is: it records that the match was
+        // checked rather than missed.
+        //
+        // `base` is Flux's own prop default, which the kit never writes out. An
+        // `AddAttribute` planned ahead of the rename puts it in the file, so this
+        // column can translate it like any other written value — the same shape
+        // `RestructureCallouts` works in: write Flux's own longhand first, and
+        // let the rename read it.
+        'flux:heading' => [
+            'level' => [
+                '1' => 'h1',
+                '2' => 'h2',
+                '3' => 'h3',
+                '4' => 'h4',
+                '5' => 'h5',
+                '6' => 'h6',
+            ],
+            'size' => [
+                'base' => 'xs',
+                'lg' => 'sm',
+                'xl' => 'xl',
+            ],
+        ],
+        // A badge's variant is the one column where the interesting half is the
+        // value neither library writes. Flux leaves `variant` null and draws a
+        // translucent tinted chip; Sheaf defaults to `solid` and paints white on
+        // near-black. Neither has a grey in its colour list, so `color="zinc"`
+        // and no colour at all come out of the same fallback in both — which
+        // makes the kit's `color="zinc"` a restatement of Flux's default rather
+        // than a colour to translate, and leaves nothing here for it to do.
+        // Sheaf's `outline` is the tint, and an `AddAttribute` after the rename
+        // writes it onto every badge that named no variant.
+        //
+        // So `solid` is the only entry: a badge that asked for Flux's solid keeps
+        // it, and the pass over it is what stops the tint being added on top.
+        // Flux's other variant is `pill`, which is not a colour at all — it is a
+        // backwards-compatible alias for `rounded`, and {@see ShapeBadgePills}
+        // unwrites it into that before this table is ever asked, the same way
+        // Flux's own component does.
+        'flux:badge' => [
+            'variant' => [
+                'solid' => 'solid',
+            ],
+        ],
+        // Sheaf names the red one after the state rather than the consequence,
+        // and falls back to blue for a word it does not know — so the kit's
+        // `danger` callouts, which are all of them, come out as calm blue notices
+        // saying a two-factor code was rejected.
+        'flux:callout' => [
+            'variant' => [
+                'danger' => 'error',
+            ],
+        ],
+    ];
+
+    /**
+     * Values refit can only translate when they are written out, and what to say
+     * when a project has bound them instead.
+     *
+     * VALUES reads literals. A bound attribute carries a PHP expression, so the
+     * sweep passes over it, and for a variant that is the right answer either
+     * way: Sheaf sends a word it does not know through to classes, so an
+     * untranslated variant looks wrong on the page rather than going missing.
+     *
+     * A heading's level is the one place that reasoning fails, because the
+     * fallback there is silent — the page renders, the outline is wrong, and
+     * nothing in the markup says so. An ordinary run produces none of these
+     * warnings, since the kit writes its levels out; they exist for the project
+     * that has moved to `:level="$depth"`.
+     *
+     * Curated for the same reason {@see UNMAPPED} is: a warning that only names
+     * the gap leaves the reader to work out why it matters.
+     *
+     * @var array<string, array<string, string>>
+     */
+    public const array BOUND_VALUES = [
+        'flux:heading' => [
+            'level' => 'Sheaf names heading levels rather than numbering them, and quietly renders an <h2> for anything that is not h1 through h6.',
+        ],
+    ];
+
+    public static function tag(string $flux): ?string
+    {
+        return self::TAGS[$flux] ?? null;
+    }
+
+    /**
+     * Whether a Sheaf tag wants a Flux attribute gone, bound or not.
+     */
+    public static function dropped(string $tag, string $flux): bool
+    {
+        $bare = ltrim($flux, ':');
+
+        if (in_array($tag, self::FORWARDS_ICON_ATTRIBUTES, true) || self::tagAttribute($tag, $bare) !== null) {
+            return false;
+        }
+
+        return in_array($bare, self::DROPPED, true);
+    }
+
+    public static function attribute(string $flux): ?string
+    {
+        return self::ATTRIBUTES[$flux] ?? null;
+    }
+
+    /**
+     * The rename a single Sheaf tag asks for, or null when it asks for none.
+     */
+    public static function tagAttribute(string $tag, string $flux): ?string
+    {
+        return self::TAG_ATTRIBUTES[$tag][$flux] ?? null;
+    }
+
+    public static function value(string $tag, string $attribute, string $value): ?string
+    {
+        return self::VALUES[$tag][$attribute][$value] ?? null;
+    }
+
+    /**
+     * The reason a Flux tag has no Sheaf equivalent, when refit knows one.
+     */
+    public static function whyUnmapped(string $flux): ?string
+    {
+        return self::UNMAPPED[$flux] ?? null;
+    }
+
+    /**
+     * Why a bound value on a Flux tag is worth a word, when refit has one.
+     */
+    public static function whyBound(string $flux, string $attribute): ?string
+    {
+        return self::BOUND_VALUES[$flux][$attribute] ?? null;
+    }
+
+    /**
+     * Every Sheaf component refit needs installed, as install names.
+     *
+     * `x-ui.navlist.item` needs the `navlist` component, so only the top-level
+     * name is returned. What each of those needs in turn is not this table's to
+     * know — {@see Components::closure()} works that out from the recorded
+     * registry, and refit installs the closure rather than this list.
+     *
+     * @return list<string>
+     */
+    public static function components(): array
+    {
+        $components = array_fill_keys(self::SUPPORTING, true);
+
+        foreach (self::TAGS as $sheaf) {
+            // `x-slot:menu` is Blade's own, not something the CLI can install.
+            if (! str_starts_with($sheaf, self::PREFIX)) {
+                continue;
+            }
+
+            $components[self::componentFor($sheaf)] = true;
+        }
+
+        $names = array_keys($components);
+
+        sort($names);
+
+        return $names;
+    }
+
+    /**
+     * `x-ui.navlist.item` -> `navlist`.
+     */
+    public static function componentFor(string $tag): string
+    {
+        $name = str_starts_with($tag, self::PREFIX) ? substr($tag, strlen(self::PREFIX)) : $tag;
+
+        return explode('.', $name)[0];
+    }
+}
