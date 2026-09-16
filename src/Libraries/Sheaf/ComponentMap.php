@@ -163,6 +163,31 @@ final class ComponentMap
     ];
 
     /**
+     * Flux attributes Sheaf has no use for, removed rather than renamed.
+     *
+     * `icon:variant` is the pass-through weight for a component's icon. Sheaf's
+     * button spells that `iconVariant`, but refit deliberately does not translate
+     * it: Sheaf picks a weight to suit the button's size when none is given, and
+     * the kit's only value, `outline`, is a Heroicons word that means nothing to
+     * the Phosphor set. Left in place, it renders onto the `<button>` as a literal
+     * `icon:variant="outline"` that nothing reads. Matched bound or not, and
+     * whatever its value.
+     *
+     * @var list<string>
+     */
+    public const array DROPPED = ['icon:variant'];
+
+    /**
+     * Sheaf tags that hand every `icon:*` attribute on to their icon.
+     *
+     * On these `icon:variant` is read — it becomes the icon's `variant` — so
+     * {@see DROPPED} leaves it where it is.
+     *
+     * @var list<string>
+     */
+    public const array FORWARDS_ICON_ATTRIBUTES = ['x-ui.navbar.item', 'x-ui.navlist.item'];
+
+    /**
      * Attributes that only one component renames, keyed by the Sheaf tag.
      *
      * ATTRIBUTES cannot carry these, because it matches on the attribute name
@@ -362,6 +387,18 @@ final class ComponentMap
     public static function tag(string $flux): ?string
     {
         return self::TAGS[$flux] ?? null;
+    }
+
+    /**
+     * Whether a Sheaf tag wants a Flux attribute gone, bound or not.
+     */
+    public static function dropped(string $tag, string $flux): bool
+    {
+        if (in_array($tag, self::FORWARDS_ICON_ATTRIBUTES, true)) {
+            return false;
+        }
+
+        return in_array(ltrim($flux, ':'), self::DROPPED, true);
     }
 
     public static function attribute(string $flux): ?string

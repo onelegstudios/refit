@@ -18,7 +18,7 @@ use Onelegstudios\Refit\Project\Project;
  * Four rewrites, in an order that matters. The dotted icon form is folded down
  * first, while the tags still say `flux:icon.*` and the suffix is still there to
  * read. Tag names go next. Attribute names and values come last, over the
- * already-renamed tree — attributes are matched by name, or by tag and name for
+ * already-renamed tree, after the attributes Sheaf has no use for are taken off — attributes are matched by name, or by tag and name for
  * the few a single component claims, and the value table looks its tag back up
  * through the map, so none of them needs the Flux name to still be on the tag.
  *
@@ -83,6 +83,12 @@ final class MapComponentTags extends BladeSweep
             $source,
             self::FLUX_PREFIX,
             static fn (string $name): ?string => ComponentMap::tag($name),
+        );
+
+        $source = $this->rewriter->removeAttributes(
+            $source,
+            'x-ui.',
+            static fn (Tag $tag, Attribute $attribute): bool => ComponentMap::dropped($tag->name, $attribute->name),
         );
 
         $source = $this->rewriter->renameAttributes(

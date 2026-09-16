@@ -329,6 +329,27 @@ it('sizes every modal panel through the width Sheaf reads', function (string $ki
     'Run `composer fixtures`.',
 );
 
+it('leaves no icon:variant for Sheaf to render as a stray attribute', function (string $kit): void {
+    $root = sheafKit($kit);
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'library' => 'sheaf',
+            'icons' => 'heroicons',
+        ]),
+    ])->assertSuccessful();
+
+    $project = (new ProjectDetector)->detect($root);
+
+    foreach ($project->blades() as $path) {
+        expect($project->get($path))->not->toContain('icon:variant');
+    }
+})->with(starterKits())->skip(
+    fn (): bool => ! is_dir(fixturePath('livewire')),
+    'Run `composer fixtures`.',
+);
+
 it('only ever produces components Sheaf actually ships', function (string $kit): void {
     $root = sheafKit($kit);
 

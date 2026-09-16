@@ -137,6 +137,21 @@ it('leaves `name` alone on every component that is not a modal', function (): vo
         ->toBe('<x-ui.input name="code" wire:model="code" />');
 });
 
+it('takes the icon weight off, which Sheaf never reads in that spelling', function (): void {
+    // Sheaf's button reads `iconVariant` and picks a weight from its size when
+    // none is given, so the Flux form would only render as a stray attribute.
+    expect(mapTags('<flux:button icon="trash" icon:variant="outline">Delete</flux:button>'))
+        ->toBe('<x-ui.button icon="trash">Delete</x-ui.button>')
+        ->and(mapTags("<flux:button\n    icon=\"eye\"\n    :icon:variant=\"\$weight\"\n/>"))
+        ->toBe("<x-ui.button\n    icon=\"eye\"\n/>")
+        // A nav item hands `icon:*` to its icon, so there the weight is read.
+        ->and(mapTags('<flux:navlist.item icon="home" icon:variant="solid" />'))
+        ->toBe('<x-ui.navlist.item icon="home" icon:variant="solid" />')
+        // Only on Sheaf tags; anything the map did not rename keeps it.
+        ->and(mapTags('<x-thing icon:variant="outline" />'))
+        ->toBe('<x-thing icon:variant="outline" />');
+});
+
 it('translates variant values per component', function (): void {
     expect(mapTags('<flux:button variant="filled" />'))
         ->toBe('<x-ui.button variant="solid" />')

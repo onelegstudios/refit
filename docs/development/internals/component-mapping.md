@@ -130,7 +130,7 @@ Sheaf's translation table, and the same discipline as
 [`IconMap`](/docs/development/internals/icon-pipeline): curated, commented where a
 call was close, and reported rather than guessed at when there is no answer.
 
-Seven kinds of entry:
+Eight kinds of entry:
 
 - **`TAGS`** — `flux:callout` to `x-ui.alerts`, `flux:menu.item` to
   `x-ui.dropdown.item`, `flux:main` to `x-ui.layout.main`.
@@ -164,6 +164,13 @@ Seven kinds of entry:
   wearing a variant's clothes, unwritten into `rounded` before this pass runs.
   What is left is the value neither library writes down, and that is added after
   this pass rather than translated by it.
+- **`DROPPED`** — Flux attributes removed rather than renamed. `icon:variant` is
+  the only one: Sheaf's button reads `iconVariant` and picks a weight from its
+  size when given none, and the kit's `outline` is a Heroicons word Phosphor does
+  not know, so translating it would be worse than letting it go. Left alone it
+  renders onto the `<button>` as a stray attribute. The two nav items are exempt
+  through `FORWARDS_ICON_ATTRIBUTES`, because they hand every `icon:*` on to their
+  icon and there the weight is read.
 - **`BOUND_VALUES`** — why a bound value is worth a word, for the few where it is.
   `VALUES` reads literals, so `:level="$depth"` goes untranslated however complete
   the table is, and a warning is all refit has left.
