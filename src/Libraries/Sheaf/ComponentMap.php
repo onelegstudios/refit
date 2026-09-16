@@ -223,7 +223,10 @@ final class ComponentMap
     /**
      * Attribute values Sheaf spells differently, keyed by tag then attribute.
      *
-     * Flux's `filled` is Sheaf's `soft`, and Flux's `subtle` is Sheaf's `ghost`.
+     * Flux's `filled` is Sheaf's `solid` — the same 5% neutral wash, class for
+     * class — and Flux's `subtle` is Sheaf's `ghost`. Sheaf's `soft` reads like
+     * the match and is not one: it is transparent with muted text, so every
+     * modal's Cancel button lost its surface.
      * Only the variants the kit actually writes are listed; an unrecognised value
      * is left alone, because Sheaf passes unknown variants through to classes
      * rather than throwing.
@@ -256,7 +259,7 @@ final class ComponentMap
     public const array VALUES = [
         'flux:button' => [
             'variant' => [
-                'filled' => 'soft',
+                'filled' => 'solid',
                 'subtle' => 'ghost',
                 'danger' => 'danger',
             ],

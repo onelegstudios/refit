@@ -139,7 +139,7 @@ it('leaves `name` alone on every component that is not a modal', function (): vo
 
 it('translates variant values per component', function (): void {
     expect(mapTags('<flux:button variant="filled" />'))
-        ->toBe('<x-ui.button variant="soft" />')
+        ->toBe('<x-ui.button variant="solid" />')
         ->and(mapTags('<flux:button variant="subtle" />'))
         ->toBe('<x-ui.button variant="ghost" />');
 });
