@@ -28,6 +28,7 @@ full suite passes without either installed.
 | `composer icons` / `composer icons:check` | Refresh the committed Lucide bundle, or report drift |
 | `composer flux:internals` / `…:check` | Re-record the icons Flux renders internally, or report drift |
 | `composer sheaf:components` / `…:check` | Re-record the components Sheaf ships, or report drift |
+| `composer resources:check` | All three drift checks in one go; the Flux one skips without a licence |
 | `composer refresh` | `icons` then `fixtures` |
 | `composer build` / `composer serve` | Build or serve the workbench application |
 
