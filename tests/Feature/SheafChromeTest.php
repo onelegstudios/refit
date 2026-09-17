@@ -357,3 +357,22 @@ it('leaves the kits without teams without a switcher to raise', function (): voi
     // itself are not refit's to move around.
     expect((new ProjectDetector)->detect($root)->exists('resources/views/components/⚡team-switcher.blade.php'))->toBeFalse();
 })->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+
+it('folds the Sheaf chrome into the layout when the layouts are flattened', function (): void {
+    $root = sheafKit('livewire');
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode(['library' => 'sheaf', 'icons' => 'heroicons', 'tasks' => ['flatten-layouts', 'single-layout']]),
+    ])->assertSuccessful();
+
+    $project = (new ProjectDetector)->detect($root);
+
+    // The stub is what gets folded in, and it already renders the main itself,
+    // so the slot lands in it directly rather than in a second main.
+    expect($project->exists('resources/views/layouts/app'))->toBeFalse()
+        ->and($project->get('resources/views/layouts/app.blade.php'))
+        ->toContain('<x-ui.layout')
+        ->not->toContain('x-layouts::')
+        ->not->toContain('flux:');
+});

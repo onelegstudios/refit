@@ -12,6 +12,7 @@ use Onelegstudios\Refit\Plan\Report;
 use Onelegstudios\Refit\Project\Project;
 use Onelegstudios\Refit\Project\ProjectDetector;
 use Onelegstudios\Refit\Refit;
+use Onelegstudios\Refit\Tasks\FlattenLayouts;
 use Onelegstudios\Refit\Tasks\KeepOneLayout;
 use Onelegstudios\Refit\Tasks\MoveAuthViewsOutOfPages;
 use Onelegstudios\Refit\Tasks\MoveComponentsOutOfPages;
@@ -51,6 +52,7 @@ it('registers the configured tasks', function (): void {
             'namespace-components',
             'toasts-at-top',
             'single-layout',
+            'flatten-layouts',
             'remove-flux-pro-source',
             'remove-flux-overrides',
         ]);
@@ -341,6 +343,166 @@ it('has nothing to delete once one layout is left in each family', function (): 
     [$project] = runTask(new KeepOneLayout, 'livewire');
 
     expect((new KeepOneLayout)->appliesTo($project))->toBeFalse();
+});
+
+/**
+ * Plan every given task against one copy of a fixture, then apply them together.
+ *
+ * @param  list<Task>  $tasks
+ * @return array{Project, Report}
+ */
+function runTasks(array $tasks, string $kit): array
+{
+    $project = (new ProjectDetector)->detect(copyFixture($kit));
+    $plan = new Plan;
+    $report = new Report;
+
+    foreach ($tasks as $task) {
+        $task->contribute($plan, $project, $report);
+    }
+
+    (new Applier)->apply($plan, $project, $report);
+
+    return [$project, $report];
+}
+
+it('empties the layout folders', function (string $kit): void {
+    [$project, $report] = runTasks([new FlattenLayouts], $kit);
+
+    expect($project->exists('resources/views/layouts/app'))->toBeFalse()
+        ->and($project->exists('resources/views/layouts/auth'))->toBeFalse()
+        ->and($project->exists('resources/views/layouts/app-header.blade.php'))->toBeTrue()
+        ->and($project->exists('resources/views/layouts/auth-card.blade.php'))->toBeTrue()
+        ->and($project->exists('resources/views/layouts/auth-split.blade.php'))->toBeTrue()
+        ->and($report->warnings())->toBe([]);
+})->with(starterKits());
+
+it('folds the rendered variant into the layout that renders it', function (string $kit): void {
+    [$project] = runTasks([new FlattenLayouts], $kit);
+
+    $app = $project->get('resources/views/layouts/app.blade.php');
+    $auth = $project->get('resources/views/layouts/auth.blade.php');
+
+    expect($project->exists('resources/views/layouts/app-sidebar.blade.php'))->toBeFalse()
+        ->and($project->exists('resources/views/layouts/auth-simple.blade.php'))->toBeFalse()
+        ->and($app)->toStartWith('<!DOCTYPE html>')
+        ->toContain('<flux:sidebar ')
+        ->toContain("        <flux:main>\n            {{ \$slot }}\n        </flux:main>\n")
+        ->not->toContain('x-layouts::')
+        ->and($auth)->toContain("<div class=\"flex flex-col gap-6\">\n                    {{ \$slot }}\n")
+        ->not->toContain('x-layouts::');
+})->with(starterKits());
+
+it('deletes the variants the kit does not render rather than flattening them', function (string $kit): void {
+    // Both tasks pick their own moment: the deletions land in the move stage, and
+    // the flattening reads the folder in reconcile, once they have.
+    [$project, $report] = runTasks([new FlattenLayouts, new KeepOneLayout], $kit);
+
+    expect($project->exists('resources/views/layouts/app-header.blade.php'))->toBeFalse()
+        ->and($project->exists('resources/views/layouts/auth-card.blade.php'))->toBeFalse()
+        ->and($project->exists('resources/views/layouts/auth-split.blade.php'))->toBeFalse()
+        ->and($project->exists('resources/views/layouts/app'))->toBeFalse()
+        ->and($project->exists('resources/views/layouts/auth'))->toBeFalse()
+        ->and($project->get('resources/views/layouts/app.blade.php'))->toContain('<flux:sidebar ')
+        ->and($report->warnings())->toBe([]);
+})->with(starterKits());
+
+it('folds the header shell when that is the one rendered', function (): void {
+    $root = copyFixture('livewire');
+    $delegate = 'resources/views/layouts/app.blade.php';
+
+    file_put_contents($root.'/'.$delegate, str_replace(
+        'app.sidebar',
+        'app.header',
+        (string) file_get_contents($root.'/'.$delegate),
+    ));
+
+    $project = (new ProjectDetector)->detect($root);
+    $plan = new Plan;
+    $report = new Report;
+
+    (new FlattenLayouts)->contribute($plan, $project, $report);
+    (new Applier)->apply($plan, $project, $report);
+
+    expect($project->get($delegate))->toContain('<flux:header ')
+        ->and($project->exists('resources/views/layouts/app-sidebar.blade.php'))->toBeTrue()
+        ->and($project->exists('resources/views/layouts/app-header.blade.php'))->toBeFalse();
+});
+
+it('repoints whatever rendered a variant that left the folder', function (): void {
+    $root = copyFixture('livewire');
+    $page = 'resources/views/welcome-back.blade.php';
+
+    file_put_contents(
+        $root.'/'.$page,
+        "<x-layouts::auth.card>\n    Hello\n</x-layouts::auth.card>\n",
+    );
+
+    $project = (new ProjectDetector)->detect($root);
+    $plan = new Plan;
+    $report = new Report;
+
+    (new FlattenLayouts(['auth']))->contribute($plan, $project, $report);
+    (new Applier)->apply($plan, $project, $report);
+
+    expect($project->get($page))->toContain('<x-layouts::auth-card>')
+        ->toContain('</x-layouts::auth-card>')
+        ->and($report->warnings())->toBe([]);
+});
+
+it('flattens a variant it cannot fold instead, and keeps the layout rendering it', function (): void {
+    $root = copyFixture('livewire');
+    $delegate = 'resources/views/layouts/auth.blade.php';
+
+    file_put_contents($root.'/'.$delegate, str_replace(
+        ':title="$title ?? null"',
+        ':title="$title ?? null" class="dark"',
+        (string) file_get_contents($root.'/'.$delegate),
+    ));
+
+    $project = (new ProjectDetector)->detect($root);
+    $plan = new Plan;
+    $report = new Report;
+
+    (new FlattenLayouts(['auth']))->contribute($plan, $project, $report);
+    (new Applier)->apply($plan, $project, $report);
+
+    expect($project->exists('resources/views/layouts/auth'))->toBeFalse()
+        ->and($project->exists('resources/views/layouts/auth-simple.blade.php'))->toBeTrue()
+        ->and($project->get($delegate))->toContain('<x-layouts::auth-simple')
+        ->and($report->warnings())->toContain(
+            'Did not fold resources/views/layouts/auth/simple.blade.php into resources/views/layouts/auth.blade.php — '
+            .'resources/views/layouts/auth.blade.php passes it attributes other than its own variables. '
+            .'It was flattened instead, and resources/views/layouts/auth.blade.php still renders it.',
+        );
+});
+
+it('does not fold a variant another view renders itself', function (): void {
+    $root = copyFixture('livewire');
+
+    file_put_contents(
+        $root.'/resources/views/welcome-back.blade.php',
+        "<x-layouts::auth.simple>\n    Hello\n</x-layouts::auth.simple>\n",
+    );
+
+    $project = (new ProjectDetector)->detect($root);
+    $plan = new Plan;
+    $report = new Report;
+
+    (new FlattenLayouts(['auth']))->contribute($plan, $project, $report);
+    (new Applier)->apply($plan, $project, $report);
+
+    // Folding deletes the file, which would leave that view rendering nothing.
+    expect($project->exists('resources/views/layouts/auth-simple.blade.php'))->toBeTrue()
+        ->and($project->get('resources/views/welcome-back.blade.php'))->toContain('<x-layouts::auth-simple>')
+        ->and($project->get('resources/views/layouts/auth.blade.php'))->toContain('<x-layouts::auth-simple')
+        ->and($report->warnings())->toHaveCount(1);
+});
+
+it('has nothing left to flatten once the folders are gone', function (): void {
+    [$project] = runTasks([new FlattenLayouts], 'livewire');
+
+    expect((new FlattenLayouts)->appliesTo($project))->toBeFalse();
 });
 
 it('positions every toast group at the top', function (string $kit): void {
