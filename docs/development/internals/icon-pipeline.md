@@ -83,6 +83,11 @@ Lucide icons in — which is the shape `OverrideGenerator` reads.
 Set `GITHUB_TOKEN` (or `GH_TOKEN`) to authenticate the API calls that resolve a
 release tag to a commit.
 
+The `icons` CI job runs `composer icons:check` on every push and on the weekly
+schedule, so a release that redraws or renames one of these icons turns up as a
+red build rather than waiting for somebody to run the downloader. A rename is the
+serious case: the map would be pointing at a name Lucide no longer publishes.
+
 ## OverrideGenerator
 
 Renders `resources/views/flux/icon/<name>.blade.php` from

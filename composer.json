@@ -85,6 +85,9 @@
     "sheaf:components:check": [
       "@php bin/scan-sheaf-components.php --check"
     ],
+    "resources:check": [
+      "@php bin/check-resources.php"
+    ],
     "refresh": [
       "Composer\\Config::disableProcessTimeout",
       "@icons",

@@ -167,17 +167,34 @@ covers the rest.
 
 Sheaf needs no such gate. Its registry is public and MIT, so
 `composer sheaf:components:check` runs anywhere, and the tests read the recorded
-manifest rather than the network.
+manifest rather than the network. Lucide is public too, so `composer icons:check`
+runs anywhere as well.
+
+`composer resources:check` runs all three together, via
+`bin/check-resources.php`. It is a script rather than a list of Composer scripts
+because a list aborts at the first non-zero exit, which would let a drifted
+Lucide bundle hide what Flux and Sheaf had to say — the one time you most want to
+hear it. Every check runs, each reports as it goes, and a summary at the end says
+which of them failed.
+
+It passes `--optional` to the Flux scan, which turns "no Flux installed
+anywhere" from an error into a skip (exit 2, which is how the summary tells a
+skip from a clean run), so the aggregate is usable on a checkout without a
+licence. Asked for on its own, `composer flux:internals:check` still fails in
+that situation: nothing was verified, and you asked for it to be verified.
 
 ## CI
 
 The matrix is PHP 8.3 / 8.4 / 8.5 against Laravel 13 and Testbench 11, each on
 `prefer-lowest` and `prefer-stable`.
 
-Two jobs sit outside the matrix. `flux-pro` re-records the icons Flux renders
-internally, and needs a licence. `sheaf-components` checks `ComponentMap` against
-Sheaf's registry, and needs nothing — it runs on every push and every fork's pull
-request. Both also run on the weekly schedule.
+Three jobs sit outside the matrix, one per vendored resource. `flux-pro`
+re-records the icons Flux renders internally, and needs a licence. `icons` checks
+the committed Lucide bundle against the latest release, and `sheaf-components`
+checks `ComponentMap` against Sheaf's registry; neither needs anything, so both
+run on every push and every fork's pull request. All three also run on the weekly
+schedule, which is the only thing that catches an upstream release landing
+between pull requests.
 
 Type coverage runs once, on PHP 8.5 / `prefer-stable`. It is a property of `src`
 rather than of the resolved dependency versions, and it *must* run on

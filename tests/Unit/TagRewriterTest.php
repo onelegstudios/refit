@@ -69,12 +69,12 @@ it('lets the callback discriminate on the tag it is rewriting', function (): voi
 
 it('rewrites a dotted tag suffix', function (): void {
     $result = $this->rewriter->rewriteNameSuffix(
-        '<flux:icon.trash class="size-4" /><flux:icon.loading />',
+        '<flux:icon.home class="size-4" /><flux:icon.loading />',
         'flux:icon.',
-        fn (string $suffix): ?string => $suffix === 'trash' ? 'trash-2' : null,
+        fn (string $suffix): ?string => $suffix === 'home' ? 'house' : null,
     );
 
-    expect($result)->toBe('<flux:icon.trash-2 class="size-4" /><flux:icon.loading />');
+    expect($result)->toBe('<flux:icon.house class="size-4" /><flux:icon.loading />');
 });
 
 it('adds a missing attribute straight after the tag name', function (): void {

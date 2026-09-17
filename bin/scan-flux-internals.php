@@ -46,6 +46,10 @@ declare(strict_types=1);
 |                     Defaults to .flux-pro, then the working directory.
 |   --check           Report drift against the manifest, write nothing.
 |                     Exits non-zero when a scanned edition disagrees.
+|   --optional        Treat "no Flux installed anywhere" as a skip, not an error,
+|                     so an aggregate can include this on an unlicensed machine.
+|                     Exits 2 in that case, which is how bin/check-resources.php
+|                     tells a skip from a clean run.
 |   --dest=path       Write to a different manifest file.
 |   --help            Show this help.
 |
@@ -74,6 +78,7 @@ function main(array $argv): int
     $project = rtrim($options['project'] ?? defaultProject(), '/');
     $destination = $options['dest'] ?? Internals::manifestPath();
     $check = isset($options['check']);
+    $optional = isset($options['optional']);
 
     if (! is_dir($project)) {
         error("Project root [{$project}] does not exist.");
@@ -147,6 +152,17 @@ function main(array $argv): int
     }
 
     if (! $scannedAny) {
+        // `composer resources:check` runs this alongside the checks that need no
+        // licence, so absence has to be survivable there: most contributors have
+        // no sidecar, and failing the aggregate on that would hide the drift in
+        // everything after it. Asked for directly, absence is still an error —
+        // nothing was verified, and the caller wanted it verified.
+        if ($optional) {
+            info("  No Flux installed under [{$project}] — skipping.");
+
+            return 2;
+        }
+
         error("No Flux stubs found under [{$project}].");
         error('Either install the sidecar once:');
         error('  composer install --working-dir=.flux-pro');
@@ -421,7 +437,7 @@ function writeManifest(string $path, array $manifest): bool
 
 function usage(): void
 {
-    info('Usage: php bin/scan-flux-internals.php [--project=path] [--check] [--dest=path]');
+    info('Usage: php bin/scan-flux-internals.php [--project=path] [--check] [--optional] [--dest=path]');
 }
 
 function info(string $message): void

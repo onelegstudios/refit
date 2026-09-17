@@ -201,7 +201,7 @@ it('drops the variant a component hands down to the icon it renders', function (
     (new Applier)->apply($plan, $project, $report);
 
     expect($project->get('resources/views/toolbar.blade.php'))
-        ->toBe('<flux:button icon="trash-2">Delete</flux:button>');
+        ->toBe('<flux:button icon="trash">Delete</flux:button>');
 });
 
 it('reports an icon whose Lucide artwork is missing rather than failing', function (): void {

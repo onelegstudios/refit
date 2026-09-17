@@ -6,10 +6,11 @@ on:
       - main
       - "*.x"
   pull_request:
-  # Catches the one kind of drift no pull request can: Flux shipping a release
-  # that renders an icon the recorded manifest has never seen. Scheduled runs
-  # execute in the base repository's context, so the licence secrets resolve and
-  # no untrusted code is involved.
+  # Catches the kind of drift no pull request can: an upstream release moving
+  # under the resources this repository has vendored — Lucide redrawing an icon,
+  # Flux rendering one the manifest has never seen, Sheaf renaming a component.
+  # Scheduled runs execute in the base repository's context, so the licence
+  # secrets resolve and no untrusted code is involved.
   schedule:
     - cron: "0 6 * * 1"
   workflow_dispatch:
@@ -23,7 +24,7 @@ concurrency:
 
 jobs:
   tests:
-    # The weekly run exists for the Flux drift check below, not to re-test the
+    # The weekly run exists for the drift checks below, not to re-test the
     # dependency matrix. Drop this condition to make it a dependency canary too.
     if: github.event_name != 'schedule'
 
@@ -84,6 +85,40 @@ jobs:
       - name: Test Suite (Windows)
         if: runner.os == 'Windows'
         run: vendor/bin/pest
+
+  # Lucide ships renames and redraws between releases, and the bundle under
+  # resources/icons/lucide is committed artwork that nothing else validates —
+  # the tests assert refit writes the bundled file, not that the file still
+  # matches upstream. Public repository, so no secrets and no fork condition.
+  #
+  # A redraw failing here is not urgent: it means the committed SVG is a release
+  # behind, not that refit is broken. A rename is, because IconMap would then
+  # point at a name Lucide no longer publishes.
+  icons:
+    name: Lucide icon bundle
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
+        with:
+          php-version: 8.4
+          extensions: dom, curl, libxml, mbstring, zip, fileinfo
+          tools: composer:v2
+          coverage: none
+
+      - name: Install dependencies
+        run: composer update --prefer-dist --no-interaction --no-progress --no-scripts
+
+      # GITHUB_TOKEN only raises the API rate limit; every request this makes is
+      # to a public repository, so the check works without it.
+      - name: Check the bundled artwork
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: composer icons:check
 
   # Flux Pro is a licensed package, so this is the one job that cannot run
   # everywhere. GitHub withholds secrets from workflows triggered by a fork, so
