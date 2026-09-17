@@ -63,7 +63,7 @@ final class IconMap
         'qr-code' => 'qr-code',
         'slash' => 'slash',
         'sun' => 'sun',
-        'trash' => 'trash-2',
+        'trash' => 'trash',
         'user-plus' => 'user-plus',
         'users' => 'users',
         'x-circle' => 'circle-x',

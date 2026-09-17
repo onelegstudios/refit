@@ -1,8 +1,8 @@
 {
     "repo": "lucide-icons/lucide",
-    "ref": "1.31.0",
-    "commit": "b7b6ecf1316d0af64c97a6b0392abe5e816a8e30",
-    "downloaded_at": "2026-08-13T12:14:51+00:00",
+    "ref": "1.47.0",
+    "commit": "3b9ea6d08707edc439f25a4c354cb0d6b8bee973",
+    "downloaded_at": "2026-09-17T19:52:06+00:00",
     "icons": [
         "book-open-text",
         "calendar",
@@ -43,7 +43,7 @@
         "settings",
         "slash",
         "sun",
-        "trash-2",
+        "trash",
         "triangle-alert",
         "user-plus",
         "users",
