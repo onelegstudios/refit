@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Onelegstudios\Refit\Contracts\Task;
+use Onelegstudios\Refit\Icons\IconStrategy;
 use Onelegstudios\Refit\Libraries\FluxLibrary;
 use Onelegstudios\Refit\Libraries\SheafLibrary;
 use Onelegstudios\Refit\Plan\Applier;
@@ -17,6 +18,7 @@ use Onelegstudios\Refit\Tasks\MoveComponentsOutOfPages;
 use Onelegstudios\Refit\Tasks\MoveToastsToTop;
 use Onelegstudios\Refit\Tasks\NamespaceComponents;
 use Onelegstudios\Refit\Tasks\PromotePartialsToComponents;
+use Onelegstudios\Refit\Tasks\RemoveFluxOverrides;
 use Onelegstudios\Refit\Tasks\RemoveFluxProSource;
 
 /**
@@ -50,6 +52,7 @@ it('registers the configured tasks', function (): void {
             'toasts-at-top',
             'single-layout',
             'remove-flux-pro-source',
+            'remove-flux-overrides',
         ]);
 });
 
@@ -71,7 +74,8 @@ it('stops offering the Flux Pro cleanup once the project is leaving Flux', funct
 
     // The whole stylesheet reference goes in Flux's teardown, and trimming one
     // @source line off a file that is losing both would only be confusing.
-    expect($sheaf)->not->toContain('remove-flux-pro-source');
+    expect($sheaf)->not->toContain('remove-flux-pro-source')
+        ->and($sheaf)->not->toContain('remove-flux-overrides');
 });
 
 it('turns partials into components and rewrites the includes', function (): void {
@@ -399,4 +403,32 @@ it('does not offer the Flux Pro cleanup when Flux Pro is installed', function ()
 
     expect($project->library(FluxLibrary::KEY)?->pro)->toBeTrue()
         ->and((new RemoveFluxProSource)->appliesTo($project))->toBeFalse();
+});
+
+it('deletes the non-icon Flux overrides and keeps the icons', function (string $kit): void {
+    [$project, $report] = runTask(new RemoveFluxOverrides, $kit);
+
+    expect($project->exists('resources/views/flux/navlist'))->toBeFalse()
+        ->and($project->exists('resources/views/flux/icon/layout-grid.blade.php'))->toBeTrue()
+        ->and($report->warnings())->toBe([]);
+})->with(starterKits());
+
+it('removes the whole Flux override directory once the icons have gone too', function (): void {
+    $root = copyFixture('livewire');
+    $project = (new ProjectDetector)->detect($root)->targeting(new FluxLibrary);
+    $plan = new Plan;
+    $report = new Report;
+
+    app(FluxLibrary::class)->planIcons($plan, $project, IconStrategy::Heroicons, $report);
+    (new RemoveFluxOverrides)->contribute($plan, $project, $report);
+    (new Applier)->apply($plan, $project, $report);
+
+    expect($project->exists('resources/views/flux'))->toBeFalse()
+        ->and($report->warnings())->toBe([]);
+});
+
+it('does not offer the override cleanup once only icons are left', function (): void {
+    [$project] = runTask(new RemoveFluxOverrides, 'livewire');
+
+    expect((new RemoveFluxOverrides)->appliesTo($project->targeting(new FluxLibrary)))->toBeFalse();
 });

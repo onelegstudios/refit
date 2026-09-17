@@ -19,6 +19,7 @@ something that would do nothing.
 | Structure | Show toasts at the top of the screen | `toasts-at-top` |
 | Cleanup | Delete the layouts the kit does not render | `single-layout` |
 | Cleanup | Remove the Flux Pro `@source` line from `app.css` | `remove-flux-pro-source` |
+| Cleanup | Use Flux's own components instead of the kit's overrides | `remove-flux-overrides` |
 
 The keys are what [`--answers`](/docs/using-refit/guide/the-refit-command#running-without-prompts)
 takes.
@@ -268,6 +269,38 @@ It is also only offered while the project is
 [staying on Flux](/docs/using-refit/guide/libraries). A project that is leaving
 loses the whole stylesheet reference on its way out, and being asked to trim one
 line off a file that is about to lose several would only be confusing.
+
+## Use Flux's own components instead of the kit's overrides
+
+Flux lets a project replace any of its views by putting a file of the same name
+under `resources/views/flux`, and every kit does that for one component:
+
+```
+resources/views/flux/
+├── icon/
+│   ├── book-open-text.blade.php
+│   ├── chevrons-up-down.blade.php
+│   ├── folder-git-2.blade.php
+│   └── layout-grid.blade.php
+└── navlist/
+    └── group.blade.php
+```
+
+`navlist/group.blade.php` is a restyled copy of Flux's navlist group. It takes
+precedence over the real one, so it stops picking up Flux's changes from the day
+you install. The task deletes it, along with anything else you have added under
+`resources/views/flux`, and the sidebar groups go back to Flux's own markup and
+styling.
+
+The `icon/` folder is left alone, because the
+[icon question](/docs/using-refit/guide/icons) already decides it. Deleting those
+files here would break every usage of a name Heroicons does not have. Choosing
+**Heroicons only** removes them and rewrites their usages. Once both are gone,
+`resources/views/flux` is removed too.
+
+Like the Flux Pro cleanup, the task is only offered while the project is
+[staying on Flux](/docs/using-refit/guide/libraries). Leaving Flux removes the
+whole directory anyway.
 
 ## What is not a task
 

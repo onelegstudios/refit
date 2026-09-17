@@ -13,11 +13,17 @@ use Onelegstudios\Refit\Project\Project;
  *
  * Only ever removes an empty directory: anything still in there is something the
  * plan did not account for, so it is reported and left for the developer.
+ *
+ * Unless the contributor expects it may not be empty. A directory that two
+ * independent choices share — `resources/views/flux`, say, emptied only when both
+ * the icons and the other overrides go — is tidied by whichever runs last, and the
+ * earlier attempt finding it occupied is not news.
  */
 final class RemoveDirectoryIfEmpty implements Action
 {
     public function __construct(
         private readonly string $path,
+        private readonly bool $warnIfOccupied = true,
     ) {}
 
     public function describe(): string
@@ -36,6 +42,10 @@ final class RemoveDirectoryIfEmpty implements Action
         $remaining = $this->entries($target);
 
         if ($remaining !== []) {
+            if (! $this->warnIfOccupied) {
+                return;
+            }
+
             $report->warn(sprintf(
                 'Left [%s] in place — it still holds %s.',
                 $this->path,
