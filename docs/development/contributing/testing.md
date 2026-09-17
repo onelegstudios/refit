@@ -61,6 +61,10 @@ before trusting a pass.
 | `requireFluxPro($kit)` | A fixture's licensed Flux stubs, or a skip |
 | `fluxScanner()` / `sheafScanner()` | An `IconScanner` reading one library's vocabulary |
 | `sheafComponents()` | Every tag a Sheaf install answers to, from the recorded manifest |
+| `sheafKit($kit)` | A copied fixture staged as if Sheaf were already installed |
+| `migratedSheafKit($kit)` | A staged fixture refit has already moved to Sheaf, shared per process |
+| `installSteps($root)` / `reconcileSteps($root)` | One stage of a Sheaf plan, as described lines |
+| `fluxTagsUnder($root)` | Every `<flux:*>` tag left in a tree |
 
 Anything that applies a plan must use `copyFixture()`. Applying against the
 fixture itself corrupts it for every later test in the run.
@@ -118,11 +122,27 @@ drives the run it always did.
 ### Testing a Sheaf run
 
 Fixtures are raw checkouts with no `vendor/`, so a Sheaf target has to be staged:
-`sheafKit()` in `tests/Feature/SheafMigrationTest.php` adds `sheaf/cli` to the
-copied `composer.json`, writes a `resources/css/theme.css`, and creates the
+`sheafKit()` adds `sheaf/cli` to the copied `composer.json`, writes a `resources/css/theme.css`, and creates the
 component directories the CLI would have written. That is not a fiction — those
 are exactly the two commands refit's preflight insists on, and pre-creating the
 components is what keeps the test about rewriting rather than about shelling out.
+
+A test that only reads the result should call `migratedSheafKit($kit)` instead.
+It migrates each kit and icon answer once per test process and hands every
+later caller the same tree, which is most of what keeps these tests fast. Take
+your own copy from `sheafKit()` whenever the test writes to the tree before or
+after the run, or runs refit with other answers.
+
+The Sheaf tests are split by what they cover, so a new one goes in the file it
+belongs to:
+
+| File | Covers |
+|---|---|
+| `SheafInstallTest` | The dependency stage: what gets installed, and what is skipped |
+| `SheafMigrationTest` | The whole tree: no Flux left, icons, theme, teardown |
+| `SheafChromeTest` | The layouts refit writes: sidebar, header, user menu, team switcher |
+| `SheafComponentsTest` | Components mapped across: modals, buttons, headings, badges, dropdowns |
+| `SheafFormsTest` | Form controls: labels, two-factor, OTP, select, segmented groups |
 
 The two assertions worth copying are the ones that would catch a bad mapping:
 no `<flux:*>` tag survives anywhere in the tree, and every `<x-ui.*>` tag produced
