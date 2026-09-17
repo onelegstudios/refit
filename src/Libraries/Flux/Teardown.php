@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Onelegstudios\Refit\Libraries\Flux;
 
-use FilesystemIterator;
 use Onelegstudios\Refit\Plan\Actions\DeleteFile;
 use Onelegstudios\Refit\Plan\Actions\RemoveBladeDirectives;
 use Onelegstudios\Refit\Plan\Actions\RemoveDirectoryIfEmpty;
@@ -13,8 +12,6 @@ use Onelegstudios\Refit\Plan\Plan;
 use Onelegstudios\Refit\Plan\Report;
 use Onelegstudios\Refit\Plan\Stage;
 use Onelegstudios\Refit\Project\Project;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
 
 /**
  * Take Flux's remaining traces out of a project that has moved off it.
@@ -43,8 +40,6 @@ use RecursiveIteratorIterator;
 final class Teardown
 {
     private const string STYLESHEET = 'resources/css/app.css';
-
-    private const string OVERRIDE_ROOT = 'resources/views/flux';
 
     /**
      * Blade directives Flux registers, which fatal once the package is gone.
@@ -80,14 +75,16 @@ final class Teardown
         // The overrides only ever existed to intercept Flux's own resolution, so
         // they mean nothing once Flux is gone. Emptied at Move, alongside the
         // other structural work, then the directories go with them.
-        foreach ($this->overrides($project) as $path) {
+        $overrides = Overrides::files($project);
+
+        foreach ($overrides as $path) {
             $plan->add(Stage::Move, new DeleteFile(
                 $path,
                 sprintf('delete %s (a Flux override, with nothing left to override)', $path),
             ));
         }
 
-        foreach ($this->directories($project) as $directory) {
+        foreach ([...Overrides::directories($overrides), Overrides::ROOT] as $directory) {
             $plan->add(Stage::Move, new RemoveDirectoryIfEmpty($directory));
         }
 
@@ -113,73 +110,5 @@ final class Teardown
         }
 
         return false;
-    }
-
-    /**
-     * Every Blade file under `resources/views/flux`.
-     *
-     * Not just the icons: the kit also overrides `flux/navlist/group`, and any
-     * project may have added more. All of it is a Flux extension point, so all of
-     * it is dead once Flux is.
-     *
-     * @return list<string>
-     */
-    private function overrides(Project $project): array
-    {
-        $root = $project->path(self::OVERRIDE_ROOT);
-
-        if (! is_dir($root)) {
-            return [];
-        }
-
-        $files = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS),
-        );
-
-        $paths = [];
-
-        foreach ($files as $file) {
-            if ($file->isFile()) {
-                $paths[] = self::OVERRIDE_ROOT.'/'.str_replace(
-                    DIRECTORY_SEPARATOR,
-                    '/',
-                    substr($file->getPathname(), strlen($root) + 1),
-                );
-            }
-        }
-
-        sort($paths);
-
-        return $paths;
-    }
-
-    /**
-     * The override directories, deepest first so each is empty by the time it is
-     * asked to go.
-     *
-     * @return list<string>
-     */
-    private function directories(Project $project): array
-    {
-        $directories = [];
-
-        foreach ($this->overrides($project) as $path) {
-            $directory = dirname($path);
-
-            while ($directory !== self::OVERRIDE_ROOT && $directory !== '.' && $directory !== '/') {
-                $directories[$directory] = true;
-                $directory = dirname($directory);
-            }
-        }
-
-        $paths = array_keys($directories);
-
-        // Longest path first is deepest first, which is the only order in which
-        // "remove if empty" can succeed all the way up.
-        usort($paths, static fn (string $a, string $b): int => strlen($b) <=> strlen($a));
-
-        $paths[] = self::OVERRIDE_ROOT;
-
-        return $paths;
     }
 }

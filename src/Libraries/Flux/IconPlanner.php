@@ -10,6 +10,7 @@ use Onelegstudios\Refit\Icons\IconStrategy;
 use Onelegstudios\Refit\Libraries\Vocabulary;
 use Onelegstudios\Refit\Plan\Actions\DeleteFile;
 use Onelegstudios\Refit\Plan\Actions\DropSolidIconVariant;
+use Onelegstudios\Refit\Plan\Actions\RemoveDirectoryIfEmpty;
 use Onelegstudios\Refit\Plan\Actions\RewriteIconNames;
 use Onelegstudios\Refit\Plan\Actions\WriteFile;
 use Onelegstudios\Refit\Plan\Plan;
@@ -32,7 +33,7 @@ use Onelegstudios\Refit\Project\Project;
  */
 final class IconPlanner
 {
-    private const string OVERRIDE_DIRECTORY = 'resources/views/flux/icon';
+    private const string OVERRIDE_DIRECTORY = Overrides::ROOT.'/'.Overrides::ICONS;
 
     public function __construct(
         private readonly Vocabulary $vocabulary,
@@ -79,8 +80,9 @@ final class IconPlanner
     private function planHeroicons(Plan $plan, Project $project, Report $report): void
     {
         $renames = [];
+        $overrides = $this->existingOverrides($project);
 
-        foreach ($this->existingOverrides($project) as $name => $path) {
+        foreach ($overrides as $name => $path) {
             $heroicon = IconMap::toHeroicons($name);
 
             if ($heroicon === null) {
@@ -105,6 +107,12 @@ final class IconPlanner
             $report->note('No Lucide overrides found — the kit is already all Heroicons.');
 
             return;
+        }
+
+        // Only when every override went: a kept one has already been warned about,
+        // and saying so again as a directory that would not go is just noise.
+        if (count($renames) === count($overrides)) {
+            $plan->add(Stage::Move, new RemoveDirectoryIfEmpty(self::OVERRIDE_DIRECTORY));
         }
 
         $plan->add(Stage::Reconcile, new RewriteIconNames($renames, 'Lucide to Heroicons', $this->vocabulary));
