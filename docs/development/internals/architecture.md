@@ -121,9 +121,11 @@ travel through one traversal rather than growing a second sweep.
 
 ## Applier and Report
 
-`Applier` walks `Plan::actions()` in stage order and calls each one, invoking an
-optional callback first so the command can echo the line. It has no error
-handling of its own; actions decide what is fatal.
+`Applier` walks `Plan::actions()` in stage order and runs each one. The command
+passes a callback that is handed the action and a closure that applies it, so it
+can echo the line first and put a spinner around the slow ones — every
+`RunProcess`, since Composer, npm and Pint print nothing while they work. It has
+no error handling of its own; actions decide what is fatal.
 
 The convention is that a missing file is a *warning*, not an exception —
 something already gone is a fact about the project, not a bug — while an

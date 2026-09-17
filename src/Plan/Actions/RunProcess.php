@@ -35,6 +35,14 @@ final class RunProcess implements Action
         private readonly bool $required = false,
     ) {}
 
+    /**
+     * What the command is for, in words — `Installing Sheaf's CLI`.
+     */
+    public function description(): string
+    {
+        return $this->description;
+    }
+
     public function describe(): string
     {
         return sprintf('run    %s (%s)', implode(' ', $this->command), $this->description);

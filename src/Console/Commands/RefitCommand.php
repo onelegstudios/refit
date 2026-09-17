@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Onelegstudios\Refit\Console\Commands;
 
+use Closure;
 use Illuminate\Console\Command;
 use JsonException;
 use Onelegstudios\Refit\Contracts\Action;
@@ -25,6 +26,7 @@ use Onelegstudios\Refit\Support\Git;
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\multiselect;
 use function Laravel\Prompts\select;
+use function Laravel\Prompts\spin;
 
 /**
  * Refit a freshly installed Livewire starter kit.
@@ -106,8 +108,18 @@ class RefitCommand extends Command
         $this->newLine();
 
         try {
-            $applier->apply($plan, $project, $report, function (Action $action): void {
+            $applier->apply($plan, $project, $report, function (Action $action, Closure $run): void {
                 $this->line('  <fg=gray>'.$action->describe().'</>');
+
+                // File rewrites finish before a spinner could draw a frame; the
+                // installs and Pint can take minutes and print nothing meanwhile.
+                if ($action instanceof RunProcess) {
+                    spin($run, $action->description());
+
+                    return;
+                }
+
+                $run();
             });
         } catch (DependencyFailed $exception) {
             // Dependencies are the first stage, so nothing has been rewritten and
