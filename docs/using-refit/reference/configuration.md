@@ -29,10 +29,14 @@ return [
 
     'tasks' => [
         PromotePartialsToComponents::class,
+        MoveAuthViewsOutOfPages::class,
+        MoveComponentsOutOfPages::class,
         NamespaceComponents::class,
         MoveToastsToTop::class,
         KeepOneLayout::class,
+        FlattenLayouts::class,
         RemoveFluxProSource::class,
+        RemoveFluxOverrides::class,
     ],
 
     'notes' => 'REFIT-NOTES.md',

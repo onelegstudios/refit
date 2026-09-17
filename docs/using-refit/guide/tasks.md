@@ -17,6 +17,7 @@ something that would do nothing.
 | Structure | Move the non-page components out of pages | `components-out-of-pages` |
 | Structure | Group components into folders | `namespace-components` |
 | Structure | Show toasts at the top of the screen | `toasts-at-top` |
+| Structure | Flatten the layout folders | `flatten-layouts` |
 | Cleanup | Delete the layouts the kit does not render | `single-layout` |
 | Cleanup | Remove the Flux Pro `@source` line from `app.css` | `remove-flux-pro-source` |
 | Cleanup | Use Flux's own components instead of the kit's overrides | `remove-flux-overrides` |
@@ -220,6 +221,64 @@ missing, and nothing else:
 ```
 
 A group that already carries a `position` is left as it is.
+
+## Flatten the layout folders
+
+Every view names `<x-layouts::app>` or `<x-layouts::auth>`, and neither of those
+files holds a page. `layouts/app.blade.php` is five lines that hand off to a
+variant in the folder beside it:
+
+```blade
+<x-layouts::app.sidebar :title="$title ?? null">
+    <flux:main>
+        {{ $slot }}
+    </flux:main>
+</x-layouts::app.sidebar>
+```
+
+So the shell every view names lives in a file no view names, one directory down.
+The task folds the variant into the layout that renders it — the wrapper's
+contents standing where the variant's `{{ $slot }}` was — moves the other
+variants up beside it, and the folders go:
+
+```
+resources/views/layouts/
+├── app.blade.php          ← was app/sidebar.blade.php
+├── app-header.blade.php   ← was app/header.blade.php
+├── auth.blade.php         ← was auth/simple.blade.php
+├── auth-card.blade.php
+└── auth-split.blade.php
+```
+
+Which one is folded is read from the delegating layout, the same way
+[Delete the layouts the kit does not render](#delete-the-layouts-the-kit-does-not-render)
+reads it. Swap to `<x-layouts::app.header>` first and the header shell is the one
+that moves in, with the sidebar flattened beside it.
+
+Nothing points at a renamed file afterwards: `auth/card.blade.php` was
+`<x-layouts::auth.card>` and is `<x-layouts::auth-card>`, and every reference to
+it is rewritten.
+
+That pairs with the deletion task rather than competing with it — one asks whether
+the variants nothing renders are worth keeping, the other asks whether the ones
+that stay need a folder. Pick both and the unrendered variants are deleted rather
+than flattened, whichever order they run in.
+
+A fold that would not survive is reported and the variant is flattened like any
+other, leaving the layout rendering it under its new name. That happens when
+another view renders the variant itself, when the wrapper does more than pass its
+own variables through — extra attributes, a named slot, markup around the tag — or
+when the variant declares `@props`, reads `$attributes`, or does not render
+`{{ $slot }}` exactly once.
+
+As with the other layout task, pass the families you want to the constructor:
+
+```php
+use Onelegstudios\Refit\Facades\Refit;
+use Onelegstudios\Refit\Tasks\FlattenLayouts;
+
+Refit::task(new FlattenLayouts(['app']));
+```
 
 ## Delete the layouts the kit does not render
 

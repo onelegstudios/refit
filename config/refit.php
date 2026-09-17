@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Onelegstudios\Refit\Libraries\FluxLibrary;
 use Onelegstudios\Refit\Libraries\SheafLibrary;
+use Onelegstudios\Refit\Tasks\FlattenLayouts;
 use Onelegstudios\Refit\Tasks\KeepOneLayout;
 use Onelegstudios\Refit\Tasks\MoveAuthViewsOutOfPages;
 use Onelegstudios\Refit\Tasks\MoveComponentsOutOfPages;
@@ -58,6 +59,7 @@ return [
         NamespaceComponents::class,
         MoveToastsToTop::class,
         KeepOneLayout::class,
+        FlattenLayouts::class,
         RemoveFluxProSource::class,
         RemoveFluxOverrides::class,
     ],
