@@ -46,7 +46,7 @@ final class IconMap
         'document' => 'file',
         'document-duplicate' => 'copy',
         'envelope' => 'mail',
-        'exclamation-triangle' => 'triangle-alert',
+        'exclamation-triangle' => 'triangle-exclamation-point',
         'eye' => 'eye',
         // Lucide files the eyedropper under the tool's name.
         'eye-dropper' => 'pipette',
