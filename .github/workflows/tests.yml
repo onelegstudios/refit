@@ -178,7 +178,7 @@ jobs:
 
       - name: Check the recorded internals
         if: steps.licence.outputs.present == 'true'
-        run: composer flux:internals:check
+        run: composer flux:check
 
   # Sheaf's registry is public and MIT, so unlike the job above this one needs no
   # licence, no secrets and no sidecar install — it runs everywhere, including on
@@ -211,4 +211,4 @@ jobs:
       - name: Check the recorded components
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        run: composer sheaf:components:check
+        run: composer sheaf:check
