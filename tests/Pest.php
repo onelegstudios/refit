@@ -49,7 +49,7 @@ function artworkFor(string $name): ?string
 /**
  * Every tag a Sheaf install answers to, without the `x-ui.` prefix.
  *
- * Recorded from Sheaf's public registry by `composer sheaf:components`, so a
+ * Recorded from Sheaf's public registry by `composer sheaf:run`, so a
  * test asserting against it is asserting against what Sheaf really ships.
  *
  * @return list<string>
@@ -60,7 +60,7 @@ function sheafComponents(): array
 }
 
 /**
- * The starter kit variations `composer fixtures` downloads.
+ * The starter kit variations `composer starter-kits` downloads.
  *
  * @return list<string>
  */
@@ -82,14 +82,14 @@ function fixturePath(string $kit): string
 
 /**
  * Fixtures are gitignored, so any test needing one skips when it is absent.
- * Run `composer fixtures` to download them.
+ * Run `composer starter-kits` to download them.
  */
 function requireFixture(string $kit): string
 {
     $path = fixturePath($kit);
 
     if (! is_dir($path)) {
-        test()->markTestSkipped("Starter kit fixture [{$kit}] is missing — run `composer fixtures`.");
+        test()->markTestSkipped("Starter kit fixture [{$kit}] is missing — run `composer starter-kits`.");
     }
 
     return $path;

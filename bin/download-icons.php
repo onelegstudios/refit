@@ -194,7 +194,7 @@ function main(array $argv): int
         }
 
         if ($changed !== []) {
-            error(sprintf('%d icon(s) differ from %s@%s. Run `composer icons` to refresh them.', count($changed), REPO, $ref));
+            error(sprintf('%d icon(s) differ from %s@%s. Run `composer icons:run` to refresh them.', count($changed), REPO, $ref));
         }
 
         return 1;

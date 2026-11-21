@@ -43,7 +43,7 @@ it('lets the two-factor QR keep the colour Sheaf\'s icon would paint over', func
     // yielding, not every caller shouting over it with `!`.
     expect($project->get('resources/views/pages/settings/⚡two-factor-setup-modal.blade.php'))
         ->toContain('<x-ui.icon name="ps:qr-code" class="relative z-20 dark:text-accent-foreground"/>');
-})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer starter-kits`.');
 it('labels the form controls Sheaf renders bare, and says why they were rejected', function (): void {
     $root = migratedSheafKit('livewire-teams');
 
@@ -95,7 +95,7 @@ it('labels the form controls Sheaf renders bare, and says why they were rejected
     expect($project->get('resources/views/pages/auth/login.blade.php'))
         ->toContain('revealable')
         ->not->toContain('viewable');
-})->skip(fn (): bool => ! is_dir(fixturePath('livewire-teams')), 'Run `composer fixtures`.');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire-teams')), 'Run `composer starter-kits`.');
 it('gives the select the runtime and the primitive that make it open', function (): void {
     $root = migratedSheafKit('livewire-teams');
 
@@ -117,7 +117,7 @@ it('gives the select the runtime and the primitive that make it open', function 
     $entrypoint = $project->get(WireSheafRuntimes::ENTRYPOINT);
 
     expect(strpos($entrypoint, 'import rover'))->toBeLessThan(strpos($entrypoint, './components/select.js'));
-})->skip(fn (): bool => ! is_dir(fixturePath('livewire-teams')), 'Run `composer fixtures`.');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire-teams')), 'Run `composer starter-kits`.');
 it('posts the two-factor code Sheaf would have left out of the form', function (string $kit, string $challenge, string $setup): void {
     $root = migratedSheafKit($kit);
 
@@ -161,7 +161,7 @@ it('posts the two-factor code Sheaf would have left out of the form', function (
         'resources/views/livewire/auth/two-factor-challenge.blade.php',
         'resources/views/livewire/settings/security.blade.php',
     ],
-])->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+])->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer starter-kits`.');
 it('gives the two-factor errors the heading Sheaf reads them from', function (string $kit, string $codes): void {
     $root = migratedSheafKit($kit);
 
@@ -180,7 +180,7 @@ it('gives the two-factor errors the heading Sheaf reads them from', function (st
     ['livewire', 'resources/views/pages/settings/two-factor/⚡recovery-codes.blade.php'],
     ['livewire-teams', 'resources/views/pages/settings/two-factor/⚡recovery-codes.blade.php'],
     ['livewire-class-components', 'resources/views/livewire/settings/two-factor/recovery-codes.blade.php'],
-])->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+])->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer starter-kits`.');
 it('keeps the OTP centred once it is wrapped in a field', function (): void {
     $root = migratedSheafKit('livewire');
 
@@ -195,7 +195,7 @@ it('keeps the OTP centred once it is wrapped in a field', function (): void {
 
     expect($project->get('resources/views/pages/settings/⚡two-factor-setup-modal.blade.php'))
         ->toContain('class="mx-auto w-fit"');
-})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer starter-kits`.');
 it('gives a segmented group the row and the bare segments Flux implied', function (): void {
     $root = migratedSheafKit('livewire');
 
@@ -205,7 +205,7 @@ it('gives a segmented group the row and the bare segments Flux implied', functio
     // segment. The appearance control came out as a grey column of dotted rows.
     expect((new ProjectDetector)->detect($root)->get('resources/views/pages/settings/⚡appearance.blade.php'))
         ->toContain('<x-ui.radio.group direction="horizontal" :indicator="false" x-data variant="segmented"');
-})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer starter-kits`.');
 it('leaves a segmented group that has already decided its own shape', function (): void {
     $root = sheafKit('livewire');
 
@@ -226,4 +226,4 @@ it('leaves a segmented group that has already decided its own shape', function (
     expect((new ProjectDetector)->detect($root)->get('resources/views/dashboard.blade.php'))
         ->toContain('<x-ui.radio.group variant="segmented" direction="vertical" :indicator="true" />')
         ->toContain('<x-ui.radio.group :variant="$variant" />');
-})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer starter-kits`.');

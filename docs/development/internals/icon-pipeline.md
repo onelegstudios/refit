@@ -56,7 +56,7 @@ attributes name.
 
 1. Add the pair to `HEROICONS_TO_LUCIDE` (or `LUCIDE_TO_HEROICONS` for the
    reverse direction, which only needs to cover the icons the kit vendors).
-2. Run `composer icons` to pull the artwork.
+2. Run `composer icons:run` to pull the artwork.
 3. Commit both.
 
 That is the whole workflow. The downloader derives its set from the map, so the
@@ -70,7 +70,7 @@ package, so an update is a reviewable commit rather than silent drift, and the
 output does not vary with whatever Composer resolved.
 
 ```bash
-composer icons                       # refresh from the latest Lucide release
+composer icons:run                   # refresh from the latest Lucide release
 composer icons:check                 # report drift, write nothing
 php bin/download-icons.php --list    # what the map requires
 php bin/download-icons.php --only=plus,search --ref=1.31.0
@@ -124,14 +124,14 @@ mostly cannot produce them.
 
 ```bash
 composer install --working-dir=.flux-pro   # once, needs a licence
-composer flux:internals                    # re-record
-composer flux:internals:check              # report drift, write nothing
-composer flux:internals -- --project=../my-app
+composer flux:run                          # re-record
+composer flux:check                        # report drift, write nothing
+composer flux:run -- --project=../my-app
 ```
 
 Editions that are not installed keep whatever the manifest already records, so
 running this with only free Flux refreshes those names and leaves the Pro ones
-alone. `flux:internals:check` only fails when a *scanned* edition disagrees.
+alone. `flux:check` only fails when a *scanned* edition disagrees.
 
 > [!IMPORTANT]
 > Only icon names are recorded. None of Flux's source is copied into this
@@ -148,8 +148,8 @@ never reads.
 
 ### Catching drift
 
-A weekly scheduled workflow runs `composer flux:internals:check` against a
-licensed install. It catches the one kind of drift no pull request can: Flux
-shipping a release that renders an icon the manifest has never seen. The job is
-skipped on pull requests from forks, which GitHub gives no secrets, so it can
-never fail a contributor's build with a 401 they cannot fix.
+A weekly scheduled workflow runs `composer flux:check` against a licensed
+install. It catches the one kind of drift no pull request can: Flux shipping a
+release that renders an icon the manifest has never seen. The job is skipped on
+pull requests from forks, which GitHub gives no secrets, so it can never fail a
+contributor's build with a 401 they cannot fix.

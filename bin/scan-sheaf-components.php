@@ -135,7 +135,7 @@ function main(array $argv): int
     if ($check) {
         if ($broken !== []) {
             error('ComponentMap points at components Sheaf no longer ships.');
-            error('Fix the mapping, then run `composer sheaf:components` to re-record.');
+            error('Fix the mapping, then run `composer sheaf:run` to re-record.');
 
             return 1;
         }
@@ -147,7 +147,7 @@ function main(array $argv): int
         }
 
         error('Sheaf ships a different set of components than the manifest records.');
-        error('Run `composer sheaf:components` to refresh it, then review ComponentMap.');
+        error('Run `composer sheaf:run` to refresh it, then review ComponentMap.');
 
         return 1;
     }

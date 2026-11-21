@@ -13,7 +13,7 @@ it('leaves no Flux tag behind anywhere in the tree', function (string $kit): voi
     expect(fluxTagsUnder($root))->toBe([]);
 })->with(starterKits())->skip(
     fn (): bool => ! is_dir(fixturePath('livewire')),
-    'Run `composer fixtures`.',
+    'Run `composer starter-kits`.',
 );
 it('gives the kit\'s toasts something that is listening for them', function (string $kit): void {
     $root = migratedSheafKit($kit);
@@ -47,7 +47,7 @@ it('gives the kit\'s toasts something that is listening for them', function (str
         ->not->toBeEmpty();
 })->with(starterKits())->skip(
     fn (): bool => ! is_dir(fixturePath('livewire')),
-    'Run `composer fixtures`.',
+    'Run `composer starter-kits`.',
 );
 it('only ever produces components Sheaf actually ships', function (string $kit): void {
     $root = migratedSheafKit($kit);
@@ -70,7 +70,7 @@ it('only ever produces components Sheaf actually ships', function (string $kit):
     expect(array_keys($unknown))->toBe([]);
 })->with(starterKits())->skip(
     fn (): bool => ! is_dir(fixturePath('livewire')),
-    'Run `composer fixtures`.',
+    'Run `composer starter-kits`.',
 );
 it('takes the Flux directives and overrides out with it', function (): void {
     $root = migratedSheafKit('livewire');
@@ -84,7 +84,7 @@ it('takes the Flux directives and overrides out with it', function (): void {
     foreach ($project->blades() as $path) {
         expect($project->get($path))->not->toContain('@fluxScripts');
     }
-})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer starter-kits`.');
 it('points the kit\'s vendored Lucide names back at Heroicons', function (): void {
     $root = migratedSheafKit('livewire');
 
@@ -96,7 +96,7 @@ it('points the kit\'s vendored Lucide names back at Heroicons', function (): voi
         ->and($names)->not->toContain('book-open-text')
         ->and($names)->not->toContain('chevrons-up-down')
         ->and($names)->not->toContain('layout-grid');
-})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer starter-kits`.');
 it('translates and prefixes every icon name when Phosphor is asked for', function (): void {
     $root = migratedSheafKit('livewire', 'phosphor');
 
@@ -120,7 +120,7 @@ it('translates and prefixes every icon name when Phosphor is asked for', functio
         ->toContain('ps:house')
         ->toContain('ps:gear')
         ->toContain('ps:eye-slash');
-})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer starter-kits`.');
 it('settles light or dark before the first paint', function (): void {
     $root = migratedSheafKit('livewire');
 
@@ -152,7 +152,7 @@ it('settles light or dark before the first paint', function (): void {
     );
 
     expect(array_values($scripts))->toBe(['resources/views/partials/head.blade.php']);
-})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer starter-kits`.');
 it('follows the head when a task turns it into a component', function (): void {
     $root = sheafKit('livewire');
 
@@ -173,7 +173,7 @@ it('follows the head when a task turns it into a component', function (): void {
     expect($project->exists('resources/views/partials/head.blade.php'))->toBeFalse()
         ->and($project->get('resources/views/components/head.blade.php'))
         ->toContain("localStorage.getItem('theme') ?? 'system'");
-})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer starter-kits`.');
 it('keeps the browser\'s own defaults dark once Flux stops declaring it', function (): void {
     $root = migratedSheafKit('livewire');
 
@@ -195,7 +195,7 @@ it('keeps the browser\'s own defaults dark once Flux stops declaring it', functi
     // which carries opacity and an underline and no colour at all.
     expect($project->get('resources/views/pages/auth/two-factor-challenge.blade.php'))
         ->toContain('login using a recovery code');
-})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer starter-kits`.');
 it('keeps Tailwind\'s import ahead of Sheaf\'s so the theme stays layered', function (): void {
     $root = migratedSheafKit('livewire');
 
@@ -213,7 +213,7 @@ it('keeps Tailwind\'s import ahead of Sheaf\'s so the theme stays layered', func
     expect($tailwind)->toBeInt()
         ->and($theme)->toBeInt()
         ->and($theme)->toBeGreaterThan($tailwind);
-})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer starter-kits`.');
 it('drives the appearance control with Sheaf\'s theme runtime, not Flux\'s magic', function (): void {
     $root = migratedSheafKit('livewire');
 
@@ -234,7 +234,7 @@ it('drives the appearance control with Sheaf\'s theme runtime, not Flux\'s magic
         ->not->toContain('$flux')
         ->toContain('$theme.storedTheme')
         ->toContain('$theme.isResolvedToDark');
-})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer starter-kits`.');
 it('leaves no Flux Alpine magic anywhere in the tree', function (string $kit): void {
     $root = migratedSheafKit($kit);
 
@@ -249,7 +249,7 @@ it('leaves no Flux Alpine magic anywhere in the tree', function (string $kit): v
 
     expect($found)->toBe([]);
 })->with(['livewire', 'livewire-class-components', 'livewire-teams', 'livewire-workos', 'livewire-workos-teams'])
-    ->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+    ->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer starter-kits`.');
 it('refuses to guess at a hand-written write to Flux\'s appearance', function (): void {
     $root = sheafKit('livewire');
 
@@ -276,7 +276,7 @@ it('refuses to guess at a hand-written write to Flux\'s appearance', function ()
         ->and($project->get('REFIT-NOTES.md'))
         ->toContain('resources/views/dashboard.blade.php')
         ->toContain('$theme.setTheme(value)');
-})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer starter-kits`.');
 it('takes Flux out on the way to Sheaf without being asked to', function (): void {
     $root = sheafKit('livewire');
 
@@ -307,7 +307,7 @@ it('takes Flux out on the way to Sheaf without being asked to', function (): voi
     expect($project->get('REFIT-NOTES.md'))
         ->not->toContain('@fluxAppearance')
         ->not->toContain('Nothing in');
-})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer starter-kits`.');
 it('leaves Flux alone when Flux is where the project is staying', function (): void {
     $root = sheafKit('livewire');
 
@@ -320,4 +320,4 @@ it('leaves Flux alone when Flux is where the project is staying', function (): v
 
     expect($project->get('resources/views/partials/head.blade.php'))->toContain('@fluxAppearance')
         ->and($project->exists('resources/views/flux'))->toBeTrue();
-})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer starter-kits`.');

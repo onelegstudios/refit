@@ -29,7 +29,7 @@ it('sizes every modal panel through the width Sheaf reads', function (string $ki
     expect($sized)->toBeGreaterThan(0);
 })->with(starterKits())->skip(
     fn (): bool => ! is_dir(fixturePath('livewire')),
-    'Run `composer fixtures`.',
+    'Run `composer starter-kits`.',
 );
 it('carries the kit\'s outline button icons across at Flux\'s size', function (string $kit): void {
     $root = migratedSheafKit($kit);
@@ -61,7 +61,7 @@ it('carries the kit\'s outline button icons across at Flux\'s size', function (s
     expect($outlined)->toContain('size-4!')->toContain(null);
 })->with(starterKits())->skip(
     fn (): bool => ! is_dir(fixturePath('livewire')),
-    'Run `composer fixtures`.',
+    'Run `composer starter-kits`.',
 );
 it('draws the settings heading\'s separator as faintly as Flux did', function (string $kit): void {
     $root = migratedSheafKit($kit);
@@ -81,7 +81,7 @@ it('draws the settings heading\'s separator as faintly as Flux did', function (s
     expect($shaded)->toBeGreaterThan(0);
 })->with(starterKits())->skip(
     fn (): bool => ! is_dir(fixturePath('livewire')),
-    'Run `composer fixtures`.',
+    'Run `composer starter-kits`.',
 );
 it('keeps the document outline the kit wrote', function (): void {
     $root = migratedSheafKit('livewire');
@@ -97,7 +97,7 @@ it('keeps the document outline the kit wrote', function (): void {
         ->and($project->get('resources/views/pages/settings/two-factor/⚡recovery-codes.blade.php'))
         ->toContain('level="h3"')
         ->not->toContain('level="3"');
-})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer starter-kits`.');
 it('gives every heading the size it was already rendering at', function (): void {
     $root = migratedSheafKit('livewire');
 
@@ -119,7 +119,7 @@ it('gives every heading the size it was already rendering at', function (): void
         // out ahead of the rename and translated with the rest.
         ->and($project->get('resources/views/pages/settings/⚡delete-user-form.blade.php'))
         ->toContain('<x-ui.heading size="xs"');
-})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer starter-kits`.');
 it('keeps a badge the quiet chip Flux drew', function (): void {
     $root = migratedSheafKit('livewire-teams');
 
@@ -148,7 +148,7 @@ it('keeps a badge the quiet chip Flux drew', function (): void {
             expect($tag->has('variant'))->toBeTrue();
         }
     }
-})->skip(fn (): bool => ! is_dir(fixturePath('livewire-teams')), 'Run `composer fixtures`.');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire-teams')), 'Run `composer starter-kits`.');
 it('keeps the auth pages centred once Sheaf owns their alignment', function (): void {
     $root = migratedSheafKit('livewire');
 
@@ -162,7 +162,7 @@ it('keeps the auth pages centred once Sheaf owns their alignment', function (): 
         // And the description is muted in the same breath, by MuteSecondaryText
         // appending to the class attribute this sweep just created.
         ->toContain('<x-ui.text class="text-center! opacity-75"');
-})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer starter-kits`.');
 it('leaves the auth pages a button worth pressing', function (): void {
     $root = migratedSheafKit('livewire');
 
@@ -182,7 +182,7 @@ it('leaves the auth pages a button worth pressing', function (): void {
     // with the auth ones rather than ending up a second visual language.
     expect($project->get('resources/views/pages/settings/⚡profile.blade.php'))
         ->toContain('<x-ui.button variant="primary" type="submit" class="w-full" data-test="update-profile-button">');
-})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer starter-kits`.');
 it('gives everything in a dropdown menu a place in Sheaf\'s grid', function (): void {
     $root = migratedSheafKit('livewire-teams');
 
@@ -197,7 +197,7 @@ it('gives everything in a dropdown menu a place in Sheaf\'s grid', function (): 
     // Sheaf renders the modal trigger's outer element, so it is wrapped instead.
     expect($project->get('resources/views/components/⚡team-switcher.blade.php'))
         ->toContain('<div class="col-span-full">');
-})->skip(fn (): bool => ! is_dir(fixturePath('livewire-teams')), 'Run `composer fixtures`.');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire-teams')), 'Run `composer starter-kits`.');
 it('opens a dropdown on the edge Flux aligned it to', function (string $kit): void {
     $root = migratedSheafKit($kit);
 
@@ -216,7 +216,7 @@ it('opens a dropdown on the edge Flux aligned it to', function (string $kit): vo
         expect($project->get($path))->not->toContain(' align="');
     }
 })->with(['livewire-teams', 'livewire-workos-teams'])
-    ->skip(fn (): bool => ! is_dir(fixturePath('livewire-teams')), 'Run `composer fixtures`.');
+    ->skip(fn (): bool => ! is_dir(fixturePath('livewire-teams')), 'Run `composer starter-kits`.');
 it('labels the items Sheaf would otherwise render empty', function (): void {
     $root = migratedSheafKit('livewire');
 
@@ -237,7 +237,7 @@ it('labels the items Sheaf would otherwise render empty', function (): void {
         ->toContain(':label="__(\'Light\')" />')
         ->toContain(':label="__(\'Dark\')" />')
         ->toContain(':label="__(\'System\')" />');
-})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer starter-kits`.');
 it('closes a modal both ways the kit closes one', function (): void {
     $root = migratedSheafKit('livewire-teams');
 
@@ -278,7 +278,7 @@ it('closes a modal both ways the kit closes one', function (): void {
         ->toContain('<x-ui.button variant="primary" icon="plus" data-test="teams-new-team-button">')
         ->not->toContain('open-modal')
         ->not->toContain('x-data=""');
-})->skip(fn (): bool => ! is_dir(fixturePath('livewire-teams')), 'Run `composer fixtures`.');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire-teams')), 'Run `composer starter-kits`.');
 it('gives the tooltips on the team pages the trigger Sheaf renders', function (string $kit): void {
     $root = migratedSheafKit($kit);
 
@@ -291,4 +291,4 @@ it('gives the tooltips on the team pages the trigger Sheaf renders', function (s
         ->toContain('<x-ui.tooltip.content>{{ __(\'Leave team\') }}</x-ui.tooltip.content>')
         ->not->toContain(':content=');
 })->with(['livewire-teams', 'livewire-workos-teams'])
-    ->skip(fn (): bool => ! is_dir(fixturePath('livewire-teams')), 'Run `composer fixtures`.');
+    ->skip(fn (): bool => ! is_dir(fixturePath('livewire-teams')), 'Run `composer starter-kits`.');

@@ -38,14 +38,14 @@ The feature suite runs against real copies of every `laravel new` Livewire
 variation:
 
 ```bash
-composer fixtures
+composer starter-kits
 ```
 
 They land in `tests/fixtures/starter-kits` and are gitignored — five checkouts of
 a Laravel application is not something to commit. Any test needing one skips
 itself when it is absent:
 
-> Starter kit fixture [livewire-teams] is missing — run `composer fixtures`.
+> Starter kit fixture [livewire-teams] is missing — run `composer starter-kits`.
 
 A suite that has never downloaded them is green and largely hollow, so run this
 before trusting a pass.
@@ -166,22 +166,21 @@ Neither skip hides a regression in refit's own logic. See
 covers the rest.
 
 Sheaf needs no such gate. Its registry is public and MIT, so
-`composer sheaf:components:check` runs anywhere, and the tests read the recorded
-manifest rather than the network. Lucide is public too, so `composer icons:check`
-runs anywhere as well.
+`composer sheaf:check` runs anywhere, and the tests read the recorded manifest
+rather than the network. Lucide is public too, so `composer icons:check` runs
+anywhere as well.
 
-`composer resources:check` runs all three together, via
-`bin/check-resources.php`. It is a script rather than a list of Composer scripts
-because a list aborts at the first non-zero exit, which would let a drifted
-Lucide bundle hide what Flux and Sheaf had to say — the one time you most want to
-hear it. Every check runs, each reports as it goes, and a summary at the end says
-which of them failed.
+`composer refit:check` runs all three together, via `bin/check-resources.php`.
+It is a script rather than a list of Composer scripts because a list aborts at
+the first non-zero exit, which would let a drifted Lucide bundle hide what Flux
+and Sheaf had to say — the one time you most want to hear it. Every check runs,
+each reports as it goes, and a summary at the end says which of them failed.
 
 It passes `--optional` to the Flux scan, which turns "no Flux installed
 anywhere" from an error into a skip (exit 2, which is how the summary tells a
 skip from a clean run), so the aggregate is usable on a checkout without a
-licence. Asked for on its own, `composer flux:internals:check` still fails in
-that situation: nothing was verified, and you asked for it to be verified.
+licence. Asked for on its own, `composer flux:check` still fails in that
+situation: nothing was verified, and you asked for it to be verified.
 
 ## CI
 

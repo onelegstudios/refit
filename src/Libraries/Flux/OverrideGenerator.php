@@ -19,8 +19,8 @@ use RuntimeException;
  * package: refit only ever generates the names in {@see IconMap}, so a package
  * dependency would add weight without widening what the tool can translate. It
  * would also make the output vary with whatever Composer resolved, when the point
- * is to emit the same drawing the kit already vendors. `composer icons` refreshes
- * the bundle from upstream as a reviewable commit instead.
+ * is to emit the same drawing the kit already vendors. `composer icons:run`
+ * refreshes the bundle from upstream as a reviewable commit instead.
  */
 final class OverrideGenerator
 {

@@ -24,15 +24,15 @@ full suite passes without either installed.
 | `composer lint` / `composer lint:check` | Pint, writing or checking |
 | `composer test:unit` | Pest, in parallel |
 | `composer test:types` | Type coverage, 100% required |
-| `composer fixtures` | Download every `laravel new` Livewire variation to `tests/fixtures/starter-kits` |
-| `composer icons` / `composer icons:check` | Refresh the committed Lucide bundle, or report drift |
-| `composer flux:internals` / `…:check` | Re-record the icons Flux renders internally, or report drift |
-| `composer sheaf:components` / `…:check` | Re-record the components Sheaf ships, or report drift |
-| `composer resources:check` | All three drift checks in one go; the Flux one skips without a licence |
-| `composer refresh` | `icons` then `fixtures` |
+| `composer starter-kits` | Download every `laravel new` Livewire variation to `tests/fixtures/starter-kits` |
+| `composer icons:run` / `composer icons:check` | Refresh the committed Lucide bundle, or report drift |
+| `composer flux:run` / `composer flux:check` | Re-record the icons Flux renders internally, or report drift |
+| `composer sheaf:run` / `composer sheaf:check` | Re-record the components Sheaf ships, or report drift |
+| `composer refit:check` | All three drift checks in one go; the Flux one skips without a licence |
+| `composer refit:refresh` | `icons:run` then `starter-kits` |
 | `composer build` / `composer serve` | Build or serve the workbench application |
 
-Run `composer fixtures` early. Tests that exercise a real starter kit skip
+Run `composer starter-kits` early. Tests that exercise a real starter kit skip
 themselves until the fixtures are on disk, so a suite that looks green may not
 have run the half you are changing.
 

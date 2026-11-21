@@ -18,7 +18,7 @@ use Onelegstudios\Refit\Plan\Actions\WrapControlsInFields;
  * variants write. Anything outside it is reported rather than guessed at.
  *
  * Names are checked against `resources/sheaf/components.json`, which
- * `composer sheaf:components` records from Sheaf's own registry — so a component
+ * `composer sheaf:run` records from Sheaf's own registry — so a component
  * renamed upstream fails CI rather than a user's view.
  */
 final class ComponentMap
