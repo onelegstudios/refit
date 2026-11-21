@@ -52,6 +52,7 @@ final class IconMap
         'eye-dropper' => 'pipette',
         'eye-slash' => 'eye-off',
         'finger-print' => 'fingerprint-pattern',
+        'globe-alt' => 'globe',
         'home' => 'house',
         'information-circle' => 'info',
         'key' => 'key-round',

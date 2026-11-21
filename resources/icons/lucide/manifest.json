@@ -2,7 +2,7 @@
     "repo": "lucide-icons/lucide",
     "ref": "1.77.0",
     "commit": "742ea78395b4122e13fd46743caba5140f47fb66",
-    "downloaded_at": "2026-11-20T11:29:26+00:00",
+    "downloaded_at": "2026-11-21T21:54:44+00:00",
     "icons": [
         "book-open-text",
         "calendar",
@@ -23,6 +23,7 @@
         "file",
         "fingerprint-pattern",
         "folder-git-2",
+        "globe",
         "house",
         "info",
         "key-round",

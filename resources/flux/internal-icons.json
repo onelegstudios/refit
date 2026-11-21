@@ -1,8 +1,8 @@
 {
-    "generated_at": "2026-08-13T12:14:10+00:00",
+    "generated_at": "2026-11-21T18:41:06+00:00",
     "editions": {
         "livewire/flux": {
-            "version": "v2.16.0",
+            "version": "v2.22.0",
             "scanned": true,
             "icons": [
                 "check",
@@ -15,6 +15,7 @@
                 "exclamation-triangle",
                 "eye",
                 "eye-slash",
+                "globe-alt",
                 "loading",
                 "magnifying-glass",
                 "minus",
@@ -23,7 +24,7 @@
             ]
         },
         "livewire/flux-pro": {
-            "version": "2.16.0",
+            "version": "2.22.0",
             "scanned": true,
             "icons": [
                 "calendar",
@@ -38,6 +39,7 @@
                 "cloud-arrow-up",
                 "document",
                 "eye-dropper",
+                "globe-alt",
                 "loading",
                 "magnifying-glass",
                 "minus",
