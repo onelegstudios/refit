@@ -64,34 +64,34 @@
       "@build",
       "@php vendor/bin/testbench serve --ansi"
     ],
-    "fixtures": [
+    "starter-kits": [
       "@php bin/download-starter-kits.php"
     ],
-    "icons": [
+    "icons:run": [
       "@php bin/download-icons.php"
     ],
     "icons:check": [
       "@php bin/download-icons.php --check"
     ],
-    "flux:internals": [
+    "flux:run": [
       "@php bin/scan-flux-internals.php"
     ],
-    "flux:internals:check": [
+    "flux:check": [
       "@php bin/scan-flux-internals.php --check"
     ],
-    "sheaf:components": [
+    "sheaf:run": [
       "@php bin/scan-sheaf-components.php"
     ],
-    "sheaf:components:check": [
+    "sheaf:check": [
       "@php bin/scan-sheaf-components.php --check"
     ],
-    "resources:check": [
+    "refit:check": [
       "@php bin/check-resources.php"
     ],
-    "refresh": [
+    "refit:refresh": [
       "Composer\\Config::disableProcessTimeout",
-      "@icons",
-      "@fixtures"
+      "@icons:run",
+      "@starter-kits"
     ],
     "lint": [
       "vendor/bin/pint --parallel"
