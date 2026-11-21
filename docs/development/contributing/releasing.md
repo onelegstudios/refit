@@ -14,8 +14,9 @@ as the public surface once tagged.
 ## Before tagging
 
 1. `composer test` — the four gates CI runs.
-2. `composer fixtures` first if you have not, so the feature suite actually runs.
-3. `composer icons:check` and `composer flux:internals:check` — both report drift
+2. `composer starter-kits` first if you have not, so the feature suite
+   actually runs.
+3. `composer icons:check` and `composer flux:check` — both report drift
    without writing, and a release is a good moment to be sure the committed
    artwork and the recorded Flux internals are current.
 4. Read `git diff` on `resources/` if either check wrote anything. Bundled

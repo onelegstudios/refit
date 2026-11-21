@@ -79,9 +79,9 @@ and no versioning — which is *not* the shape the site will serve.
 
 - [ ] `CHANGELOG.md` still has placeholders — `202x-xx-xx` and a `v0.1.0`
       compare link with an empty base. Fix both before the first tag
-- [ ] `composer fixtures` then `composer test` — the feature suite is hollow
-      without fixtures on disk
-- [ ] `composer icons:check` and `composer flux:internals:check` — both report
+- [ ] `composer starter-kits` then `composer test` — the feature suite is
+      hollow without fixtures on disk
+- [ ] `composer icons:check` and `composer flux:check` — both report
       drift without writing
 - [ ] Review `git diff` on `resources/` if either check wrote anything
 - [ ] Tag and publish `v0.1.0` from GitHub (the publish workflow fires on

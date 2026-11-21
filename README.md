@@ -79,9 +79,9 @@ Full documentation lives in [`docs/`](docs), and is served by
 composer test
 ```
 
-Tests that exercise a real starter kit skip themselves unless the fixtures have
-been downloaded with `composer fixtures`. You do not need a Flux Pro licence to
-contribute — see [Setup](docs/development/contributing/setup.md).
+Tests that exercise a real starter kit skip themselves unless the fixtures
+have been downloaded with `composer starter-kits`. You do not need a Flux Pro
+licence to contribute — see [Setup](docs/development/contributing/setup.md).
 
 ## Changelog
 

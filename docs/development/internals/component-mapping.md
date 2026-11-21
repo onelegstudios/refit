@@ -183,19 +183,19 @@ Eight kinds of entry:
 
 ### The manifest keeps it honest
 
-`resources/sheaf/components.json` records every component Sheaf ships and the tags
-each answers to, recorded by `composer sheaf:components` from the public
-`sheafui/components` registry. Each component's `config.yml` lists where its files
-install, and the install path *is* the Blade component name — so the registry is
-the authority on tag names rather than a reading of the docs.
+`resources/sheaf/components.json` records every component Sheaf ships and the
+tags each answers to, recorded by `composer sheaf:run` from the public
+`sheafui/components` registry. Each component's `config.yml` lists where its
+files install, and the install path *is* the Blade component name — so the
+registry is the authority on tag names rather than a reading of the docs.
 
-`composer sheaf:components:check` fails when a mapping points at a component Sheaf
-no longer ships, which is the same job `flux:internals:check` does for icons. It
-checks `ComponentMap::SUPPORTING` as well — `field`, `label` and `error`, the three
+`composer sheaf:check` fails when a mapping points at a component Sheaf no
+longer ships, which is the same job `flux:check` does for icons. It checks
+`ComponentMap::SUPPORTING` as well — `field`, `label` and `error`, the three
 components refit writes for itself rather than renaming anything into, which no
-entry in `TAGS` would otherwise vouch for. Only
-names are recorded; none of Sheaf's source is copied into this repository, because
-its CLI is what puts components in a project and refit runs that CLI.
+entry in `TAGS` would otherwise vouch for. Only names are recorded; none of
+Sheaf's source is copied into this repository, because its CLI is what puts
+components in a project and refit runs that CLI.
 
 Unlike the Flux manifest this needs no licence and no sidecar install —
 `sheafui/components` is public and MIT.

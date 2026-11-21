@@ -45,7 +45,7 @@ Four files × five variants = 20 hashes.
 
 ## The thing that makes this worse than it looks
 
-**CI never runs `composer fixtures`.** There is no such step in
+**CI never runs `composer starter-kits`.** There is no such step in
 `.github/workflows/tests.yml`, so every fixture-backed test skips there: 33
 explicit `is_dir(fixturePath(…))` guards in `SheafMigrationTest` alone, plus six
 more files that skip through `requireFixture()` — `TagParserTest`,
@@ -84,9 +84,9 @@ call about how Sheaf should express it — which is what most of the comments
 inside the stubs are. Those comments are the reasoning behind a hand-made
 translation, not decoration.
 
-So: **the job fails with a diff of what moved.** A person updates the stubs, then
-re-records — exactly the `composer icons` / `composer icons:check` relationship
-that already exists for artwork.
+So: **the job fails with a diff of what moved.** A person updates the stubs,
+then re-records — exactly the `composer icons:run` / `composer icons:check`
+relationship that already exists for artwork.
 
 ## The build
 

@@ -152,7 +152,7 @@ function main(array $argv): int
     }
 
     if (! $scannedAny) {
-        // `composer resources:check` runs this alongside the checks that need no
+        // `composer refit:check` runs this alongside the checks that need no
         // licence, so absence has to be survivable there: most contributors have
         // no sidecar, and failing the aggregate on that would hide the drift in
         // everything after it. Asked for directly, absence is still an error —
@@ -201,7 +201,7 @@ function main(array $argv): int
         }
 
         error('Flux renders a different set of icons than the manifest records.');
-        error('Run `composer flux:internals -- --project=path` to refresh it, then map any new names in IconMap.');
+        error('Run `composer flux:run -- --project=path` to refresh it, then map any new names in IconMap.');
 
         return 1;
     }
@@ -375,7 +375,7 @@ function reportUntranslatable(array $editions): void
     sort($names);
 
     error(sprintf('%d recorded name(s) have no Lucide translation: %s', count($names), implode(', ', $names)));
-    error('Add them to IconMap::HEROICONS_TO_LUCIDE and run `composer icons`, or they stay Heroicons after a refit.');
+    error('Add them to IconMap::HEROICONS_TO_LUCIDE and run `composer icons:run`, or they stay Heroicons after a refit.');
 }
 
 /**

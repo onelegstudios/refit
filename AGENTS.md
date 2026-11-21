@@ -30,12 +30,12 @@ Laradocs is a dev dependency and the workbench provider points it at this reposi
 - Pest tests: `composer test:unit`
 - Workbench build: `composer build`
 - Workbench server: `composer serve`
-- Starter kit fixtures: `composer fixtures` (downloads every `laravel new` Livewire variation to `tests/fixtures/starter-kits`, gitignored)
-- Lucide artwork: `composer icons` (refreshes the committed `resources/icons/lucide` bundle from the latest Lucide release); `composer icons:check` reports drift without writing
-- Flux internals: `composer flux:internals` re-records `resources/flux/internal-icons.json` from the `.flux-pro` sidecar (`composer install --working-dir=.flux-pro`, needs a Flux Pro licence); `composer flux:internals:check` reports drift without writing. Both take `-- --project=path` to read another project. Editions that are not installed keep their recorded names, so an unlicensed run never drops the Pro ones.
+- Starter kit fixtures: `composer starter-kits` (downloads every `laravel new` Livewire variation to `tests/fixtures/starter-kits`, gitignored)
+- Lucide artwork: `composer icons:run` (refreshes the committed `resources/icons/lucide` bundle from the latest Lucide release); `composer icons:check` reports drift without writing
+- Flux internals: `composer flux:run` re-records `resources/flux/internal-icons.json` from the `.flux-pro` sidecar (`composer install --working-dir=.flux-pro`, needs a Flux Pro licence); `composer flux:check` reports drift without writing. Both take `-- --project=path` to read another project. Editions that are not installed keep their recorded names, so an unlicensed run never drops the Pro ones.
 - Never name `composer.fluxui.dev` in the root `composer.json` — not as a `require`, not even as a bare `repositories` entry. Composer loads every composer-type repository's `packages.json` before resolving, so an unauthenticated 401 there fails the entire install and contributors lose Pest and PHPStan too. That is why the licensed install lives in the separate, committed `.flux-pro/composer.json`, which the root install never reads.
-- All three drift checks at once: `composer resources:check` (icons, Flux internals, Sheaf components), via `bin/check-resources.php`. Every check runs even when an earlier one fails, and the summary at the end says which did; a Composer script list could not do that, since it aborts at the first non-zero exit. It passes `--optional` to the Flux scan so a checkout without a licence skips that one instead of failing the aggregate.
-- Refresh everything: `composer refresh` (runs `icons` then `fixtures`; note it can leave a diff in `resources/icons/lucide` to review and commit)
+- All three drift checks at once: `composer refit:check` (icons, Flux internals, Sheaf components), via `bin/check-resources.php`. Every check runs even when an earlier one fails, and the summary at the end says which did; a Composer script list could not do that, since it aborts at the first non-zero exit. It passes `--optional` to the Flux scan so a checkout without a licence skips that one instead of failing the aggregate.
+- Refresh everything: `composer refit:refresh` (runs `icons:run` then `starter-kits`; note it can leave a diff in `resources/icons/lucide` to review and commit)
 
 ## Local Skills
 

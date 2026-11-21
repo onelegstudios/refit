@@ -40,7 +40,7 @@ it('keeps the logo tile Sheaf\'s brand would have dropped', function (): void {
     foreach ($project->blades() as $path) {
         expect($project->get($path))->not->toContain(':sidebar');
     }
-})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer starter-kits`.');
 it('gives the user menu the row a Sheaf nav item would have had', function (): void {
     $root = migratedSheafKit('livewire');
 
@@ -66,7 +66,7 @@ it('gives the user menu the row a Sheaf nav item would have had', function (): v
         // The panel opens no narrower than the row it belongs to. A minimum
         // rather than a width, so it still grows for a long address.
         ->toContain('<x-slot:menu class="z-[100]! min-w-60">');
-})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer starter-kits`.');
 it('stops the mobile bar where Sheaf starts showing the sidebar', function (): void {
     $root = migratedSheafKit('livewire');
 
@@ -81,7 +81,7 @@ it('stops the mobile bar where Sheaf starts showing the sidebar', function (): v
         ->toContain('<x-ui.layout.header class="md:hidden">')
         ->toContain('<x-ui.sidebar.toggle class="md:hidden" />')
         ->not->toContain('lg:hidden');
-})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer starter-kits`.');
 it('empties the user menu to an avatar when the sidebar collapses', function (): void {
     $root = migratedSheafKit('livewire');
 
@@ -104,7 +104,7 @@ it('empties the user menu to an avatar when the sidebar collapses', function ():
     // and the header's copy keeps its name at a width where the sidebar is
     // already collapsed underneath it.
     expect($menu)->not->toContain('[[data-collapsed]_&]');
-})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer starter-kits`.');
 it('stops the collapse at the sidebar so the settings menu survives it', function (): void {
     $root = sheafKit('livewire');
 
@@ -135,7 +135,7 @@ it('stops the collapse at the sidebar so the settings menu survives it', functio
         ->toContain('[[data-collapsed]_[data-slot=sidebar]_&]:hidden')
         ->toContain('[[data-collapsed]_[data-slot=sidebar]_&]:p-2')
         ->not->toContain(':has([data-collapsed]');
-})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer starter-kits`.');
 it('composes the header layout the way Sheaf\'s grid reads it', function (): void {
     $root = migratedSheafKit('livewire');
 
@@ -159,7 +159,7 @@ it('composes the header layout the way Sheaf\'s grid reads it', function (): voi
     expect($project->get('resources/views/layouts/app.blade.php'))
         ->not->toContain('layout.main')
         ->toContain('{{ $slot }}');
-})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer starter-kits`.');
 it('leaves Sheaf\'s sidebar the one surface Sheaf paints', function (string $fixture, string $layout): void {
     $root = migratedSheafKit($fixture);
 
@@ -176,7 +176,7 @@ it('leaves Sheaf\'s sidebar the one surface Sheaf paints', function (string $fix
 })->with([
     'sidebar' => ['livewire', 'resources/views/layouts/app/sidebar.blade.php'],
     'header' => ['livewire', 'resources/views/layouts/app/header.blade.php'],
-])->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+])->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer starter-kits`.');
 it('gives the page inside Sheaf\'s main the height and padding the kit\'s had', function (string $fixture, string $layout): void {
     $root = migratedSheafKit($fixture);
 
@@ -193,7 +193,7 @@ it('gives the page inside Sheaf\'s main the height and padding the kit\'s had', 
 })->with([
     'sidebar' => ['livewire', 'resources/views/layouts/app/sidebar.blade.php'],
     'header' => ['livewire', 'resources/views/layouts/app/header.blade.php'],
-])->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+])->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer starter-kits`.');
 it('names only icons refit\'s own table knows in the chrome it writes', function (): void {
     $root = migratedSheafKit('livewire');
 
@@ -229,7 +229,7 @@ it('names only icons refit\'s own table knows in the chrome it writes', function
     }
 
     expect($unknown)->toBe([]);
-})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer starter-kits`.');
 it('keeps the header\'s utility links down to the icons the kit showed', function (): void {
     $root = migratedSheafKit('livewire');
 
@@ -250,7 +250,7 @@ it('keeps the header\'s utility links down to the icons the kit showed', functio
     expect(substr_count($header, '[&>span]:hidden'))->toBe(3)
         ->and($header)->toContain(':label="__(\'Dashboard\')"')
         ->not->toContain(':aria-label="__(\'Dashboard\')"');
-})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer starter-kits`.');
 it('sizes the header layout\'s main to the row the grid left it', function (): void {
     $root = migratedSheafKit('livewire');
 
@@ -265,7 +265,7 @@ it('sizes the header layout\'s main to the row the grid left it', function (): v
     // rather than stretching them, so there the screen is the right answer.
     expect((new ProjectDetector)->detect($root)->get('resources/views/layouts/app/sidebar.blade.php'))
         ->not->toContain('min-h-0!');
-})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer starter-kits`.');
 it('teleports the user menu out of the sidebar\'s stacking context', function (): void {
     $root = migratedSheafKit('livewire');
 
@@ -282,7 +282,7 @@ it('teleports the user menu out of the sidebar\'s stacking context', function ()
     // the inline `z-index:99` the sidebar carries. The whole menu paints behind
     // the sidebar, which reads as a trigger that does nothing at all.
     expect($menu)->toContain('<x-slot:menu class="z-[100]! min-w-60">');
-})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer starter-kits`.');
 it('raises the team switcher clear of the sidebar that clips it', function (string $kit): void {
     $root = migratedSheafKit($kit);
 
@@ -295,7 +295,7 @@ it('raises the team switcher clear of the sidebar that clips it', function (stri
         // And teleporting alone drops it below the sidebar's inline z-index 99.
         ->toContain('<x-slot:menu class="z-[100]! min-w-56">');
 })->with(['livewire-teams', 'livewire-workos-teams'])
-    ->skip(fn (): bool => ! is_dir(fixturePath('livewire-teams')), 'Run `composer fixtures`.');
+    ->skip(fn (): bool => ! is_dir(fixturePath('livewire-teams')), 'Run `composer starter-kits`.');
 it('lays the team switcher out the way Flux laid it out', function (string $kit): void {
     $root = migratedSheafKit($kit);
 
@@ -313,7 +313,7 @@ it('lays the team switcher out the way Flux laid it out', function (string $kit)
     // first of three columns, with the first team beside it rather than under it.
     expect($switcher)->toContain('<x-ui.dropdown.group :label="__(\'Teams\')" />');
 })->with(['livewire-teams', 'livewire-workos-teams'])
-    ->skip(fn (): bool => ! is_dir(fixturePath('livewire-teams')), 'Run `composer fixtures`.');
+    ->skip(fn (): bool => ! is_dir(fixturePath('livewire-teams')), 'Run `composer starter-kits`.');
 it('empties the team switcher to a glyph when the sidebar collapses', function (string $kit): void {
     $root = migratedSheafKit($kit);
 
@@ -339,7 +339,7 @@ it('empties the team switcher to a glyph when the sidebar collapses', function (
         ->toContain('[[data-collapsed]_[data-slot=sidebar]_&]:h-9')
         ->toContain('[[data-collapsed]_[data-slot=sidebar]_&]:p-2!');
 })->with(['livewire-teams', 'livewire-workos-teams'])
-    ->skip(fn (): bool => ! is_dir(fixturePath('livewire-teams')), 'Run `composer fixtures`.');
+    ->skip(fn (): bool => ! is_dir(fixturePath('livewire-teams')), 'Run `composer starter-kits`.');
 it('puts the team switcher in the gutter the rest of the sidebar sits in', function (string $kit): void {
     $root = migratedSheafKit($kit);
 
@@ -349,14 +349,14 @@ it('puts the team switcher in the gutter the rest of the sidebar sits in', funct
     expect((new ProjectDetector)->detect($root)->get('resources/views/layouts/app/sidebar.blade.php'))
         ->toContain("<x-ui.navlist>\n                    <livewire:team-switcher />\n                </x-ui.navlist>");
 })->with(['livewire-teams', 'livewire-workos-teams'])
-    ->skip(fn (): bool => ! is_dir(fixturePath('livewire-teams')), 'Run `composer fixtures`.');
+    ->skip(fn (): bool => ! is_dir(fixturePath('livewire-teams')), 'Run `composer starter-kits`.');
 it('leaves the kits without teams without a switcher to raise', function (): void {
     $root = migratedSheafKit('livewire');
 
     // Nothing to do, and nothing done: the page dropdowns a project writes for
     // itself are not refit's to move around.
     expect((new ProjectDetector)->detect($root)->exists('resources/views/components/⚡team-switcher.blade.php'))->toBeFalse();
-})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer fixtures`.');
+})->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer starter-kits`.');
 
 it('folds the Sheaf chrome into the layout when the layouts are flattened', function (): void {
     $root = sheafKit('livewire');

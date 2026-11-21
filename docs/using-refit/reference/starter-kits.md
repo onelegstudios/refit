@@ -82,5 +82,6 @@ offered, and nothing is assumed that disk did not answer.
 ## Fixtures
 
 Refit's test suite runs against real copies of all five, downloaded with
-`composer fixtures`. They are gitignored, and tests that need one skip themselves
-when it is absent. See [Testing](/docs/development/contributing/testing).
+`composer starter-kits`. They are gitignored, and tests that need one skip
+themselves when it is absent. See
+[Testing](/docs/development/contributing/testing).
