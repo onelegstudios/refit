@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace Onelegstudios\Refit\Libraries;
 
 /**
- * How one UI library spells its component tags and names its icons.
+ * How one UI library spells its component tags, names its icons, and asks for a
+ * button nobody is meant to press first.
  *
  * Everything the Blade rewriters need to work on a library without knowing which
  * one they are looking at. The two libraries refit ships disagree on every field
@@ -20,6 +21,7 @@ final class Vocabulary
      * @param  string  $iconTag  The generic icon component's full tag name.
      * @param  string  $iconTagAttribute  The attribute {@see $iconTag} takes its name from.
      * @param  list<string>  $nameAttributes  Attributes that carry an icon name on any component.
+     * @param  string  $quietVariant  What this library calls the button beside the one to press — Flux's `subtle`, Sheaf's `ghost`.
      * @param  string|null  $dottedIconTag  The dotted form's prefix (`flux:icon.`), or null when the library has no such form.
      * @param  string|null  $variantAttribute  The attribute holding an icon's own weight, or null.
      * @param  string|null  $iconVariantAttribute  The pass-through form of the same, or null.
@@ -29,6 +31,12 @@ final class Vocabulary
         public readonly string $iconTag,
         public readonly string $iconTagAttribute,
         public readonly array $nameAttributes,
+        // There is no sensible default here, which is why it is asked for rather
+        // than assumed: the two libraries do not even agree on what writing no
+        // variant at all means. Flux draws an outline button, Sheaf falls back to
+        // `primary` — so a pair of links written without one comes out as two
+        // buttons to press there, and the choice between them stops reading.
+        public readonly string $quietVariant,
         public readonly ?string $dottedIconTag = null,
         public readonly ?string $variantAttribute = null,
         public readonly ?string $iconVariantAttribute = null,

@@ -10,6 +10,7 @@ use Onelegstudios\Refit\Tasks\MoveAuthViewsOutOfPages;
 use Onelegstudios\Refit\Tasks\MoveComponentsOutOfPages;
 use Onelegstudios\Refit\Tasks\MoveToastsToTop;
 use Onelegstudios\Refit\Tasks\NamespaceComponents;
+use Onelegstudios\Refit\Tasks\OpenLayoutsToGuests;
 use Onelegstudios\Refit\Tasks\PromotePartialsToComponents;
 use Onelegstudios\Refit\Tasks\RemoveFluxOverrides;
 use Onelegstudios\Refit\Tasks\RemoveFluxProSource;
@@ -60,6 +61,7 @@ return [
         MoveToastsToTop::class,
         KeepOneLayout::class,
         FlattenLayouts::class,
+        OpenLayoutsToGuests::class,
         RemoveFluxProSource::class,
         RemoveFluxOverrides::class,
     ],

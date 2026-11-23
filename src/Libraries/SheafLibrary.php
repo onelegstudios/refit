@@ -124,6 +124,10 @@ final class SheafLibrary implements Library
             // just `icon`. Both spellings are produced by the migration, so only
             // these two ever appear in a Sheaf tree.
             nameAttributes: ['icon', 'iconAfter'],
+            // Sheaf's spelling of the same, which is what the migration renames
+            // Flux's `subtle` to — {@see ComponentMap::VALUES}. The stub for the
+            // user menu writes it too, on the sign out item.
+            quietVariant: 'ghost',
             // Sheaf has no `<x-ui.icon.home />` form — every icon is named through
             // an attribute, which is why the migration collapses Flux's dotted
             // tags rather than renaming them.

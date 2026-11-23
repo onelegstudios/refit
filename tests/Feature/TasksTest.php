@@ -9,6 +9,7 @@ use Onelegstudios\Refit\Libraries\SheafLibrary;
 use Onelegstudios\Refit\Plan\Applier;
 use Onelegstudios\Refit\Plan\Plan;
 use Onelegstudios\Refit\Plan\Report;
+use Onelegstudios\Refit\Project\Feature;
 use Onelegstudios\Refit\Project\Project;
 use Onelegstudios\Refit\Project\ProjectDetector;
 use Onelegstudios\Refit\Refit;
@@ -18,6 +19,7 @@ use Onelegstudios\Refit\Tasks\MoveAuthViewsOutOfPages;
 use Onelegstudios\Refit\Tasks\MoveComponentsOutOfPages;
 use Onelegstudios\Refit\Tasks\MoveToastsToTop;
 use Onelegstudios\Refit\Tasks\NamespaceComponents;
+use Onelegstudios\Refit\Tasks\OpenLayoutsToGuests;
 use Onelegstudios\Refit\Tasks\PromotePartialsToComponents;
 use Onelegstudios\Refit\Tasks\RemoveFluxOverrides;
 use Onelegstudios\Refit\Tasks\RemoveFluxProSource;
@@ -53,6 +55,7 @@ it('registers the configured tasks', function (): void {
             'toasts-at-top',
             'single-layout',
             'flatten-layouts',
+            'guests-in-app-layouts',
             'remove-flux-pro-source',
             'remove-flux-overrides',
         ]);
@@ -546,6 +549,203 @@ it('keeps a toast group that already chose a position', function (): void {
     expect($project->get($layout))
         ->toContain('<flux:toast.group position="bottom center">')
         ->not->toContain('top end');
+});
+
+/**
+ * The app layouts of a project, as project-relative paths.
+ *
+ * @return list<string>
+ */
+function appLayouts(Project $project): array
+{
+    return array_values(array_filter(
+        $project->blades(),
+        fn (string $path): bool => str_starts_with($path, 'resources/views/layouts/app'),
+    ));
+}
+
+/**
+ * Every line of a view that reads the signed-in user with no guard open.
+ *
+ * Counted rather than parsed, which is enough: the kit writes one directive per
+ * line and so does refit.
+ *
+ * @return list<string>
+ */
+function unguardedLines(string $source): array
+{
+    $depth = 0;
+    $found = [];
+
+    foreach (explode("\n", $source) as $line) {
+        $depth += (int) preg_match_all('/@(?:auth|guest)\b/', $line);
+
+        if ($depth === 0 && (str_contains($line, 'auth()->user(') || str_contains($line, 'Auth::user('))) {
+            $found[] = trim($line);
+        }
+
+        $depth -= (int) preg_match_all('/@end(?:auth|guest)\b/', $line);
+    }
+
+    return $found;
+}
+
+it('leaves no app layout reading a user it might not have', function (string $kit): void {
+    [$project] = runTask(new OpenLayoutsToGuests, $kit);
+
+    expect(appLayouts($project))->not->toBeEmpty();
+
+    foreach (appLayouts($project) as $path) {
+        expect(unguardedLines($project->get($path)))->toBe([]);
+    }
+})->with(starterKits());
+
+it('guards the user menu the layout renders as a component', function (string $kit): void {
+    // Nothing in the layout says the menu needs a user. The component does.
+    [$project] = runTask(new OpenLayoutsToGuests, $kit);
+
+    foreach (appLayouts($project) as $path) {
+        $source = $project->get($path);
+
+        if (! str_contains($source, '<x-desktop-user-menu')) {
+            continue;
+        }
+
+        expect($source)->toMatch('/@auth\s+<x-desktop-user-menu/');
+    }
+})->with(starterKits());
+
+it('offers a guest the way in that the user menu was', function (string $kit): void {
+    [$project] = runTask(new OpenLayoutsToGuests, $kit);
+    $guarded = 0;
+
+    foreach (appLayouts($project) as $path) {
+        $source = $project->get($path);
+
+        // The delegating layout holds no chrome, so it has nothing to guard.
+        if (! str_contains($source, '@auth')) {
+            continue;
+        }
+
+        // What the links wear is GuardSignedInChromeTest's to pin down; here it
+        // is only that a guest is given one at all.
+        expect($source)
+            ->toContain('@else')
+            ->toMatch('/<flux:button :href="route\(\'login\'\)"[^>]*>\{\{ __\(\'Log in\'\) \}\}<\/flux:button>/');
+
+        $guarded++;
+    }
+
+    expect($guarded)->toBeGreaterThan(0);
+})->with(starterKits());
+
+it('offers a guest the way in the kit still has to offer', function (string $kit): void {
+    [$project] = runTask(new OpenLayoutsToGuests, $kit);
+    $registers = $project->has(Feature::Registration);
+    $guarded = 0;
+
+    foreach (appLayouts($project) as $path) {
+        $source = $project->get($path);
+
+        if (! str_contains($source, '@else')) {
+            continue;
+        }
+
+        // The WorkOS kits hand registration to AuthKit, so there is no
+        // `register` route for refit to name — and naming one would throw.
+        // Two ways in go in a box of their own: `<flux:header>` gives its
+        // children no room between them, so a loose pair comes out touching.
+        $registers
+            ? expect($source)
+                ->toMatch('/<flux:button :href="route\(\'register\'\)" variant="primary"[^>]*>\{\{ __\(\'Register\'\) \}\}<\/flux:button>/')
+                ->toMatch('/<div class="(?:[^"]* )?flex items-center gap-2">\s+<flux:button :href="route\(\'login\'\)"/')
+            : expect($source)
+                ->not->toContain('route(\'register\')')
+                ->not->toContain('<div class="flex items-center gap-2">');
+
+        $guarded++;
+    }
+
+    expect($guarded)->toBeGreaterThan(0);
+})->with(starterKits());
+
+it('guards the team chrome without offering a guest a stand-in for it', function (string $kit): void {
+    [$project] = runTask(new OpenLayoutsToGuests, $kit);
+
+    foreach (appLayouts($project) as $path) {
+        $source = $project->get($path);
+
+        if (! str_contains($source, '<livewire:team-switcher')) {
+            continue;
+        }
+
+        expect($source)->toMatch('/@auth\s+<livewire:team-switcher \/>\s+@endauth/')
+            ->toMatch('/@auth\s+<livewire:create-team-modal \/>\s+@endauth/');
+    }
+})->with(['livewire-teams', 'livewire-workos-teams']);
+
+it('leaves the navigation a guest can still use outside the guard', function (): void {
+    [$project] = runTask(new OpenLayoutsToGuests, 'livewire');
+    $source = $project->get('resources/views/layouts/app/sidebar.blade.php');
+
+    // The sidebar holds the user menu, so a guard around the sidebar would take
+    // the navigation and the brand with it.
+    expect($source)->toContain('<flux:sidebar sticky collapsible="mobile"')
+        ->toMatch('/<flux:sidebar sticky[^>]*>\s+<flux:sidebar\.header>/')
+        ->and(substr_count($source, '@auth'))->toBe(2);
+});
+
+it('leaves every view but the app layouts exactly as it found them', function (string $kit): void {
+    // The auth layouts render for a guest already, that being their whole job,
+    // and every other view holding an auth()->user() is behind a middleware.
+    [$project] = runTask(new OpenLayoutsToGuests, $kit);
+    $kept = detectFixture($kit);
+
+    foreach ($project->blades() as $path) {
+        if (str_starts_with($path, 'resources/views/layouts/app')) {
+            continue;
+        }
+
+        expect($project->get($path))->toBe($kept->get($path));
+    }
+})->with(starterKits());
+
+it('guards the shell whatever shape the other layout tasks left it in', function (): void {
+    [$project] = runTasks([new KeepOneLayout, new FlattenLayouts, new OpenLayoutsToGuests], 'livewire');
+
+    expect($project->exists('resources/views/layouts/app/sidebar.blade.php'))->toBeFalse()
+        ->and(unguardedLines($project->get('resources/views/layouts/app.blade.php')))->toBe([])
+        ->and($project->get('resources/views/layouts/app.blade.php'))->toContain('@auth');
+});
+
+it('guards the chrome a target wrote from its own stubs, in that target\'s tags', function (): void {
+    // Sheaf cannot be reached by renaming Flux's tags, so it writes the app
+    // layouts again from its own stubs — and the guard has to land on what it
+    // wrote rather than on what the kit shipped.
+    $root = sheafKit('livewire');
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'library' => 'sheaf',
+            'icons' => 'heroicons',
+            'tasks' => ['guests-in-app-layouts'],
+        ]),
+    ])->assertSuccessful();
+
+    $sidebar = (new ProjectDetector)->detect($root)->get('resources/views/layouts/app/sidebar.blade.php');
+
+    expect(unguardedLines($sidebar))->toBe([])
+        ->and($sidebar)->toContain('<x-ui.button :href="route(\'login\')" variant="ghost" class="flex-1">{{ __(\'Log in\') }}</x-ui.button>')
+        ->and($sidebar)->toContain('<x-ui.button :href="route(\'register\')" variant="primary" class="flex-1">{{ __(\'Register\') }}</x-ui.button>')
+        ->and($sidebar)->toContain('items-center gap-2">')
+        ->not->toContain('<flux:button');
+});
+
+it('has nothing left to guard once the shell renders for a guest', function (): void {
+    [$project] = runTask(new OpenLayoutsToGuests, 'livewire');
+
+    expect((new OpenLayoutsToGuests)->appliesTo($project))->toBeFalse();
 });
 
 it('drops the Flux Pro source line', function (): void {

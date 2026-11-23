@@ -18,6 +18,7 @@ something that would do nothing.
 | Structure | Group components into folders | `namespace-components` |
 | Structure | Show toasts at the top of the screen | `toasts-at-top` |
 | Structure | Flatten the layout folders | `flatten-layouts` |
+| Structure | Let the app layouts render for a guest | `guests-in-app-layouts` |
 | Cleanup | Delete the layouts the kit does not render | `single-layout` |
 | Cleanup | Remove the Flux Pro `@source` line from `app.css` | `remove-flux-pro-source` |
 | Cleanup | Use Flux's own components instead of the kit's overrides | `remove-flux-overrides` |
@@ -278,6 +279,142 @@ use Onelegstudios\Refit\Facades\Refit;
 use Onelegstudios\Refit\Tasks\FlattenLayouts;
 
 Refit::task(new FlattenLayouts(['app']));
+```
+
+## Let the app layouts render for a guest
+
+The kit draws its application shell for one kind of visitor.
+`layouts/app/sidebar.blade.php` reads `auth()->user()->name` where the profile
+goes, `auth()->user()->initials()` in the mobile header, and posts to
+`route('logout')` from the menu — none of it asking first:
+
+```blade
+<x-desktop-user-menu class="hidden lg:block" :name="auth()->user()->name" />
+```
+
+So the layout every signed-in page names is a layout no public page can use.
+Point a marketing page, a pricing page or a shared link at `<x-layouts::app>` and
+the view fails on a null user rather than rendering without one — which is a
+structural decision rather than a missing feature, and the one this task
+reverses. The signed-in chrome goes behind `@auth`, and a guest gets the way in
+where the user menu was:
+
+```blade
+@auth
+    <x-desktop-user-menu class="hidden lg:block" :name="auth()->user()->name" />
+@else
+    <div class="hidden lg:flex items-center gap-2">
+        <flux:button :href="route('login')" variant="subtle" class="flex-1">{{ __('Log in') }}</flux:button>
+        <flux:button :href="route('register')" variant="primary" class="flex-1">{{ __('Register') }}</flux:button>
+    </div>
+@endauth
+```
+
+Both states then render the same shell, and the navigation, the brand and the
+mobile toggle stay where they were for everybody.
+
+### What counts as signed-in chrome
+
+Nothing is listed by name. A piece of chrome needs a user when its own markup
+dereferences one — or when something it renders does, which is the usual case:
+`<x-desktop-user-menu />` carries no `auth()` call at all, and the component
+behind it is nothing but one. So the task follows a tag to the files that decide
+what it renders — an anonymous component's view, a single-file Livewire
+component, a class component's view *and* its class — and reads those too. The
+teams kits get `<livewire:team-switcher />` and `<livewire:create-team-modal />`
+guarded for exactly that reason.
+
+Then each find grows outwards, which is the part worth knowing about. The
+smallest guard is useless — `@auth` around the avatar inside a dropdown leaves a
+guest opening an empty menu — and the largest is worse, because the sidebar holds
+the user menu and guarding the sidebar would take the navigation with it. So a
+find grows into the element around it only while *everything* in that element is
+the user's, counting whitespace and Blade comments as nothing. The kit's mobile
+menu grows from the profile out to the `<flux:dropdown>` and stops at the
+`<flux:header>`, which also holds the toggle a guest still needs.
+
+### The links a guest gets
+
+Only chrome with a log out in it is a user menu, and only a user menu is given a
+stand-in — there is no guest counterpart for a team switcher, so that is guarded
+with nothing in its place. Where there is one, a guest gets the way in the kit
+still has to offer: a log in link, and a register link beside it where
+registration survived `install:features`. The WorkOS kits hand registration to
+AuthKit and have no `register` route at all, so they get the log in link alone —
+naming a route that is not there would throw rather than render.
+
+The links are written in the tag of
+[whichever library the project is ending on](/docs/using-refit/guide/libraries),
+so a Sheaf run gets `<x-ui.button>`, and they carry the guarded chrome's own
+classes, so a menu that was hidden at a breakpoint is replaced by links that are
+hidden there too.
+
+The one class that does not come across is the `display`. A button is laid out as
+a flex row, so the sidebar menu's `lg:block` would leave the button's own
+`justify-center` with nothing to centre and the label would stop sitting in the
+middle of it. Nothing is needed in its place either: what decides the menu's
+width is the sidebar it is a flex child of, and the link is one too. So the
+sidebar's `hidden lg:block` becomes `hidden lg:inline-flex` — hidden on mobile as
+the desktop menu was, and filling the sidebar as it did — while a display
+standing on its own, with no variant holding a `hidden` up, is simply dropped.
+
+Register is the one to press, the way the kit's own welcome page has it, and log
+in is the quieter half of the pair. The variants are the only styling refit
+writes, and both are said outright rather than left to a default: writing no
+variant means an outline button in Flux and the prominent one in Sheaf, so a pair
+with one of them bare would read as two buttons to press there.
+
+`variant="primary"` needs no translating — it is the one variant name Flux and
+Sheaf share outright, so it survives a target's rename pass untouched. The quiet
+one is not shared, so it is asked of the library the project is ending on: Flux's
+`subtle`, Sheaf's `ghost`.
+
+Where there are two of them they go in a box of their own, because the chrome
+they replace was one element and its parent laid it out as one. `<flux:header>`
+gives its children no room between them — it is the children that ask, `mr-2` on
+the sidebar toggle and `me-1.5` on the icon navbar — so two links standing loose
+in it come out touching. The box asks the parent for nothing and gives the room
+itself, which is also why the guarded chrome's classes go on the box rather than
+on each link.
+
+The box says nothing about how it displays where the kit's own classes already
+settle it. A bare `flex` beside the kit's `hidden` is two display utilities in
+one layer, and then the stylesheet's order decides which wins rather than
+anything in the file. So the sidebar's box reads `hidden lg:flex` where the menu
+read `hidden lg:block`, and the header's, carrying no classes of its own, simply
+says `flex`. Only a display standing on its own counts as settling it: Sheaf's
+rail hides its menu with `max-md:hidden` and leaves every other size to the
+element itself, so that box says `flex` too.
+
+The links themselves get `flex-1`, an equal part of the box each. The box is as
+wide as whatever it stands in, and in the sidebar that is the whole of it — so
+without that the pair would sit at the width of its own labels with the rest of
+the line empty beside it. A lone log in link needs none of this: no box, no
+share, and no class at all where the chrome it replaces had none.
+
+Past that the point is that a guest has somewhere to go, not that refit has
+styled your chrome — reorder them, stack them, move them, which the run report
+says as well.
+
+### What is left alone
+
+Only the application family. The auth layouts render for a guest already, that
+being their whole job, and every other view holding an `auth()->user()` sits
+behind an `auth` middleware — guarding those would answer a question nobody
+asked. Chrome already inside an `@auth` or `@guest` you wrote yourself is left as
+it is.
+
+The task runs after the other layout tasks and after a library has written its
+own chrome, so it guards the shell in whatever shape it ended up in — folded into
+`layouts/app.blade.php`, or rewritten from
+[Sheaf's stubs](/docs/using-refit/guide/libraries). Pass your own family to the
+constructor if your shell is called something else:
+
+```php
+use Onelegstudios\Refit\Facades\Refit;
+use Onelegstudios\Refit\Tasks\OpenLayoutsToGuests;
+
+Refit::task(new OpenLayoutsToGuests('marketing'));
 ```
 
 ## Delete the layouts the kit does not render
