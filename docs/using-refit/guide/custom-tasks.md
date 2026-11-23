@@ -116,9 +116,7 @@ use Onelegstudios\Refit\Questions\{Answers, Question};
 
 final class PositionToasts implements Asks, Task
 {
-    public function __construct(
-        private readonly Answers $answers = new Answers(['corner' => 'top end']),
-    ) {}
+    public function __construct(private readonly string $corner = 'top end') {}
 
     // key(), group(), label(), hint() and appliesTo() as before
 
@@ -126,19 +124,19 @@ final class PositionToasts implements Asks, Task
     {
         return [new Question(
             key: 'corner',
-            label: 'Where should the toasts stack?',
+            label: 'Which corner should the toasts stack in?',
             options: [
-                'top end' => 'Top right, clear of the sidebar footer',
-                'top center' => 'Top centre',
-                'bottom end' => 'Leave them where Flux puts them',
+                'top end' => 'Top right, opposite the sidebar',
+                'top center' => 'Top centre, like a banner',
+                'top start' => 'Top left, above the sidebar',
             ],
-            hint: 'The group positions every toast inside it.',
+            hint: 'They cover whatever is under them.',
         )];
     }
 
     public function answered(Answers $answers): Task
     {
-        return new self($answers);
+        return new self($answers->get('corner'));
     }
 
     public function contribute(Plan $plan, Project $project, Report $report): void
@@ -146,7 +144,7 @@ final class PositionToasts implements Asks, Task
         $plan->add(Stage::Reconcile, new AddAttribute(
             'flux:toast.group',
             'position',
-            $this->answers->get('corner'),
+            $this->corner,
         ));
     }
 }
@@ -156,6 +154,9 @@ final class PositionToasts implements Asks, Task
 |---|---|
 | `questions()` | The questions to put before this task plans anything |
 | `answered()` | The task to plan with, now that they have answers |
+
+That is [`toasts-at-top`](/docs/using-refit/guide/tasks#show-toasts-at-the-top-of-the-screen)
+with the name changed — the one task refit ships that asks anything.
 
 Nothing is asked of a task the user did not pick, so nobody answers a question
 about work that is not going to happen. And nothing is asked until the library
@@ -209,6 +210,11 @@ about is present and holds one of the options you offered.
 instance stays answer-free and one run cannot leak its choices into the next.
 Give the constructor a default so the task still plans when nobody has answered
 anything — a test calling `contribute()` directly, for one.
+
+Take the answer as the thing it means — a corner, a path, a family of layouts —
+rather than holding the whole `Answers`, and the constructor stays worth calling
+by hand. Hold the `Answers` when there are several and unpacking them is the
+noise.
 
 It returns a `Task` rather than `static` on purpose: a fork wide enough to
 deserve a class of its own can be one, and the task that asked the question hands

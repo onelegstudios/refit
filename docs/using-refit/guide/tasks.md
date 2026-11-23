@@ -221,7 +221,22 @@ missing, and nothing else:
 </flux:toast.group>
 ```
 
-A group that already carries a `position` is left as it is.
+Which top corner is a follow-up question, because the project cannot answer it:
+all three are equally true of it, and your own layout is the only thing that
+makes one better than another.
+
+| Answer | Where they stack |
+|---|---|
+| `top end` | Top right, opposite the sidebar — the default |
+| `top center` | Top centre, like a banner |
+| `top start` | Top left, above the sidebar |
+
+Without prompts that is
+`--answers='{"tasks":["toasts-at-top"],"toasts-at-top":{"corner":"top center"}}'`.
+See [running without prompts](/docs/using-refit/guide/the-refit-command#running-without-prompts).
+
+A group that already carries a `position` is left as it is, whichever corner you
+picked here.
 
 ## Flatten the layout folders
 

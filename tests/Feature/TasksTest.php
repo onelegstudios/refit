@@ -12,6 +12,7 @@ use Onelegstudios\Refit\Plan\Report;
 use Onelegstudios\Refit\Project\Feature;
 use Onelegstudios\Refit\Project\Project;
 use Onelegstudios\Refit\Project\ProjectDetector;
+use Onelegstudios\Refit\Questions\Answers;
 use Onelegstudios\Refit\Refit;
 use Onelegstudios\Refit\Tasks\FlattenLayouts;
 use Onelegstudios\Refit\Tasks\KeepOneLayout;
@@ -522,6 +523,30 @@ it('positions every toast group at the top', function (string $kit): void {
         expect($project->get($path))->toContain('<flux:toast.group position="top end">');
     }
 })->with(starterKits());
+
+it('offers the toast corners along the top, right-hand one first', function (): void {
+    $questions = (new MoveToastsToTop)->questions(detectFixture('livewire'));
+
+    expect($questions)->toHaveCount(1)
+        ->and($questions[0]->key)->toBe('corner')
+        ->and(array_keys($questions[0]->options))->toBe(['top end', 'top center', 'top start'])
+        ->and($questions[0]->default())->toBe('top end');
+});
+
+it('positions the toast groups in the corner it was answered with', function (): void {
+    [$project] = runTask((new MoveToastsToTop)->answered(new Answers(['corner' => 'top center'])), 'livewire');
+
+    $layouts = array_values(array_filter(
+        $project->blades(),
+        fn (string $path): bool => str_contains($project->get($path), '<flux:toast.group'),
+    ));
+
+    expect($layouts)->not->toBeEmpty();
+
+    foreach ($layouts as $path) {
+        expect($project->get($path))->toContain('<flux:toast.group position="top center">');
+    }
+});
 
 it('has nothing left to do once the toasts are at the top', function (): void {
     [$project] = runTask(new MoveToastsToTop, 'livewire');

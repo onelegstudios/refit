@@ -53,6 +53,38 @@ it('applies the answers it is given without prompting', function (): void {
         ->and(is_file($root.'/resources/views/flux/icon/house.blade.php'))->toBeTrue();
 });
 
+it('asks a chosen task its own question before planning', function (): void {
+    $root = useKit('livewire');
+
+    $this->artisan('refit', ['--force' => true])
+        ->expectsQuestion('Which component library should this project end up on?', 'flux')
+        ->expectsQuestion('The kit ships Heroicons with a few Lucide icons vendored in. What would you like?', 'keep')
+        ->expectsQuestion('Which tasks would you like to run?', ['toasts-at-top'])
+        ->expectsQuestion('Which corner should the toasts stack in?', 'top center')
+        ->expectsQuestion('Apply these changes?', true)
+        ->expectsQuestion('Remove refit from this project now?', false)
+        ->assertSuccessful();
+
+    expect(file_get_contents($root.'/resources/views/layouts/app/sidebar.blade.php'))
+        ->toContain('<flux:toast.group position="top center">');
+});
+
+it('hands a task the answers --answers holds under its own key', function (): void {
+    $root = useKit('livewire');
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'icons' => 'keep',
+            'tasks' => ['toasts-at-top'],
+            'toasts-at-top' => ['corner' => 'top start'],
+        ]),
+    ])->assertSuccessful();
+
+    expect(file_get_contents($root.'/resources/views/layouts/app/sidebar.blade.php'))
+        ->toContain('<flux:toast.group position="top start">');
+});
+
 it('reports a plan with nothing in it rather than pretending to work', function (): void {
     useKit('livewire');
 

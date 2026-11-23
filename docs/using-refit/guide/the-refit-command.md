@@ -76,10 +76,10 @@ the next:
    are never asked to pick something that would do nothing. See
    [Tasks](/docs/using-refit/guide/tasks).
 
-A task can then ask a follow-up question of its own — which corner, which
-variant — and only the tasks you picked get to ask. Nothing refit ships does yet;
-[writing your own task](/docs/using-refit/guide/custom-tasks#asking-a-follow-up-question)
-is where that interface lives.
+A task can then ask a follow-up question of its own, and only the tasks you
+picked get to ask. [Show toasts at the top](/docs/using-refit/guide/tasks#show-toasts-at-the-top-of-the-screen)
+is the one that does — it wants to know which corner. The interface behind it is
+in [writing your own task](/docs/using-refit/guide/custom-tasks#asking-a-follow-up-question).
 
 ## Plan
 
