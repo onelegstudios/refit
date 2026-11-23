@@ -116,7 +116,7 @@ use Onelegstudios\Refit\Questions\{Answers, Question};
 
 final class PositionToasts implements Asks, Task
 {
-    public function __construct(private readonly string $corner = 'top end') {}
+    public function __construct(private readonly string $corner = 'top-right') {}
 
     // key(), group(), label(), hint() and appliesTo() as before
 
@@ -126,9 +126,9 @@ final class PositionToasts implements Asks, Task
             key: 'corner',
             label: 'Which corner should the toasts stack in?',
             options: [
-                'top end' => 'Top right, opposite the sidebar',
-                'top center' => 'Top centre, like a banner',
-                'bottom start' => 'Bottom left, over the sidebar footer',
+                'top-right' => 'Top right, opposite the sidebar',
+                'top-center' => 'Top centre, like a banner',
+                'bottom-left' => 'Bottom left, over the sidebar footer',
             ],
             hint: 'They cover whatever is under them.',
         )];
@@ -182,19 +182,27 @@ them where they are" tell the reader more than "Yes" and "No" ever do, the same
 way an action's `describe()` has to.
 
 A question left with a single option is not asked — its one answer is taken as
-given. That is what makes a question safe to narrow to what the kit in front of
-you can actually take:
+given. That is what makes a question safe to narrow to what the project in front
+of you can actually take, which is why `questions()` is handed the `Project` at
+all. The shipped task narrows on the target: an answer is a corner rather than an
+attribute value, and the two midpoints are dropped on a run heading for Sheaf,
+whose toast reads four literal corners and nothing else.
 
 ```php
 public function questions(Project $project): array
 {
-    return [new Question(
-        key: 'variant',
-        label: 'Which shell should survive?',
-        options: $this->variantsPresentIn($project),
+    $corners = $this->cornersFor($project->target);
+
+    return $corners === [] ? [] : [new Question(
+        key: 'corner',
+        label: 'Which corner should the toasts stack in?',
+        options: $corners,
     )];
 }
 ```
+
+Returning no questions at all is how a task that has nothing to ask of *this*
+project stays quiet without a second interface.
 
 ### Answers
 
@@ -204,7 +212,7 @@ about is present and holds one of the options you offered.
 | Call | What it gives you |
 |---|---|
 | `get('corner')` | The option chosen, or `''` for a key nothing asked about |
-| `is('corner', 'top end')` | The same comparison, read as a sentence |
+| `is('corner', 'top-right')` | The same comparison, read as a sentence |
 | `all()` | Every answer, keyed by question |
 
 `answered()` hands back a task rather than mutating this one, so the registered
@@ -236,7 +244,7 @@ A task reads its answers out of [`--answers`](/docs/using-refit/guide/the-refit-
 under a key of its own, beside `library`, `icons` and `tasks`:
 
 ```bash
-php artisan refit --answers='{"tasks":["position-toasts"],"position-toasts":{"corner":"bottom start"}}'
+php artisan refit --answers='{"tasks":["position-toasts"],"position-toasts":{"corner":"bottom-left"}}'
 ```
 
 An answer that is missing, or that the question never offered, falls back to the

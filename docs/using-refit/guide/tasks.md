@@ -223,26 +223,36 @@ else:
 
 Which corner is a follow-up question, because the project cannot answer it: they
 are all equally true of it, and your own layout is the only thing that makes one
-better than another. Flux reads the attribute as one of `top`/`bottom` and one of
-`start`/`center`/`end`, so every corner and both midpoints are on offer:
+better than another.
 
-| Answer | Where they stack |
-|---|---|
-| `top end` | Top right, opposite the sidebar — the default, and where this task used to put them |
-| `top center` | Top centre, like a banner |
-| `top start` | Top left, over the sidebar header |
-| `bottom center` | Bottom centre |
-| `bottom start` | Bottom left, over the sidebar footer |
+| Answer | Where they stack | On Flux | On Sheaf |
+|---|---|---|---|
+| `top-right` | Top right, opposite the sidebar — the default | `top end` | `top-right` |
+| `top-center` | Top centre, like a banner | `top center` | — |
+| `top-left` | Top left, over the sidebar header | `top start` | `top-left` |
+| `bottom-center` | Bottom centre | `bottom center` | — |
+| `bottom-left` | Bottom left, over the sidebar footer | `bottom start` | `bottom-left` |
 
-The bottom right is the one answer missing, because it is the one you already
-have. Leaving the task unpicked is how you keep it.
+You answer with a corner rather than an attribute value, because the two
+libraries disagree on both the spelling and the range. Flux reads one of
+`top`/`bottom` and one of `start`/`center`/`end`, where `start` and `end` follow
+the text direction. Sheaf's toast reads four literal corners and falls back to
+its own default for anything else — so the two midpoints are not offered at all
+on a run heading for Sheaf.
+
+The bottom right is the one corner nobody is offered, because it is the one every
+project already has. Leaving the task unpicked is how you keep it.
 
 Without prompts that is
-`--answers='{"tasks":["position-toasts"],"position-toasts":{"corner":"bottom start"}}'`.
-See [running without prompts](/docs/using-refit/guide/the-refit-command#running-without-prompts).
+`--answers='{"tasks":["position-toasts"],"position-toasts":{"corner":"bottom-left"}}'`,
+whichever library you are heading for. See
+[running without prompts](/docs/using-refit/guide/the-refit-command#running-without-prompts).
 
-A group that already carries a `position` is left as it is, whichever corner you
-picked here.
+The attribute lands on whatever the container is called by the time the plan
+runs: `<flux:toast.group>` on a project staying with Flux, `<x-ui.toast>` on one
+moving to Sheaf, which the migration has renamed it to earlier in the same pass.
+A container that already carries a `position` is left as it is, whichever corner
+you picked here.
 
 ## Flatten the layout folders
 

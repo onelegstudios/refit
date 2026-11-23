@@ -60,7 +60,7 @@ it('asks a chosen task its own question before planning', function (): void {
         ->expectsQuestion('Which component library should this project end up on?', 'flux')
         ->expectsQuestion('The kit ships Heroicons with a few Lucide icons vendored in. What would you like?', 'keep')
         ->expectsQuestion('Which tasks would you like to run?', ['position-toasts'])
-        ->expectsQuestion('Which corner should the toasts stack in?', 'bottom start')
+        ->expectsQuestion('Which corner should the toasts stack in?', 'bottom-left')
         ->expectsQuestion('Apply these changes?', true)
         ->expectsQuestion('Remove refit from this project now?', false)
         ->assertSuccessful();
@@ -77,7 +77,7 @@ it('hands a task the answers --answers holds under its own key', function (): vo
         '--answers' => json_encode([
             'icons' => 'keep',
             'tasks' => ['position-toasts'],
-            'position-toasts' => ['corner' => 'top start'],
+            'position-toasts' => ['corner' => 'top-left'],
         ]),
     ])->assertSuccessful();
 

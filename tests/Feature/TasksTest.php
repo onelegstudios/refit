@@ -525,21 +525,30 @@ it('puts every toast group in the top right when nothing was answered', function
 })->with(starterKits());
 
 it('offers every corner but the one the project already has', function (): void {
-    $questions = (new PositionToasts)->questions(detectFixture('livewire'));
+    $questions = (new PositionToasts)->questions(detectFixture('livewire')->targeting(new FluxLibrary));
 
     expect($questions)->toHaveCount(1)
         ->and($questions[0]->key)->toBe('corner')
         ->and(array_keys($questions[0]->options))->toBe([
-            'top end',
-            'top center',
-            'top start',
-            'bottom center',
-            'bottom start',
+            'top-right',
+            'top-center',
+            'top-left',
+            'bottom-center',
+            'bottom-left',
         ])
-        ->and($questions[0]->default())->toBe('top end');
+        ->and($questions[0]->default())->toBe('top-right');
 });
 
-it('positions the toast groups in the corner it was answered with', function (string $corner): void {
+it('offers a project leaving Flux only the corners its target can reach', function (): void {
+    // Sheaf's toast reads four literal corners and falls back to its own default
+    // for anything else, so the two midpoints are not answers on a Sheaf run.
+    $questions = (new PositionToasts)->questions(detectFixture('livewire')->targeting(new SheafLibrary));
+
+    expect(array_keys($questions[0]->options))->toBe(['top-right', 'top-left', 'bottom-left'])
+        ->and($questions[0]->default())->toBe('top-right');
+});
+
+it('spells the answered corner the way Flux reads it', function (string $corner, string $position): void {
     [$project] = runTask((new PositionToasts)->answered(new Answers(['corner' => $corner])), 'livewire');
 
     $layouts = array_values(array_filter(
@@ -550,14 +559,56 @@ it('positions the toast groups in the corner it was answered with', function (st
     expect($layouts)->not->toBeEmpty();
 
     foreach ($layouts as $path) {
-        expect($project->get($path))->toContain(sprintf('<flux:toast.group position="%s">', $corner));
+        expect($project->get($path))->toContain(sprintf('<flux:toast.group position="%s">', $position));
     }
-})->with(['top center', 'top start', 'bottom center', 'bottom start']);
+})->with([
+    ['top-center', 'top center'],
+    ['top-left', 'top start'],
+    ['bottom-center', 'bottom center'],
+    ['bottom-left', 'bottom start'],
+]);
+
+it('spells the answered corner the way Sheaf reads it, on the tag Sheaf uses', function (): void {
+    $root = sheafKit('livewire');
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'library' => 'sheaf',
+            'icons' => 'heroicons',
+            'tasks' => ['position-toasts'],
+            'position-toasts' => ['corner' => 'top-left'],
+        ]),
+    ])->assertSuccessful();
+
+    $project = (new ProjectDetector)->detect($root);
+
+    $containers = array_values(array_filter(
+        $project->blades(),
+        fn (string $path): bool => str_contains($project->get($path), '<x-ui.toast'),
+    ));
+
+    expect($containers)->not->toBeEmpty();
+
+    foreach ($containers as $path) {
+        expect($project->get($path))->toContain('<x-ui.toast position="top-left"');
+    }
+});
 
 it('has nothing left to do once the toasts have a position', function (): void {
     [$project] = runTask(new PositionToasts, 'livewire');
 
-    expect((new PositionToasts)->appliesTo($project))->toBeFalse();
+    expect((new PositionToasts)->appliesTo($project->targeting(new FluxLibrary)))->toBeFalse();
+});
+
+it('is offered whichever library the project is heading for', function (): void {
+    $offered = fn (object $library): array => array_map(
+        fn (Task $task): string => $task->key(),
+        app(Refit::class)->tasksFor(detectFixture('livewire')->targeting($library)),
+    );
+
+    expect($offered(new FluxLibrary))->toContain('position-toasts')
+        ->and($offered(new SheafLibrary))->toContain('position-toasts');
 });
 
 it('keeps a toast group that already chose a position', function (): void {
