@@ -76,6 +76,11 @@ the next:
    are never asked to pick something that would do nothing. See
    [Tasks](/docs/using-refit/guide/tasks).
 
+A task can then ask a follow-up question of its own — which corner, which
+variant — and only the tasks you picked get to ask. Nothing refit ships does yet;
+[writing your own task](/docs/using-refit/guide/custom-tasks#asking-a-follow-up-question)
+is where that interface lives.
+
 ## Plan
 
 Your answers become a list of actions, sorted into stages that run in order:
@@ -130,6 +135,7 @@ php artisan refit --answers='{"icons":"lucide","tasks":["partials-to-components"
 | `library` | `flux` or `sheaf`. Omitted means `flux`, which is what the kit ships. An unregistered key fails the run rather than falling back |
 | `icons` | An icon set your chosen library offers. Anything else falls back to that library's first choice |
 | `tasks` | A list of task keys. Unknown keys are ignored — see [Tasks](/docs/using-refit/guide/tasks) for the list |
+| A task's own key | An object of that task's follow-up answers, for a task that asks any. A missing or unoffered answer falls back to the question's default |
 
 With `--answers` there is no confirmation step (passing answers *is* the
 confirmation) and no offer to remove refit at the end. Combine it with
