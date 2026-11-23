@@ -61,6 +61,10 @@ final class FluxLibrary implements Library
             // keyword such as `outline`, not a name, and translating it would
             // corrupt the tag.
             nameAttributes: ['icon', 'icon-leading', 'icon-trailing', 'icon:leading', 'icon:trailing'],
+            // Flux's own quiet button. `ghost` is the one beside it on the scale
+            // and is not this: it keeps a hover surface, which reads as a control
+            // waiting to be used rather than the lesser of two choices.
+            quietVariant: 'subtle',
             // The kit writes all three forms: `<flux:icon.key />`, `icon="key"`,
             // and `<flux:icon name="key" />`.
             dottedIconTag: 'flux:icon.',

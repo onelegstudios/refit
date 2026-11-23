@@ -35,6 +35,7 @@ return [
         MoveToastsToTop::class,
         KeepOneLayout::class,
         FlattenLayouts::class,
+        OpenLayoutsToGuests::class,
         RemoveFluxProSource::class,
         RemoveFluxOverrides::class,
     ],
