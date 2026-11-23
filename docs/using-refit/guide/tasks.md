@@ -16,7 +16,7 @@ something that would do nothing.
 | Structure | Move the auth views out of pages | `auth-views-out-of-pages` |
 | Structure | Move the non-page components out of pages | `components-out-of-pages` |
 | Structure | Group components into folders | `namespace-components` |
-| Structure | Show toasts at the top of the screen | `toasts-at-top` |
+| Structure | Move the toast stack to another corner | `position-toasts` |
 | Structure | Flatten the layout folders | `flatten-layouts` |
 | Structure | Let the app layouts render for a guest | `guests-in-app-layouts` |
 | Cleanup | Delete the layouts the kit does not render | `single-layout` |
@@ -208,12 +208,12 @@ use Onelegstudios\Refit\Tasks\NamespaceComponents;
 Refit::task(new NamespaceComponents(['app-logo' => 'marketing/logo'], fallback: 'shared'));
 ```
 
-## Show toasts at the top of the screen
+## Move the toast stack to another corner
 
 The kit renders a bare `<flux:toast.group>` in every layout, which leaves Flux on
-its `bottom end` default — the corner a sidebar footer, a cookie bar or a mobile
-keyboard tends to occupy. Moving the toasts up adds the position the group was
-missing, and nothing else:
+its `bottom end` default — the corner a cookie bar or a mobile keyboard tends to
+occupy. Moving the stack adds the position the group was missing, and nothing
+else:
 
 ```blade
 <flux:toast.group position="top end">
@@ -221,7 +221,38 @@ missing, and nothing else:
 </flux:toast.group>
 ```
 
-A group that already carries a `position` is left as it is.
+Which corner is a follow-up question, because the project cannot answer it: they
+are all equally true of it, and your own layout is the only thing that makes one
+better than another.
+
+| Answer | Where they stack | On Flux | On Sheaf |
+|---|---|---|---|
+| `top-right` | Top right, opposite the sidebar — the default | `top end` | `top-right` |
+| `top-center` | Top centre, like a banner | `top center` | — |
+| `top-left` | Top left, over the sidebar header | `top start` | `top-left` |
+| `bottom-center` | Bottom centre | `bottom center` | — |
+| `bottom-left` | Bottom left, over the sidebar footer | `bottom start` | `bottom-left` |
+
+You answer with a corner rather than an attribute value, because the two
+libraries disagree on both the spelling and the range. Flux reads one of
+`top`/`bottom` and one of `start`/`center`/`end`, where `start` and `end` follow
+the text direction. Sheaf's toast reads four literal corners and falls back to
+its own default for anything else — so the two midpoints are not offered at all
+on a run heading for Sheaf.
+
+The bottom right is the one corner nobody is offered, because it is the one every
+project already has. Leaving the task unpicked is how you keep it.
+
+Without prompts that is
+`--answers='{"tasks":["position-toasts"],"position-toasts":{"corner":"bottom-left"}}'`,
+whichever library you are heading for. See
+[running without prompts](/docs/using-refit/guide/the-refit-command#running-without-prompts).
+
+The attribute lands on whatever the container is called by the time the plan
+runs: `<flux:toast.group>` on a project staying with Flux, `<x-ui.toast>` on one
+moving to Sheaf, which the migration has renamed it to earlier in the same pass.
+A container that already carries a `position` is left as it is, whichever corner
+you picked here.
 
 ## Flatten the layout folders
 

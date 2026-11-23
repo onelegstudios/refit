@@ -116,9 +116,7 @@ use Onelegstudios\Refit\Questions\{Answers, Question};
 
 final class PositionToasts implements Asks, Task
 {
-    public function __construct(
-        private readonly Answers $answers = new Answers(['corner' => 'top end']),
-    ) {}
+    public function __construct(private readonly string $corner = 'top-right') {}
 
     // key(), group(), label(), hint() and appliesTo() as before
 
@@ -126,19 +124,19 @@ final class PositionToasts implements Asks, Task
     {
         return [new Question(
             key: 'corner',
-            label: 'Where should the toasts stack?',
+            label: 'Which corner should the toasts stack in?',
             options: [
-                'top end' => 'Top right, clear of the sidebar footer',
-                'top center' => 'Top centre',
-                'bottom end' => 'Leave them where Flux puts them',
+                'top-right' => 'Top right, opposite the sidebar',
+                'top-center' => 'Top centre, like a banner',
+                'bottom-left' => 'Bottom left, over the sidebar footer',
             ],
-            hint: 'The group positions every toast inside it.',
+            hint: 'They cover whatever is under them.',
         )];
     }
 
     public function answered(Answers $answers): Task
     {
-        return new self($answers);
+        return new self($answers->get('corner'));
     }
 
     public function contribute(Plan $plan, Project $project, Report $report): void
@@ -146,7 +144,7 @@ final class PositionToasts implements Asks, Task
         $plan->add(Stage::Reconcile, new AddAttribute(
             'flux:toast.group',
             'position',
-            $this->answers->get('corner'),
+            $this->corner,
         ));
     }
 }
@@ -156,6 +154,10 @@ final class PositionToasts implements Asks, Task
 |---|---|
 | `questions()` | The questions to put before this task plans anything |
 | `answered()` | The task to plan with, now that they have answers |
+
+That is refit's own [`position-toasts`](/docs/using-refit/guide/tasks#move-the-toast-stack-to-another-corner),
+trimmed to the parts this section is about — the one task it ships that asks
+anything.
 
 Nothing is asked of a task the user did not pick, so nobody answers a question
 about work that is not going to happen. And nothing is asked until the library
@@ -180,19 +182,27 @@ them where they are" tell the reader more than "Yes" and "No" ever do, the same
 way an action's `describe()` has to.
 
 A question left with a single option is not asked — its one answer is taken as
-given. That is what makes a question safe to narrow to what the kit in front of
-you can actually take:
+given. That is what makes a question safe to narrow to what the project in front
+of you can actually take, which is why `questions()` is handed the `Project` at
+all. The shipped task narrows on the target: an answer is a corner rather than an
+attribute value, and the two midpoints are dropped on a run heading for Sheaf,
+whose toast reads four literal corners and nothing else.
 
 ```php
 public function questions(Project $project): array
 {
-    return [new Question(
-        key: 'variant',
-        label: 'Which shell should survive?',
-        options: $this->variantsPresentIn($project),
+    $corners = $this->cornersFor($project->target);
+
+    return $corners === [] ? [] : [new Question(
+        key: 'corner',
+        label: 'Which corner should the toasts stack in?',
+        options: $corners,
     )];
 }
 ```
+
+Returning no questions at all is how a task that has nothing to ask of *this*
+project stays quiet without a second interface.
 
 ### Answers
 
@@ -202,13 +212,18 @@ about is present and holds one of the options you offered.
 | Call | What it gives you |
 |---|---|
 | `get('corner')` | The option chosen, or `''` for a key nothing asked about |
-| `is('corner', 'top end')` | The same comparison, read as a sentence |
+| `is('corner', 'top-right')` | The same comparison, read as a sentence |
 | `all()` | Every answer, keyed by question |
 
 `answered()` hands back a task rather than mutating this one, so the registered
 instance stays answer-free and one run cannot leak its choices into the next.
 Give the constructor a default so the task still plans when nobody has answered
 anything — a test calling `contribute()` directly, for one.
+
+Take the answer as the thing it means — a corner, a path, a family of layouts —
+rather than holding the whole `Answers`, and the constructor stays worth calling
+by hand. Hold the `Answers` when there are several and unpacking them is the
+noise.
 
 It returns a `Task` rather than `static` on purpose: a fork wide enough to
 deserve a class of its own can be one, and the task that asked the question hands
@@ -229,7 +244,7 @@ A task reads its answers out of [`--answers`](/docs/using-refit/guide/the-refit-
 under a key of its own, beside `library`, `icons` and `tasks`:
 
 ```bash
-php artisan refit --answers='{"tasks":["toasts-at-top"],"toasts-at-top":{"corner":"top center"}}'
+php artisan refit --answers='{"tasks":["position-toasts"],"position-toasts":{"corner":"bottom-left"}}'
 ```
 
 An answer that is missing, or that the question never offered, falls back to the

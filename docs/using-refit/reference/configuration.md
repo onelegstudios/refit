@@ -32,7 +32,7 @@ return [
         MoveAuthViewsOutOfPages::class,
         MoveComponentsOutOfPages::class,
         NamespaceComponents::class,
-        MoveToastsToTop::class,
+        PositionToasts::class,
         KeepOneLayout::class,
         FlattenLayouts::class,
         OpenLayoutsToGuests::class,

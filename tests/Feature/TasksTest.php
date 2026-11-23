@@ -12,14 +12,15 @@ use Onelegstudios\Refit\Plan\Report;
 use Onelegstudios\Refit\Project\Feature;
 use Onelegstudios\Refit\Project\Project;
 use Onelegstudios\Refit\Project\ProjectDetector;
+use Onelegstudios\Refit\Questions\Answers;
 use Onelegstudios\Refit\Refit;
 use Onelegstudios\Refit\Tasks\FlattenLayouts;
 use Onelegstudios\Refit\Tasks\KeepOneLayout;
 use Onelegstudios\Refit\Tasks\MoveAuthViewsOutOfPages;
 use Onelegstudios\Refit\Tasks\MoveComponentsOutOfPages;
-use Onelegstudios\Refit\Tasks\MoveToastsToTop;
 use Onelegstudios\Refit\Tasks\NamespaceComponents;
 use Onelegstudios\Refit\Tasks\OpenLayoutsToGuests;
+use Onelegstudios\Refit\Tasks\PositionToasts;
 use Onelegstudios\Refit\Tasks\PromotePartialsToComponents;
 use Onelegstudios\Refit\Tasks\RemoveFluxOverrides;
 use Onelegstudios\Refit\Tasks\RemoveFluxProSource;
@@ -52,7 +53,7 @@ it('registers the configured tasks', function (): void {
             'auth-views-out-of-pages',
             'components-out-of-pages',
             'namespace-components',
-            'toasts-at-top',
+            'position-toasts',
             'single-layout',
             'flatten-layouts',
             'guests-in-app-layouts',
@@ -508,8 +509,8 @@ it('has nothing left to flatten once the folders are gone', function (): void {
     expect((new FlattenLayouts)->appliesTo($project))->toBeFalse();
 });
 
-it('positions every toast group at the top', function (string $kit): void {
-    [$project] = runTask(new MoveToastsToTop, $kit);
+it('puts every toast group in the top right when nothing was answered', function (string $kit): void {
+    [$project] = runTask(new PositionToasts, $kit);
 
     $layouts = array_values(array_filter(
         $project->blades(),
@@ -523,10 +524,91 @@ it('positions every toast group at the top', function (string $kit): void {
     }
 })->with(starterKits());
 
-it('has nothing left to do once the toasts are at the top', function (): void {
-    [$project] = runTask(new MoveToastsToTop, 'livewire');
+it('offers every corner but the one the project already has', function (): void {
+    $questions = (new PositionToasts)->questions(detectFixture('livewire')->targeting(new FluxLibrary));
 
-    expect((new MoveToastsToTop)->appliesTo($project))->toBeFalse();
+    expect($questions)->toHaveCount(1)
+        ->and($questions[0]->key)->toBe('corner')
+        ->and(array_keys($questions[0]->options))->toBe([
+            'top-right',
+            'top-center',
+            'top-left',
+            'bottom-center',
+            'bottom-left',
+        ])
+        ->and($questions[0]->default())->toBe('top-right');
+});
+
+it('offers a project leaving Flux only the corners its target can reach', function (): void {
+    // Sheaf's toast reads four literal corners and falls back to its own default
+    // for anything else, so the two midpoints are not answers on a Sheaf run.
+    $questions = (new PositionToasts)->questions(detectFixture('livewire')->targeting(new SheafLibrary));
+
+    expect(array_keys($questions[0]->options))->toBe(['top-right', 'top-left', 'bottom-left'])
+        ->and($questions[0]->default())->toBe('top-right');
+});
+
+it('spells the answered corner the way Flux reads it', function (string $corner, string $position): void {
+    [$project] = runTask((new PositionToasts)->answered(new Answers(['corner' => $corner])), 'livewire');
+
+    $layouts = array_values(array_filter(
+        $project->blades(),
+        fn (string $path): bool => str_contains($project->get($path), '<flux:toast.group'),
+    ));
+
+    expect($layouts)->not->toBeEmpty();
+
+    foreach ($layouts as $path) {
+        expect($project->get($path))->toContain(sprintf('<flux:toast.group position="%s">', $position));
+    }
+})->with([
+    ['top-center', 'top center'],
+    ['top-left', 'top start'],
+    ['bottom-center', 'bottom center'],
+    ['bottom-left', 'bottom start'],
+]);
+
+it('spells the answered corner the way Sheaf reads it, on the tag Sheaf uses', function (): void {
+    $root = sheafKit('livewire');
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'library' => 'sheaf',
+            'icons' => 'heroicons',
+            'tasks' => ['position-toasts'],
+            'position-toasts' => ['corner' => 'top-left'],
+        ]),
+    ])->assertSuccessful();
+
+    $project = (new ProjectDetector)->detect($root);
+
+    $containers = array_values(array_filter(
+        $project->blades(),
+        fn (string $path): bool => str_contains($project->get($path), '<x-ui.toast'),
+    ));
+
+    expect($containers)->not->toBeEmpty();
+
+    foreach ($containers as $path) {
+        expect($project->get($path))->toContain('<x-ui.toast position="top-left"');
+    }
+});
+
+it('has nothing left to do once the toasts have a position', function (): void {
+    [$project] = runTask(new PositionToasts, 'livewire');
+
+    expect((new PositionToasts)->appliesTo($project->targeting(new FluxLibrary)))->toBeFalse();
+});
+
+it('is offered whichever library the project is heading for', function (): void {
+    $offered = fn (object $library): array => array_map(
+        fn (Task $task): string => $task->key(),
+        app(Refit::class)->tasksFor(detectFixture('livewire')->targeting($library)),
+    );
+
+    expect($offered(new FluxLibrary))->toContain('position-toasts')
+        ->and($offered(new SheafLibrary))->toContain('position-toasts');
 });
 
 it('keeps a toast group that already chose a position', function (): void {
@@ -543,7 +625,7 @@ it('keeps a toast group that already chose a position', function (): void {
     $plan = new Plan;
     $report = new Report;
 
-    (new MoveToastsToTop)->contribute($plan, $project, $report);
+    (new PositionToasts)->contribute($plan, $project, $report);
     (new Applier)->apply($plan, $project, $report);
 
     expect($project->get($layout))
