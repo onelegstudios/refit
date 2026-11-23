@@ -16,28 +16,36 @@ use Onelegstudios\Refit\Questions\Answers;
 use Onelegstudios\Refit\Questions\Question;
 
 /**
- * Stack toasts at the top of the screen instead of the bottom.
+ * Stack the toasts in a corner of your choosing.
  *
  * Every kit renders a bare `<flux:toast.group>` in each layout, which leaves Flux
- * on its `bottom end` default — the corner a sidebar footer, a cookie bar or a
- * mobile keyboard tends to occupy. Adding a `position` moves the stack out of the
- * way, and is the whole change: the group positions the toasts inside it.
+ * on its `bottom end` default — the corner a cookie bar or a mobile keyboard
+ * tends to occupy. Giving the group a `position` moves the stack, and is the
+ * whole change: the group positions the toasts inside it.
  *
- * Which top corner is asked rather than decided, because the project cannot
- * answer it: all three are equally true of it, and the sidebar is the only thing
- * that makes one better than another. The right-hand corner is the default, so a
- * run that does not answer lands where this task has always put them.
+ * Which corner is asked rather than decided, because the project cannot answer
+ * it. Flux reads the attribute as one of `top`/`bottom` and one of
+ * `start`/`center`/`end`, so every corner and both midpoints are on offer — the
+ * top right by default, which is where this task has always put them, and the
+ * bottom left for a layout whose right-hand side is the busy one.
+ *
+ * The bottom right is the one answer missing, because it is the one the project
+ * already has. Leaving the task unpicked is how you keep it, and that is a
+ * cheaper way of saying so than an attribute that changes nothing.
  *
  * A group that already carries a position is left alone, so a project that has
  * made its own choice keeps it — whichever corner was picked here.
  */
-final class MoveToastsToTop implements Asks, Task
+final class PositionToasts implements Asks, Task
 {
     private const string TAG = 'flux:toast.group';
 
     private const string ATTRIBUTE = 'position';
 
-    private const string POSITION = 'top end';
+    /**
+     * Where a run that answers nothing puts them, and the first corner offered.
+     */
+    private const string CORNER = 'top end';
 
     /**
      * The corners on offer, and the line each is shown as.
@@ -47,17 +55,19 @@ final class MoveToastsToTop implements Asks, Task
     private const array CORNERS = [
         'top end' => 'Top right, opposite the sidebar',
         'top center' => 'Top centre, like a banner',
-        'top start' => 'Top left, above the sidebar',
+        'top start' => 'Top left, over the sidebar header',
+        'bottom center' => 'Bottom centre',
+        'bottom start' => 'Bottom left, over the sidebar footer',
     ];
 
     public function __construct(
-        private readonly string $position = self::POSITION,
+        private readonly string $position = self::CORNER,
         private readonly TagRewriter $rewriter = new TagRewriter,
     ) {}
 
     public function key(): string
     {
-        return 'toasts-at-top';
+        return 'position-toasts';
     }
 
     public function group(): TaskGroup
@@ -67,12 +77,12 @@ final class MoveToastsToTop implements Asks, Task
 
     public function label(): string
     {
-        return 'Show toasts at the top of the screen';
+        return 'Move the toast stack to another corner';
     }
 
     public function hint(): string
     {
-        return 'Puts a position on the <flux:toast.group> in every layout — you pick the corner';
+        return 'Puts a position on the <flux:toast.group> in every layout — you pick which';
     }
 
     public function appliesTo(Project $project): bool
@@ -101,7 +111,7 @@ final class MoveToastsToTop implements Asks, Task
             key: 'corner',
             label: 'Which corner should the toasts stack in?',
             options: self::CORNERS,
-            hint: 'They cover whatever is under them, so pick the corner your layout leaves free.',
+            hint: 'They cover whatever is under them. The bottom right is where Flux already puts them.',
         )];
     }
 

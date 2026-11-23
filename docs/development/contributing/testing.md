@@ -77,7 +77,7 @@ Plans are pure, so most task behaviour can be asserted without applying anything
 $project = detectFixture('livewire');
 $plan = new Plan;
 
-(new MoveToastsToTop)->contribute($plan, $project, new Report);
+(new PositionToasts)->contribute($plan, $project, new Report);
 
 expect($plan->describe())->toContain('  rewrite <flux:toast.group> -> <flux:toast.group position="top end">');
 ```

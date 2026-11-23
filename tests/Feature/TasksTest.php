@@ -18,9 +18,9 @@ use Onelegstudios\Refit\Tasks\FlattenLayouts;
 use Onelegstudios\Refit\Tasks\KeepOneLayout;
 use Onelegstudios\Refit\Tasks\MoveAuthViewsOutOfPages;
 use Onelegstudios\Refit\Tasks\MoveComponentsOutOfPages;
-use Onelegstudios\Refit\Tasks\MoveToastsToTop;
 use Onelegstudios\Refit\Tasks\NamespaceComponents;
 use Onelegstudios\Refit\Tasks\OpenLayoutsToGuests;
+use Onelegstudios\Refit\Tasks\PositionToasts;
 use Onelegstudios\Refit\Tasks\PromotePartialsToComponents;
 use Onelegstudios\Refit\Tasks\RemoveFluxOverrides;
 use Onelegstudios\Refit\Tasks\RemoveFluxProSource;
@@ -53,7 +53,7 @@ it('registers the configured tasks', function (): void {
             'auth-views-out-of-pages',
             'components-out-of-pages',
             'namespace-components',
-            'toasts-at-top',
+            'position-toasts',
             'single-layout',
             'flatten-layouts',
             'guests-in-app-layouts',
@@ -509,8 +509,8 @@ it('has nothing left to flatten once the folders are gone', function (): void {
     expect((new FlattenLayouts)->appliesTo($project))->toBeFalse();
 });
 
-it('positions every toast group at the top', function (string $kit): void {
-    [$project] = runTask(new MoveToastsToTop, $kit);
+it('puts every toast group in the top right when nothing was answered', function (string $kit): void {
+    [$project] = runTask(new PositionToasts, $kit);
 
     $layouts = array_values(array_filter(
         $project->blades(),
@@ -524,17 +524,23 @@ it('positions every toast group at the top', function (string $kit): void {
     }
 })->with(starterKits());
 
-it('offers the toast corners along the top, right-hand one first', function (): void {
-    $questions = (new MoveToastsToTop)->questions(detectFixture('livewire'));
+it('offers every corner but the one the project already has', function (): void {
+    $questions = (new PositionToasts)->questions(detectFixture('livewire'));
 
     expect($questions)->toHaveCount(1)
         ->and($questions[0]->key)->toBe('corner')
-        ->and(array_keys($questions[0]->options))->toBe(['top end', 'top center', 'top start'])
+        ->and(array_keys($questions[0]->options))->toBe([
+            'top end',
+            'top center',
+            'top start',
+            'bottom center',
+            'bottom start',
+        ])
         ->and($questions[0]->default())->toBe('top end');
 });
 
-it('positions the toast groups in the corner it was answered with', function (): void {
-    [$project] = runTask((new MoveToastsToTop)->answered(new Answers(['corner' => 'top center'])), 'livewire');
+it('positions the toast groups in the corner it was answered with', function (string $corner): void {
+    [$project] = runTask((new PositionToasts)->answered(new Answers(['corner' => $corner])), 'livewire');
 
     $layouts = array_values(array_filter(
         $project->blades(),
@@ -544,14 +550,14 @@ it('positions the toast groups in the corner it was answered with', function ():
     expect($layouts)->not->toBeEmpty();
 
     foreach ($layouts as $path) {
-        expect($project->get($path))->toContain('<flux:toast.group position="top center">');
+        expect($project->get($path))->toContain(sprintf('<flux:toast.group position="%s">', $corner));
     }
-});
+})->with(['top center', 'top start', 'bottom center', 'bottom start']);
 
-it('has nothing left to do once the toasts are at the top', function (): void {
-    [$project] = runTask(new MoveToastsToTop, 'livewire');
+it('has nothing left to do once the toasts have a position', function (): void {
+    [$project] = runTask(new PositionToasts, 'livewire');
 
-    expect((new MoveToastsToTop)->appliesTo($project))->toBeFalse();
+    expect((new PositionToasts)->appliesTo($project))->toBeFalse();
 });
 
 it('keeps a toast group that already chose a position', function (): void {
@@ -568,7 +574,7 @@ it('keeps a toast group that already chose a position', function (): void {
     $plan = new Plan;
     $report = new Report;
 
-    (new MoveToastsToTop)->contribute($plan, $project, $report);
+    (new PositionToasts)->contribute($plan, $project, $report);
     (new Applier)->apply($plan, $project, $report);
 
     expect($project->get($layout))

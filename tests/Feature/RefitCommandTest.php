@@ -59,14 +59,14 @@ it('asks a chosen task its own question before planning', function (): void {
     $this->artisan('refit', ['--force' => true])
         ->expectsQuestion('Which component library should this project end up on?', 'flux')
         ->expectsQuestion('The kit ships Heroicons with a few Lucide icons vendored in. What would you like?', 'keep')
-        ->expectsQuestion('Which tasks would you like to run?', ['toasts-at-top'])
-        ->expectsQuestion('Which corner should the toasts stack in?', 'top center')
+        ->expectsQuestion('Which tasks would you like to run?', ['position-toasts'])
+        ->expectsQuestion('Which corner should the toasts stack in?', 'bottom start')
         ->expectsQuestion('Apply these changes?', true)
         ->expectsQuestion('Remove refit from this project now?', false)
         ->assertSuccessful();
 
     expect(file_get_contents($root.'/resources/views/layouts/app/sidebar.blade.php'))
-        ->toContain('<flux:toast.group position="top center">');
+        ->toContain('<flux:toast.group position="bottom start">');
 });
 
 it('hands a task the answers --answers holds under its own key', function (): void {
@@ -76,8 +76,8 @@ it('hands a task the answers --answers holds under its own key', function (): vo
         '--force' => true,
         '--answers' => json_encode([
             'icons' => 'keep',
-            'tasks' => ['toasts-at-top'],
-            'toasts-at-top' => ['corner' => 'top start'],
+            'tasks' => ['position-toasts'],
+            'position-toasts' => ['corner' => 'top start'],
         ]),
     ])->assertSuccessful();
 
@@ -144,7 +144,7 @@ it('leaves every view structurally intact after a full run', function (string $k
         '--force' => true,
         '--answers' => json_encode([
             'icons' => 'lucide',
-            'tasks' => ['partials-to-components', 'namespace-components', 'toasts-at-top', 'single-layout', 'flatten-layouts', 'remove-flux-pro-source', 'remove-flux-overrides'],
+            'tasks' => ['partials-to-components', 'namespace-components', 'position-toasts', 'single-layout', 'flatten-layouts', 'remove-flux-pro-source', 'remove-flux-overrides'],
         ]),
     ])->assertSuccessful();
 

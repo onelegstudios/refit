@@ -128,7 +128,7 @@ final class PositionToasts implements Asks, Task
             options: [
                 'top end' => 'Top right, opposite the sidebar',
                 'top center' => 'Top centre, like a banner',
-                'top start' => 'Top left, above the sidebar',
+                'bottom start' => 'Bottom left, over the sidebar footer',
             ],
             hint: 'They cover whatever is under them.',
         )];
@@ -155,8 +155,9 @@ final class PositionToasts implements Asks, Task
 | `questions()` | The questions to put before this task plans anything |
 | `answered()` | The task to plan with, now that they have answers |
 
-That is [`toasts-at-top`](/docs/using-refit/guide/tasks#show-toasts-at-the-top-of-the-screen)
-with the name changed — the one task refit ships that asks anything.
+That is refit's own [`position-toasts`](/docs/using-refit/guide/tasks#move-the-toast-stack-to-another-corner),
+trimmed to the parts this section is about — the one task it ships that asks
+anything.
 
 Nothing is asked of a task the user did not pick, so nobody answers a question
 about work that is not going to happen. And nothing is asked until the library
@@ -235,7 +236,7 @@ A task reads its answers out of [`--answers`](/docs/using-refit/guide/the-refit-
 under a key of its own, beside `library`, `icons` and `tasks`:
 
 ```bash
-php artisan refit --answers='{"tasks":["toasts-at-top"],"toasts-at-top":{"corner":"top center"}}'
+php artisan refit --answers='{"tasks":["position-toasts"],"position-toasts":{"corner":"bottom start"}}'
 ```
 
 An answer that is missing, or that the question never offered, falls back to the

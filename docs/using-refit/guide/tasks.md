@@ -16,7 +16,7 @@ something that would do nothing.
 | Structure | Move the auth views out of pages | `auth-views-out-of-pages` |
 | Structure | Move the non-page components out of pages | `components-out-of-pages` |
 | Structure | Group components into folders | `namespace-components` |
-| Structure | Show toasts at the top of the screen | `toasts-at-top` |
+| Structure | Move the toast stack to another corner | `position-toasts` |
 | Structure | Flatten the layout folders | `flatten-layouts` |
 | Structure | Let the app layouts render for a guest | `guests-in-app-layouts` |
 | Cleanup | Delete the layouts the kit does not render | `single-layout` |
@@ -208,12 +208,12 @@ use Onelegstudios\Refit\Tasks\NamespaceComponents;
 Refit::task(new NamespaceComponents(['app-logo' => 'marketing/logo'], fallback: 'shared'));
 ```
 
-## Show toasts at the top of the screen
+## Move the toast stack to another corner
 
 The kit renders a bare `<flux:toast.group>` in every layout, which leaves Flux on
-its `bottom end` default — the corner a sidebar footer, a cookie bar or a mobile
-keyboard tends to occupy. Moving the toasts up adds the position the group was
-missing, and nothing else:
+its `bottom end` default — the corner a cookie bar or a mobile keyboard tends to
+occupy. Moving the stack adds the position the group was missing, and nothing
+else:
 
 ```blade
 <flux:toast.group position="top end">
@@ -221,18 +221,24 @@ missing, and nothing else:
 </flux:toast.group>
 ```
 
-Which top corner is a follow-up question, because the project cannot answer it:
-all three are equally true of it, and your own layout is the only thing that
-makes one better than another.
+Which corner is a follow-up question, because the project cannot answer it: they
+are all equally true of it, and your own layout is the only thing that makes one
+better than another. Flux reads the attribute as one of `top`/`bottom` and one of
+`start`/`center`/`end`, so every corner and both midpoints are on offer:
 
 | Answer | Where they stack |
 |---|---|
-| `top end` | Top right, opposite the sidebar — the default |
+| `top end` | Top right, opposite the sidebar — the default, and where this task used to put them |
 | `top center` | Top centre, like a banner |
-| `top start` | Top left, above the sidebar |
+| `top start` | Top left, over the sidebar header |
+| `bottom center` | Bottom centre |
+| `bottom start` | Bottom left, over the sidebar footer |
+
+The bottom right is the one answer missing, because it is the one you already
+have. Leaving the task unpicked is how you keep it.
 
 Without prompts that is
-`--answers='{"tasks":["toasts-at-top"],"toasts-at-top":{"corner":"top center"}}'`.
+`--answers='{"tasks":["position-toasts"],"position-toasts":{"corner":"bottom start"}}'`.
 See [running without prompts](/docs/using-refit/guide/the-refit-command#running-without-prompts).
 
 A group that already carries a `position` is left as it is, whichever corner you

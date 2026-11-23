@@ -77,7 +77,7 @@ the next:
    [Tasks](/docs/using-refit/guide/tasks).
 
 A task can then ask a follow-up question of its own, and only the tasks you
-picked get to ask. [Show toasts at the top](/docs/using-refit/guide/tasks#show-toasts-at-the-top-of-the-screen)
+picked get to ask. [Move the toast stack](/docs/using-refit/guide/tasks#move-the-toast-stack-to-another-corner)
 is the one that does — it wants to know which corner. The interface behind it is
 in [writing your own task](/docs/using-refit/guide/custom-tasks#asking-a-follow-up-question).
 
