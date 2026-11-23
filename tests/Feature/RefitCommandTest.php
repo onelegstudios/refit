@@ -5,21 +5,6 @@ declare(strict_types=1);
 use Onelegstudios\Refit\Blade\TagParser;
 use Onelegstudios\Refit\Project\ProjectDetector;
 
-/**
- * Point the application at a throwaway starter kit, minus the chisel script the
- * command refuses to run alongside.
- */
-function useKit(string $kit): string
-{
-    $root = copyFixture($kit);
-
-    @unlink($root.'/chisel.php');
-
-    app()->setBasePath($root);
-
-    return $root;
-}
-
 it('refuses to run before install:features has settled the tree', function (): void {
     $root = copyFixture('livewire');
 

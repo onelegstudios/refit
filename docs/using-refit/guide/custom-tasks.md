@@ -55,6 +55,9 @@ Refit::task(new DropTheWelcomePage);
 | `appliesTo()` | Whether this task makes sense for the detected project |
 | `contribute()` | Add actions to the plan |
 
+A task that needs to know more than whether to run implements `Asks` as well —
+see [Asking a follow-up question](#asking-a-follow-up-question).
+
 `appliesTo()` is the important one. A task that cannot apply is never offered, so
 the user is not asked to choose between things that would silently do nothing.
 Answer it from the project rather than from configuration:
@@ -95,6 +98,144 @@ public function appliesTo(Project $project): bool
     return $project->targets('flux');
 }
 ```
+
+## Asking a follow-up question
+
+The multiselect asks whether a task should run. Some tasks need to know more than
+that before they can plan — which corner the toasts go in, what a guest gets
+where the user menu was — and the project cannot answer it, because both answers
+are equally true of it.
+
+Implement `Contracts\Asks` alongside `Task`, and refit puts your questions to the
+user once they have picked the task:
+
+```php
+use Onelegstudios\Refit\Contracts\{Asks, Task};
+use Onelegstudios\Refit\Plan\Actions\AddAttribute;
+use Onelegstudios\Refit\Questions\{Answers, Question};
+
+final class PositionToasts implements Asks, Task
+{
+    public function __construct(
+        private readonly Answers $answers = new Answers(['corner' => 'top end']),
+    ) {}
+
+    // key(), group(), label(), hint() and appliesTo() as before
+
+    public function questions(Project $project): array
+    {
+        return [new Question(
+            key: 'corner',
+            label: 'Where should the toasts stack?',
+            options: [
+                'top end' => 'Top right, clear of the sidebar footer',
+                'top center' => 'Top centre',
+                'bottom end' => 'Leave them where Flux puts them',
+            ],
+            hint: 'The group positions every toast inside it.',
+        )];
+    }
+
+    public function answered(Answers $answers): Task
+    {
+        return new self($answers);
+    }
+
+    public function contribute(Plan $plan, Project $project, Report $report): void
+    {
+        $plan->add(Stage::Reconcile, new AddAttribute(
+            'flux:toast.group',
+            'position',
+            $this->answers->get('corner'),
+        ));
+    }
+}
+```
+
+| Method | Purpose |
+|---|---|
+| `questions()` | The questions to put before this task plans anything |
+| `answered()` | The task to plan with, now that they have answers |
+
+Nothing is asked of a task the user did not pick, so nobody answers a question
+about work that is not going to happen. And nothing is asked until the library
+and the icon set are settled, so a question can be narrowed to the project the
+task is about to rewrite — the same way `appliesTo()` narrows the task itself.
+
+### Questions
+
+A question is a choice between named options. That is the whole shape on purpose:
+one prompt to render, one string to put in `--answers`, one value to branch on.
+
+| Argument | What it is |
+|---|---|
+| `key` | Stable identifier, scoped to your task — this is what `--answers` names |
+| `label` | The prompt. It has to stand on its own: several tasks can be asking in a row, and the prompt shows the question rather than the task that asked it |
+| `options` | `answer value => the line shown for it` |
+| `default` | What a run without prompts falls back to. `null` means the first option |
+| `hint` | The dimmer line under the prompt |
+
+A yes/no question is two options with words on them. "Move them too" and "Leave
+them where they are" tell the reader more than "Yes" and "No" ever do, the same
+way an action's `describe()` has to.
+
+A question left with a single option is not asked — its one answer is taken as
+given. That is what makes a question safe to narrow to what the kit in front of
+you can actually take:
+
+```php
+public function questions(Project $project): array
+{
+    return [new Question(
+        key: 'variant',
+        label: 'Which shell should survive?',
+        options: $this->variantsPresentIn($project),
+    )];
+}
+```
+
+### Answers
+
+`Answers` is built from the questions your task declared, so every key you asked
+about is present and holds one of the options you offered.
+
+| Call | What it gives you |
+|---|---|
+| `get('corner')` | The option chosen, or `''` for a key nothing asked about |
+| `is('corner', 'top end')` | The same comparison, read as a sentence |
+| `all()` | Every answer, keyed by question |
+
+`answered()` hands back a task rather than mutating this one, so the registered
+instance stays answer-free and one run cannot leak its choices into the next.
+Give the constructor a default so the task still plans when nobody has answered
+anything — a test calling `contribute()` directly, for one.
+
+It returns a `Task` rather than `static` on purpose: a fork wide enough to
+deserve a class of its own can be one, and the task that asked the question hands
+the planning over to it.
+
+```php
+public function answered(Answers $answers): Task
+{
+    return $answers->is('folders', 'flat')
+        ? new FlattenLayouts
+        : new KeepOneLayout;
+}
+```
+
+### Answering without prompts
+
+A task reads its answers out of [`--answers`](/docs/using-refit/guide/the-refit-command#running-without-prompts)
+under a key of its own, beside `library`, `icons` and `tasks`:
+
+```bash
+php artisan refit --answers='{"tasks":["toasts-at-top"],"toasts-at-top":{"corner":"top center"}}'
+```
+
+An answer that is missing, or that the question never offered, falls back to the
+question's default rather than failing the run — the same way an unknown icon set
+does. There is nothing to ask again: the options were narrowed to the answers
+that make sense before the question was put.
 
 ## Stages
 

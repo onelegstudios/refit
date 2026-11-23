@@ -63,6 +63,14 @@ list; `resolve()` maps `--answers` keys back to instances.
 Tasks are an interface on day one because they are the open-ended half of the
 tool: a package can register a task refit knows nothing about.
 
+A task that also implements `Contracts\Asks` gets questions of its own.
+`RefitCommand::followUp()` puts them — only for the tasks the user picked, and
+only once the target and the icon set are settled — resolves each one against
+`--answers` or a prompt, and hands the task the `Answers` through `answered()`.
+That returns a `Task` rather than mutating the registered instance, so the
+registry stays answer-free and the plan is still a pure function of the project
+plus the answers.
+
 ## Who contributes to a plan
 
 `RefitCommand::build()` asks four things, in this order:

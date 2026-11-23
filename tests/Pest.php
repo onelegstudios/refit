@@ -137,6 +137,21 @@ function detectFixture(string $kit): Project
     return (new ProjectDetector)->detect(requireFixture($kit));
 }
 
+/**
+ * Point the application at a throwaway starter kit, minus the chisel script the
+ * command refuses to run alongside.
+ */
+function useKit(string $kit): string
+{
+    $root = copyFixture($kit);
+
+    @unlink($root.'/chisel.php');
+
+    app()->setBasePath($root);
+
+    return $root;
+}
+
 function copyDirectory(string $source, string $destination): void
 {
     mkdir($destination, 0755, true);

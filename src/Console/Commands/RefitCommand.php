@@ -8,6 +8,7 @@ use Closure;
 use Illuminate\Console\Command;
 use JsonException;
 use Onelegstudios\Refit\Contracts\Action;
+use Onelegstudios\Refit\Contracts\Asks;
 use Onelegstudios\Refit\Contracts\Library;
 use Onelegstudios\Refit\Contracts\Task;
 use Onelegstudios\Refit\Icons\IconStrategy;
@@ -20,6 +21,7 @@ use Onelegstudios\Refit\Plan\Report;
 use Onelegstudios\Refit\Plan\Stage;
 use Onelegstudios\Refit\Project\Project;
 use Onelegstudios\Refit\Project\ProjectDetector;
+use Onelegstudios\Refit\Questions\Answers;
 use Onelegstudios\Refit\Refit;
 use Onelegstudios\Refit\Support\Git;
 
@@ -292,6 +294,8 @@ class RefitCommand extends Command
     }
 
     /**
+     * Which tasks to run, and whatever else each of them needs to know.
+     *
      * @param  array<string, mixed>|null  $answers
      * @return list<Task>
      */
@@ -303,6 +307,21 @@ class RefitCommand extends Command
             return [];
         }
 
+        return array_map(
+            fn (Task $task): Task => $this->followUp($task, $project, $answers),
+            $this->chooseTasks($refit, $options, $answers),
+        );
+    }
+
+    /**
+     * The tasks the user picked, before any of them has been asked anything.
+     *
+     * @param  array<string, string>  $options
+     * @param  array<string, mixed>|null  $answers
+     * @return list<Task>
+     */
+    private function chooseTasks(Refit $refit, array $options, ?array $answers): array
+    {
         if ($answers !== null) {
             $given = $answers['tasks'] ?? [];
 
@@ -316,6 +335,53 @@ class RefitCommand extends Command
         );
 
         return $refit->resolve(array_values(array_filter($chosen, 'is_string')));
+    }
+
+    /**
+     * Put a chosen task's own questions to the user, and hand it the answers.
+     *
+     * Only the tasks the user picked are asked, so nobody answers a question for
+     * work that is not going to happen, and the project is settled by now — the
+     * target is attached and the icon set chosen, so a question can be narrowed
+     * to the project the task is about to rewrite.
+     *
+     * A task answers its own questions out of `--answers` under a key of its
+     * own, beside `library`, `icons` and `tasks`, so one payload drives the whole
+     * run. An answer that is missing or not on offer falls back to the question's
+     * default, which is also what a question with a single option is given
+     * without asking.
+     *
+     * @param  array<string, mixed>|null  $answers
+     */
+    private function followUp(Task $task, Project $project, ?array $answers): Task
+    {
+        if (! $task instanceof Asks) {
+            return $task;
+        }
+
+        $questions = $task->questions($project);
+
+        if ($questions === []) {
+            return $task;
+        }
+
+        $given = $answers === null ? null : $answers[$task->key()] ?? null;
+        $given = is_array($given) ? $given : [];
+
+        $values = [];
+
+        foreach ($questions as $question) {
+            $values[$question->key] = $answers !== null || count($question->options) < 2
+                ? $question->resolve($given[$question->key] ?? null)
+                : (string) select(
+                    label: $question->label,
+                    options: $question->options,
+                    default: $question->default(),
+                    hint: $question->hint,
+                );
+        }
+
+        return $task->answered(new Answers($values));
     }
 
     /**
