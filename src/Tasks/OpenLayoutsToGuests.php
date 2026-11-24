@@ -298,7 +298,7 @@ final class OpenLayoutsToGuests implements Asks, Task
         foreach ($this->action($project)->icons() as $name) {
             $path = Overrides::icon($name);
 
-            if ($this->planned($plan, $path)) {
+            if ($plan->writes($path)) {
                 continue;
             }
 
@@ -308,19 +308,5 @@ final class OpenLayoutsToGuests implements Asks, Task
                 sprintf('write  %s (Lucide "%s", for the way in a guest gets)', $path, $name),
             ));
         }
-    }
-
-    /**
-     * Does the plan already write this file?
-     */
-    private function planned(Plan $plan, string $path): bool
-    {
-        foreach ($plan->actions() as $action) {
-            if ($action instanceof WriteFile && $action->path() === $path) {
-                return true;
-            }
-        }
-
-        return false;
     }
 }

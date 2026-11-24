@@ -17,6 +17,7 @@ use Onelegstudios\Refit\Project\ProjectDetector;
 use Onelegstudios\Refit\Questions\Answers;
 use Onelegstudios\Refit\Refit;
 use Onelegstudios\Refit\Tasks\FlattenLayouts;
+use Onelegstudios\Refit\Tasks\IconButtons;
 use Onelegstudios\Refit\Tasks\KeepOneLayout;
 use Onelegstudios\Refit\Tasks\MoveAuthViewsOutOfPages;
 use Onelegstudios\Refit\Tasks\MoveComponentsOutOfPages;
@@ -56,6 +57,7 @@ it('registers the configured tasks', function (): void {
             'components-out-of-pages',
             'namespace-components',
             'position-toasts',
+            'icon-buttons',
             'single-layout',
             'flatten-layouts',
             'guests-in-app-layouts',
@@ -633,6 +635,147 @@ it('keeps a toast group that already chose a position', function (): void {
     expect($project->get($layout))
         ->toContain('<flux:toast.group position="bottom center">')
         ->not->toContain('top end');
+});
+
+/**
+ * Run the button task against a throwaway kit, with the library and the icon
+ * set already settled — which is the state it is contributed in.
+ *
+ * @return array{Project, Report}
+ */
+function runButtonIcons(string $kit, Library $target, IconStrategy $icons): array
+{
+    $project = (new ProjectDetector)->detect(copyFixture($kit))->targeting($target)->withIcons($icons);
+    $plan = new Plan;
+    $report = new Report;
+
+    (new IconButtons)->contribute($plan, $project, $report);
+
+    (new Applier)->apply($plan, $project, $report);
+
+    return [$project, $report];
+}
+
+/**
+ * The views holding a given string, as project-relative paths.
+ *
+ * @return list<string>
+ */
+function viewsWith(Project $project, string $needle): array
+{
+    return array_values(array_filter(
+        $project->blades(),
+        fn (string $path): bool => str_contains($project->get($path), $needle),
+    ));
+}
+
+it('gives the buttons the kit left bare the icon their label asks for', function (string $kit): void {
+    [$project] = runButtonIcons($kit, new FluxLibrary, IconStrategy::Keep);
+
+    // The save button is written the same way in all five variations, and the
+    // account deletion is the one every kit puts behind a danger button.
+    expect(viewsWith($project, '<flux:button icon="check" variant="primary" type="submit"'))->not->toBeEmpty()
+        ->and(viewsWith($project, '<flux:button icon="trash" variant="danger"'))->not->toBeEmpty();
+})->with(starterKits());
+
+it('reads a label the kit wrote on a line of its own', function (): void {
+    [$project] = runButtonIcons('livewire', new FluxLibrary, IconStrategy::Keep);
+
+    expect($project->get('resources/views/pages/auth/reset-password.blade.php'))
+        ->toContain('<flux:button icon="key" type="submit" variant="primary"')
+        ->and($project->get('resources/views/pages/auth/verify-email.blade.php'))
+        ->toContain('icon="envelope"')
+        ->toContain('icon="arrow-right-start-on-rectangle"');
+});
+
+it('leaves the buttons the kit had already chosen an icon for alone', function (): void {
+    [$project] = runButtonIcons('livewire-teams', new FluxLibrary, IconStrategy::Keep);
+    $edit = $project->get('resources/views/pages/teams/⚡edit.blade.php');
+
+    expect($edit)->toContain('<flux:button variant="primary" icon="user-plus" data-test="invite-member-button">')
+        ->and(substr_count($edit, 'icon="user-plus"'))->toBe(1);
+});
+
+it('says which labels it had no icon for', function (): void {
+    // "Keep invitation" is the button for declining to cancel an invitation, and
+    // there is no icon for that which is not the one for cancelling it.
+    [, $report] = runButtonIcons('livewire-teams', new FluxLibrary, IconStrategy::Keep);
+
+    expect($report->notes())->toHaveCount(1)
+        ->and($report->notes()[0])->toContain('"Keep invitation"');
+});
+
+it('spells the icons in the set the run is heading for', function (): void {
+    [$project] = runButtonIcons('livewire', new FluxLibrary, IconStrategy::Lucide);
+
+    expect($project->get('resources/views/pages/auth/reset-password.blade.php'))
+        ->toContain('<flux:button icon="key-round" type="submit" variant="primary"')
+        ->and(viewsWith($project, 'icon="x"'))->not->toBeEmpty();
+});
+
+it('brings the artwork for the Lucide icons the buttons are the first to name', function (): void {
+    // The kit has no `x-mark` anywhere, so the icon pass never generates Lucide's
+    // `x` — and a name with no override behind it is drawn by Flux's own
+    // Heroicons. The task that names it brings its drawing. `key` the kit does
+    // have, so that override is the icon pass's to write.
+    $project = detectFixture('livewire')->targeting(new FluxLibrary)->withIcons(IconStrategy::Lucide);
+    $plan = new Plan;
+    $report = new Report;
+
+    (new FluxLibrary)->planIcons($plan, $project, IconStrategy::Lucide, $report);
+    (new IconButtons)->contribute($plan, $project, $report);
+
+    $lines = $plan->describe();
+
+    expect($lines)->toContain('  write  resources/views/flux/icon/x.blade.php (Lucide "x", for a button icon)')
+        ->and(array_filter($lines, fn (string $line): bool => str_contains($line, 'flux/icon/key-round.blade.php')))
+        ->toHaveCount(1);
+});
+
+it('brings no artwork where the icon set needs none', function (): void {
+    $project = detectFixture('livewire')->targeting(new FluxLibrary)->withIcons(IconStrategy::Heroicons);
+    $plan = new Plan;
+
+    (new IconButtons)->contribute($plan, $project, new Report);
+
+    expect(array_keys($plan->grouped()))->toBe(['Reconcile']);
+});
+
+it('writes the icons on the tag the project ends on, in that library\'s set', function (): void {
+    $root = sheafKit('livewire');
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'library' => 'sheaf',
+            'icons' => 'phosphor',
+            'tasks' => ['icon-buttons'],
+        ]),
+    ])->assertSuccessful();
+
+    $project = (new ProjectDetector)->detect($root);
+
+    expect(viewsWith($project, '<x-ui.button icon="ps:check"'))->not->toBeEmpty();
+});
+
+it('has nothing left to do once the buttons have icons', function (): void {
+    [$project] = runButtonIcons('livewire', new FluxLibrary, IconStrategy::Keep);
+
+    expect((new IconButtons)->appliesTo($project))->toBeFalse();
+});
+
+it('takes a table of its own, spelled however the caller spells it', function (): void {
+    $project = (new ProjectDetector)->detect(copyFixture('livewire'));
+    $plan = new Plan;
+    $report = new Report;
+
+    (new IconButtons(['Delete Account' => 'x-circle']))->contribute($plan, $project, $report);
+
+    (new Applier)->apply($plan, $project, $report);
+
+    // The table it was given, and nothing of refit's: the saves stay bare.
+    expect(viewsWith($project, '<flux:button icon="x-circle" variant="danger"'))->not->toBeEmpty()
+        ->and(viewsWith($project, 'icon="check"'))->toBeEmpty();
 });
 
 /**
