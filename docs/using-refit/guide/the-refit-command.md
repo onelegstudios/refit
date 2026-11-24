@@ -96,8 +96,12 @@ Your answers become a list of actions, sorted into stages that run in order:
 
 The stages are what keep two tasks from tripping over one another: files stop
 moving before the reconcile pass rewrites the references to them. When the plan
-is not empty, refit appends `./vendor/bin/pint --dirty` to the `Format` stage so
-the files it touched come out formatted.
+is not empty, refit appends two of its own: `./vendor/bin/pint --dirty` to the
+`Format` stage, so the files it touched come out formatted, and
+`php artisan view:clear` to `Finish`, so Blade stops serving views it compiled
+from the tree you no longer have. The kit installs `livewire/blaze`, which folds
+one component's source into another's compiled output — so a stale compiled view
+is not even limited to the files refit rewrote.
 
 A plan with nothing in it ends the run there:
 

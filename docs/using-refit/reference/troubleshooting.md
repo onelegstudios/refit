@@ -122,6 +122,18 @@ The finishing Pint pass could not run — usually because the project has no
 `./vendor/bin/pint`. Everything else in the run still applied. Format the diff
 however your project normally does.
 
+**"Clearing the compiled views failed"**
+
+The last thing a run does is `php artisan view:clear`, and it could not run.
+Everything else still applied, but Blade is still holding the views it compiled
+before the rewrite — and with `livewire/blaze` folding one component's source
+into another's compiled output, a stale copy is not limited to the files refit
+touched. Run it yourself before you reload the page:
+
+```bash
+php artisan view:clear
+```
+
 ## Running it twice
 
 Don't. Refit is one-time scaffolding: the changes are one-way and not idempotent,

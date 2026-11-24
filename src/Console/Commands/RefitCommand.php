@@ -417,6 +417,18 @@ class RefitCommand extends Command
                 ['./vendor/bin/pint', '--dirty'],
                 'Formatting with Pint',
             ));
+
+            // Blade keys a compiled view by the file it was compiled from, and
+            // the kit installs `livewire/blaze`, which folds other components'
+            // source into that output at compile time. So a compiled view can be
+            // stale because a file it folded in changed rather than itself — and
+            // a refit run is nothing but that, for every view in the tree. The
+            // last thing it does is throw the compiled copies away, so the first
+            // page load after it renders what is now on disk.
+            $plan->add(Stage::Finish, new RunProcess(
+                ['php', 'artisan', 'view:clear'],
+                'Clearing the compiled views',
+            ));
         }
 
         return $plan;
