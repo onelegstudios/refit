@@ -1,8 +1,8 @@
 {
     "repo": "lucide-icons/lucide",
-    "ref": "1.77.0",
-    "commit": "742ea78395b4122e13fd46743caba5140f47fb66",
-    "downloaded_at": "2026-11-21T21:54:44+00:00",
+    "ref": "1.79.0",
+    "commit": "c26ce5515667640ca2753e095ba319d225fc0d8d",
+    "downloaded_at": "2026-11-24T09:12:31+00:00",
     "icons": [
         "book-open-text",
         "calendar",
@@ -30,6 +30,7 @@
         "layout-grid",
         "loader-circle",
         "lock",
+        "log-in",
         "log-out",
         "mail",
         "menu",

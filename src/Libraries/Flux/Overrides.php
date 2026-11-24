@@ -24,6 +24,18 @@ final class Overrides
     public const string ICONS = 'icon';
 
     /**
+     * Where the override for one icon name goes.
+     *
+     * Flux resolves `icon="house"` through `flux::icon.house`, and a Blade file
+     * at this path is what takes precedence over the artwork Flux ships — the
+     * mechanism the whole Lucide answer rests on.
+     */
+    public static function icon(string $name): string
+    {
+        return self::ROOT.'/'.self::ICONS.'/'.$name.'.blade.php';
+    }
+
+    /**
      * Every file under the root, as sorted project-relative paths.
      *
      * @param  list<string>  $except  Top-level subdirectories to leave out.

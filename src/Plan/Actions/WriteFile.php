@@ -22,6 +22,18 @@ final class WriteFile implements Action
         return $this->description ?? 'write  '.$this->path;
     }
 
+    /**
+     * Where this write lands.
+     *
+     * Public so a contributor can see whether the plan already holds the file it
+     * was about to add — the same file planned twice is a preview line promising
+     * work nobody needs.
+     */
+    public function path(): string
+    {
+        return $this->path;
+    }
+
     public function apply(Project $project, Report $report): void
     {
         $target = $project->path($this->path);

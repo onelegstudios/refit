@@ -156,13 +156,16 @@ final class PositionToasts implements Asks, Task
 | `answered()` | The task to plan with, now that they have answers |
 
 That is refit's own [`position-toasts`](/docs/using-refit/guide/tasks#move-the-toast-stack-to-another-corner),
-trimmed to the parts this section is about — the one task it ships that asks
-anything.
+trimmed to the parts this section is about.
 
 Nothing is asked of a task the user did not pick, so nobody answers a question
 about work that is not going to happen. And nothing is asked until the library
 and the icon set are settled, so a question can be narrowed to the project the
 task is about to rewrite — the same way `appliesTo()` narrows the task itself.
+Refit's other asking task leans on both:
+[`guests-in-app-layouts`](/docs/using-refit/guide/tasks#what-the-way-in-shows)
+reads `$project->icons` to spell the icon on the way in a guest gets, and to
+bring the artwork for it where the run needs a file to draw it from.
 
 ### Questions
 

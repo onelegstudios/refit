@@ -41,6 +41,8 @@ function guardedProject(array $views = []): Project
 
 /**
  * Run the sweep over one layout.
+ *
+ * @param  array<string, string>  $icons  route name mapped to the icon it wears
  */
 function guardChrome(
     string $source,
@@ -48,11 +50,15 @@ function guardChrome(
     ?Project $project = null,
     ?Vocabulary $vocabulary = null,
     bool $registration = false,
+    array $icons = [],
+    bool $labels = true,
 ): string {
     $action = new GuardSignedInChrome(
         'app',
         $vocabulary ?? (new FluxLibrary)->vocabulary(),
         $registration,
+        $icons,
+        $labels,
     );
 
     return (fn (): string => $this->transform($source, $path, $project ?? guardedProject(), new Report))
@@ -311,6 +317,32 @@ it('asks the library it is ending on for the quieter of the two', function (): v
     expect(guardChrome($source, vocabulary: (new SheafLibrary)->vocabulary(), registration: true))
         ->toContain('<x-ui.button :href="route(\'login\')" variant="ghost" class="flex-1">')
         ->toContain('<x-ui.button :href="route(\'register\')" variant="primary" class="flex-1">');
+});
+
+it('wears the icon the chosen set spells, beside the words', function (): void {
+    // The name arrives ready to write: the icon pass has already run by the time
+    // the guard does, so there is nothing left to translate it.
+    $source = '<flux:profile :name="auth()->user()->name" :href="route(\'logout\')" />';
+
+    expect(guardChrome($source, icons: ['login' => 'arrow-right-end-on-rectangle']))
+        ->toContain('<flux:button :href="route(\'login\')" icon="arrow-right-end-on-rectangle">{{ __(\'Log in\') }}</flux:button>');
+});
+
+it('leaves an icon standing on its own saying what it is', function (): void {
+    // A button with nothing in it reads as its own route to a screen reader.
+    $source = '<flux:profile class="hidden lg:block" :name="auth()->user()->name" :href="route(\'logout\')" />';
+
+    expect(guardChrome($source, icons: ['login' => 'arrow-right-end-on-rectangle'], labels: false))
+        ->toContain('<flux:button :href="route(\'login\')" icon="arrow-right-end-on-rectangle" :aria-label="__(\'Log in\')" class="hidden lg:inline-flex" />')
+        ->not->toContain('{{ __(\'Log in\') }}');
+});
+
+it('keeps the words where it has no icon to stand in for them', function (): void {
+    // Nothing offers half a pair, but a way in with no icon is still a way in.
+    $source = '<flux:profile :name="auth()->user()->name" :href="route(\'logout\')" />';
+
+    expect(guardChrome($source, labels: false))
+        ->toContain('<flux:button :href="route(\'login\')">{{ __(\'Log in\') }}</flux:button>');
 });
 
 it('writes the link in the tag of the library the project is ending on', function (): void {

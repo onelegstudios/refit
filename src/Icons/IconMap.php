@@ -12,8 +12,10 @@ use Onelegstudios\Refit\Libraries\Vocabulary;
  *
  * These are semantic, not mechanical: Heroicons' `arrow-right-start-on-rectangle`
  * is Lucide's `log-out`, and `magnifying-glass` is `search`. The set covers every
- * name the five starter kit variants reference, plus the ones Flux's own stubs
- * render. Anything outside it is reported rather than guessed at.
+ * name the five starter kit variants reference, the ones Flux's own stubs render,
+ * and the handful refit writes itself — the sign-in arrow a guest's way in wears
+ * is in the kit nowhere, and is here because refit puts it there. Anything
+ * outside the set is reported rather than guessed at.
  *
  * Set to set only. Which attribute carries a name, and which names a library
  * draws itself, are facts about a library rather than about an icon set — those
@@ -27,6 +29,9 @@ final class IconMap
      */
     public const array HEROICONS_TO_LUCIDE = [
         'arrow-path' => 'refresh-cw',
+        // Heroicons draws the arrow going into the rectangle for signing in and
+        // out of it for signing out; Lucide says which is which in the name.
+        'arrow-right-end-on-rectangle' => 'log-in',
         'arrow-right-start-on-rectangle' => 'log-out',
         'bars-2' => 'menu',
         'calendar' => 'calendar',
@@ -90,6 +95,7 @@ final class IconMap
      */
     public const array HEROICONS_TO_PHOSPHOR = [
         'arrow-path' => 'arrows-clockwise',
+        'arrow-right-end-on-rectangle' => 'sign-in',
         'arrow-right-start-on-rectangle' => 'sign-out',
         'bars-2' => 'list',
         'book-open' => 'book-open',
