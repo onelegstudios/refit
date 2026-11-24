@@ -8,7 +8,7 @@ use Onelegstudios\Refit\Plan\Report;
 use Onelegstudios\Refit\Project\Project;
 
 /**
- * Let a caller's own colour beat the one Sheaf's icon paints over it.
+ * Take the colour off Sheaf's icon, so whatever it sits in decides.
  *
  * Flux's icon had no colour of its own: it drew in `currentColor` and the view
  * decided, either by putting a class on the tag or by letting the glyph inherit
@@ -33,17 +33,25 @@ use Onelegstudios\Refit\Project\Project;
  * the alert's `text-blue-600` and the copy button's `text-green-500` against
  * `text-neutral-700`, and both lose.
  *
- * So the default is rewritten to lose on purpose. `[:where(&)]:` compiles to a
- * zero-specificity selector, which is how Sheaf's own nav items let a caller
- * resize their icon, and a zero-specificity rule loses to any class the view
- * writes whatever the order — while still beating plain inheritance, so an icon
- * that asks for nothing is coloured exactly as it was.
+ * So the default comes off. Not written to lose — a zero-specificity rule loses
+ * to any class the view names, which fixes the ties above, but it still beats
+ * plain inheritance, and inheritance is how an icon inside a control is coloured.
+ * A button colours its own label and hands its icon nothing but a size, so a
+ * `danger` button came out with a red label beside a neutral glyph; the teams
+ * kits show it on their own `plus` and `user-plus`, where the accent surface gets
+ * the same neutral grey over it. Nothing a caller can write reaches that, because
+ * the caller is the button rather than the view.
  *
- * It has to be added with `merge(..., escape: false)`. `class()` escapes what it
- * is given, and this bag is handed straight to `<x-dynamic-component>`, which
+ * Taking it off leaves both readings right. A class the view names is still in
+ * the bag and still applies, and an icon that names nothing draws in the colour
+ * around it — which is what it did under Flux, and what every control it sits in
+ * is already saying. It also retires an escaping trap: a class added here would
+ * have to go on with `merge(..., escape: false)`, since `class()` escapes what it
+ * is given and the bag is handed straight to `<x-dynamic-component>`, which
  * escapes it a second time on the way to the icon set's `<svg {{ $attributes }}>`
- * — the class lands as `[:where(&amp;)]:text-neutral-700` and names no rule
- * Tailwind wrote. {@see SizeNavItemIcons} is the same trap, one component over.
+ * — `[:where(&)]` reaching the browser as `[:where(&amp;)]` and naming no rule
+ * Tailwind wrote. {@see SizeNavItemIcons} is still in that trap, one component
+ * over, because a size is a class and has to be added rather than removed.
  *
  * The third place refit edits Sheaf's own source, for the reason the other two
  * give: `sheaf:install` copies these files into the project, which is what makes
@@ -57,16 +65,16 @@ final class YieldIconColour extends BladeSweep
     /** How Sheaf colours its icon, at a specificity no caller can beat. */
     private const string OPAQUE = "\$attributes->class(['text-neutral-700 dark:text-neutral-300'])";
 
-    /** The same colour, written to lose to anything the view says instead. */
-    private const string YIELDING = "\$attributes->merge(['class' => '[:where(&)]:text-neutral-700 dark:[:where(&)]:text-neutral-300'], escape: false)";
+    /** The bag with no colour in it, which is the bag Flux's icon rendered. */
+    private const string INHERITED = '$attributes';
 
     public function describe(): string
     {
-        return 'colour the icons Sheaf paints over the view\'s own class';
+        return 'colour the icons Sheaf paints over whatever they sit in';
     }
 
     protected function transform(string $source, string $path, Project $project, Report $report): string
     {
-        return str_replace(self::OPAQUE, self::YIELDING, $source);
+        return str_replace(self::OPAQUE, self::INHERITED, $source);
     }
 }
