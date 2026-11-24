@@ -34,9 +34,10 @@ it('lets the two-factor QR keep the colour Sheaf\'s icon would paint over', func
     // Tailwind sorts a same-specificity tie by name, and `dark:text-neutral-300`
     // is written after `dark:text-accent-foreground` — so the QR glyph asked to
     // stay dark on a disc that is light in both appearances and came out white on
-    // white. A zero-specificity default loses that tie instead.
+    // white. With no colour of its own the component has no tie to win.
     expect($project->get($icon))
-        ->toContain("\$attributes->merge(['class' => '[:where(&)]:text-neutral-700 dark:[:where(&)]:text-neutral-300'], escape: false)")
+        ->toContain('{{ $attributes }}')
+        ->not->toContain('text-neutral-700')
         ->not->toContain('->class(');
 
     // And the view is left saying exactly what it said: the fix is the component

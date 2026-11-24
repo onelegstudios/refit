@@ -220,10 +220,17 @@ the order it writes the rules in, which the component wins. The two-factor setup
 modal is where you see it: its QR glyph asks for `dark:text-accent-foreground` to
 stay dark on a disc that is light in both appearances, gets `neutral-300` instead,
 and in dark mode goes white on white. Phosphor is where anyone notices, because its
-QR is a filled block rather than thin strokes. Refit rewrites the component's own
-colour to `[:where(&)]:` — the same zero-specificity variant it uses for the size
-above, so an icon that names a colour keeps it and one that names none is coloured
-exactly as before.
+QR is a filled block rather than thin strokes.
+
+So refit takes the colour off the component altogether. A zero-specificity variant
+would settle that tie, the way the size above is settled, but it would still beat
+plain inheritance — and inheritance is how an icon inside a control gets its colour.
+A button colours its own label and hands its icon nothing but a size, so a `danger`
+button comes out with a red label beside a neutral glyph, and the teams kits show
+the same grey over the accent surface of their own `plus` and `user-plus`. Nothing
+a view can write reaches that, because the caller there is the button. With no
+colour of its own, a class the view names still applies and an icon that names none
+draws in the colour around it — which is what it did under Flux.
 
 **Dropdown triggers.** Flux takes a dropdown's trigger as its first child; Sheaf
 takes it as `<x-slot:button>`. Refit wraps it.

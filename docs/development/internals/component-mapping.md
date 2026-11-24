@@ -671,17 +671,26 @@ merely looks faint. The tie is not confined to that page — the team invitation
 alert's `text-blue-600` and the setup key's copied `text-green-500` both lose to
 `text-neutral-700` the same way.
 
-So `YieldIconColour` writes the default to lose on purpose, with the variant the
-nav items already use for their size and the `escape` argument they already need:
+So `YieldIconColour` takes the colour off, leaving the bag Flux's icon rendered:
 
 ```blade
-{{ $attributes->merge(['class' => '[:where(&)]:text-neutral-700 dark:[:where(&)]:text-neutral-300'], escape: false) }}
+{{ $attributes }}
 ```
 
-A zero-specificity rule loses to any class the view writes, whatever the order,
-and still beats plain inheritance — so an icon that asks for no colour is drawn in
-exactly the neutral pair it was, and no caller has to shout over the component
-with `!`. Like the other two, it matches on the call rather than on a line.
+The zero-specificity variant the nav items use for their size was the first
+answer, and it is the wrong one here. `[:where(&)]:text-neutral-700` loses to any
+class the view writes, whatever the order, which settles every tie above — but it
+still beats plain inheritance, and inheritance is how an icon inside a control is
+coloured. A button colours its own label and hands its icon nothing but a size,
+so a `danger` button draws a red label beside a neutral glyph, and the teams kits
+put the same grey over the accent surface of their own `plus` and `user-plus`. No
+view can reach that, because the caller is the button rather than the page.
+
+Removing it leaves both readings right: a class the view names is still in the bag
+and still applies, and an icon that names nothing draws in the colour around it,
+which is what every control it sits in is already saying. It also costs the
+`escape: false` the nav items need — there is no class to add here, only one to
+take away. Like the other two, it matches on the call rather than on a line.
 
 ### A menu is a grid
 
