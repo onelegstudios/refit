@@ -121,6 +121,22 @@ it('hands a task the answers --answers holds under its own key', function (): vo
         ->toContain('<flux:toast.group position="top start">');
 });
 
+it('throws the compiled views away once the run is otherwise done', function (): void {
+    // Blade would otherwise go on serving a view it compiled before the rewrite,
+    // and with `livewire/blaze` folding one component's source into another's
+    // output, a stale copy is not even limited to the files refit touched.
+    useKit('livewire');
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--dry-run' => true,
+        '--answers' => json_encode(['icons' => 'heroicons', 'tasks' => []]),
+    ])
+        ->expectsOutputToContain('Finish')
+        ->expectsOutputToContain('run    php artisan view:clear (Clearing the compiled views)')
+        ->assertSuccessful();
+});
+
 it('reports a plan with nothing in it rather than pretending to work', function (): void {
     useKit('livewire');
 

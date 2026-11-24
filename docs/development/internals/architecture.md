@@ -84,7 +84,10 @@ plus the answers.
 2. `planTeardown()` on every installed library the run is *not* ending on, which
    is how Flux comes out without any target having to know how to remove it;
 3. each chosen `Task`;
-4. `pint --dirty`, unless the plan is empty.
+4. `pint --dirty` and then `php artisan view:clear`, unless the plan is empty —
+   the one so the diff comes out formatted, the other because Blade keys a
+   compiled view by the file it was compiled from, and `livewire/blaze` folds
+   other components' source into it.
 
 That order is contribution order, not execution order — `Stage` decides the
 second. It matters only where two contributors touch the same file in the same
