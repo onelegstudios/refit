@@ -5,14 +5,26 @@
     </head>
     <body class="min-h-screen bg-white dark:bg-zinc-800">
         <x-ui.layout>
-            {{-- No border and no tint restated here. Sheaf's sidebar paints its
-                 own surface twice — the panel, and the sticky brand row above it
-                 — and only the panel takes attributes, so the kit's zinc-50 lands
-                 on one of the two and leaves the row white behind the logo. Flux's
-                 `sticky` and `collapsible` go with them: Sheaf spells those
-                 `sticky-header` and `collapsable`, so both were rendering as
+            {{-- The kit's border and tint, restated — and the tint twice, because
+                 Sheaf's sidebar paints its own surface twice: the panel, and the
+                 sticky brand row above it. Only the panel takes attributes, so the
+                 second half of the pair reaches the row through the brand it wraps,
+                 the one child of it Sheaf gives a name to. Left to the panel alone
+                 the tint stops at the nav and the row stays white behind the logo.
+
+                 All four are important. Sheaf paints both surfaces with a plain
+                 `bg-white` and draws the edge with a plain `border-black/5`, and a
+                 plain utility of refit's own beside one of those is a tie the
+                 stylesheet's order decides, not the view.
+
+                 Flux's `sticky` and `collapsible` are not restated: Sheaf spells
+                 those `sticky-header` and `collapsable`, so both were rendering as
                  literal attributes on the div. --}}
-            <x-ui.sidebar>
+            <x-ui.sidebar
+                class="border-zinc-200! bg-zinc-50! dark:border-zinc-700! dark:bg-zinc-900!
+                       [&>div:has([data-slot=sidebar-brand])]:bg-zinc-50!
+                       dark:[&>div:has([data-slot=sidebar-brand])]:bg-zinc-900!"
+            >
                 <x-slot:brand>
                     <x-app-logo href="{{ route('dashboard') }}" wire:navigate />
                 </x-slot:brand>

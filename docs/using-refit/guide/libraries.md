@@ -154,13 +154,18 @@ variant it lands in, and there the grid has already spent a header on the row
 above, so a screen is a header too many and the layout clips the difference off
 the bottom of every page.
 
-The sidebar the stubs render is bare on purpose. Sheaf's sidebar paints its own
-surface in two places — the panel, and the sticky brand row above it — and only
-the panel takes attributes, so restating the kit's `bg-zinc-50 dark:bg-zinc-900`
-tints one of the two and leaves the row white behind the logo. The chrome is
-Sheaf's white-on-border sidebar instead. Flux's `sticky` and `collapsible="mobile"`
-go with it: Sheaf spells them `sticky-header` and `collapsable`, and left in place
-they were rendering as literal attributes on the div rather than reaching a prop.
+The sidebar the stubs render carries the kit's border and tint, and the tint twice.
+Sheaf's sidebar paints its own surface in two places — the panel, and the sticky
+brand row above it — and only the panel takes attributes, so restating the kit's
+`bg-zinc-50 dark:bg-zinc-900` on its own tints the panel and leaves the row white
+behind the logo. The second half of the pair reaches the row through the brand it
+wraps, which is the one child of it Sheaf gives a name to. All of it is marked
+important, because Sheaf paints both surfaces with a plain `bg-white` and draws the
+edge with a plain `border-black/5`, and a plain utility of refit's own beside one of
+those is a tie the stylesheet's order decides rather than the view. Flux's `sticky`
+and `collapsible="mobile"` are not restated: Sheaf spells them `sticky-header` and
+`collapsable`, and left in place they were rendering as literal attributes on the
+div rather than reaching a prop.
 
 The user menu at the foot of that sidebar is dressed as a nav row rather than as a
 button — a ghost button is taller, squarer, darker and heavier than a Sheaf nav
