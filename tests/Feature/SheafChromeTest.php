@@ -146,8 +146,11 @@ it('composes the header layout the way Sheaf\'s grid reads it', function (): voi
     // sidebar and main. All three have to be children of the layout to land in
     // them — a header nested inside the main leaves the header row empty, which
     // is a screen-height gap above the page.
-    expect(strpos($header, '<x-ui.layout.header'))->toBeLessThan((int) strpos($header, '<x-ui.sidebar '))
-        ->and(strpos($header, '<x-ui.sidebar '))->toBeLessThan((int) strpos($header, '<x-ui.layout.main'));
+    // The newline is part of the needle: the sidebar's class list is long enough
+    // to take a line of its own, and `<x-ui.sidebar` alone would find the toggle
+    // in the header row above it first.
+    expect(strpos($header, '<x-ui.layout.header'))->toBeLessThan((int) strpos($header, "<x-ui.sidebar\n"))
+        ->and(strpos($header, "<x-ui.sidebar\n"))->toBeLessThan((int) strpos($header, '<x-ui.layout.main'));
 
     // The kit centred the bar on a container instead of running it the width of
     // the screen, and measured its gutter from the edge — so the header gives up
@@ -160,15 +163,20 @@ it('composes the header layout the way Sheaf\'s grid reads it', function (): voi
         ->not->toContain('layout.main')
         ->toContain('{{ $slot }}');
 })->skip(fn (): bool => ! is_dir(fixturePath('livewire')), 'Run `composer starter-kits`.');
-it('leaves Sheaf\'s sidebar the one surface Sheaf paints', function (string $fixture, string $layout): void {
+it('tints both of the surfaces Sheaf paints the sidebar with', function (string $fixture, string $layout): void {
     $root = migratedSheafKit($fixture);
 
     $sidebar = (new ProjectDetector)->detect($root)->get($layout);
 
     // Sheaf's sidebar paints itself twice — the panel, and the sticky brand row
-    // above it — and only the panel takes attributes. Restating the kit's tint
-    // therefore reaches one of the two, and the row stays white behind the logo.
-    expect($sidebar)->not->toContain('bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900')
+    // above it — and only the panel takes attributes. The kit's tint on the panel
+    // alone therefore stops below the logo and leaves the row white, so the row is
+    // reached through the brand it wraps, the one child of it Sheaf names. The
+    // importants are not decoration either: Sheaf paints both surfaces with a
+    // plain `bg-white`, which a plain `bg-zinc-50` beside it only ties with.
+    expect($sidebar)->toContain('border-zinc-200! bg-zinc-50! dark:border-zinc-700! dark:bg-zinc-900!')
+        ->toContain('[&>div:has([data-slot=sidebar-brand])]:bg-zinc-50!')
+        ->toContain('dark:[&>div:has([data-slot=sidebar-brand])]:bg-zinc-900!')
         // Flux's spellings, which Sheaf takes as `sticky-header` and `collapsable`
         // — left alone they render as literal attributes on the div.
         ->not->toContain('<x-ui.sidebar sticky')
