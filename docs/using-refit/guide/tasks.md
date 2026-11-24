@@ -17,6 +17,7 @@ something that would do nothing.
 | Structure | Move the non-page components out of pages | `components-out-of-pages` |
 | Structure | Group components into folders | `namespace-components` |
 | Structure | Move the toast stack to another corner | `position-toasts` |
+| Structure | Put an icon on the buttons that have none | `icon-buttons` |
 | Structure | Flatten the layout folders | `flatten-layouts` |
 | Structure | Let the app layouts render for a guest | `guests-in-app-layouts` |
 | Cleanup | Delete the layouts the kit does not render | `single-layout` |
@@ -253,6 +254,121 @@ runs: `<flux:toast.group>` on a project staying with Flux, `<x-ui.toast>` on one
 moving to Sheaf, which the migration has renamed it to earlier in the same pass.
 A container that already carries a `position` is left as it is, whichever corner
 you picked here.
+
+## Put an icon on the buttons that have none
+
+The kit ships two buttons wearing an icon and several dozen that are words alone.
+Both of the two are in the teams kits — `plus` on "New team", `user-plus` on
+"Invite member" — so the starter kit has already decided that a button with an
+icon is how it wants to look, and then written every other one without one. Save,
+Cancel, Delete account, Log out, Reset password: all text, in a shell whose
+sidebar, navbar and user menu are nothing but icon-and-label rows.
+
+The task finishes the job. Each button's own label picks its icon:
+
+```blade
+{{-- before --}}
+<flux:button variant="primary" type="submit">{{ __('Save') }}</flux:button>
+
+{{-- after --}}
+<flux:button icon="check" variant="primary" type="submit">{{ __('Save') }}</flux:button>
+```
+
+Nothing is asked, because nothing here is a choice your project cannot make for
+itself — the labels are the kit's own, read back.
+
+### Which icon a label gets
+
+| Icon | Labels |
+|---|---|
+| `check` | Save, Confirm, Accept |
+| `x-mark` | Cancel, Decline |
+| `trash` | Delete account, Delete team, Remove member, Remove passkey, Cancel invitation |
+| `envelope` | Email password reset link, Resend verification email, Send invitation |
+| `user-plus` | Create account, Register, Invite member |
+| `plus` | Create team, New team |
+| `key` | Reset password |
+| `arrow-right-end-on-rectangle` | Log in |
+| `arrow-right-start-on-rectangle` | Log out, Leave team |
+| `lock-closed`, `x-circle` | Enable 2FA, Disable 2FA |
+| `eye`, `eye-slash` | View recovery codes, Hide recovery codes |
+| `arrow-path` | Regenerate codes |
+| `finger-print` | Add passkey |
+| `chevron-left`, `chevron-right` | Back, Continue |
+
+A button that removes something gets the trash whatever it is removing, because
+what you are about to lose is the part worth drawing — and a pair that undoes
+itself gets one drawing and its opposite, the way the kit's own recovery codes
+already read.
+
+The labels are matched on their words rather than on their spelling, so case and
+the line breaks a long tag is wrapped over make no difference. Labels the table
+does not have are named in [`REFIT-NOTES.md`](/docs/using-refit/reference/troubleshooting)
+rather than matched on a guess — "Keep invitation" is the one in the teams kits,
+there being no icon for declining to cancel something that is not the icon for
+cancelling it.
+
+To name your application's own buttons, register the task with your own table. It
+replaces refit's rather than adding to it, so spread that one in to keep it, and
+write the names as Heroicons spells them — the set every translation starts from:
+
+```php
+use Onelegstudios\Refit\Facades\Refit;
+use Onelegstudios\Refit\Tasks\IconButtons;
+
+Refit::task(new IconButtons([...IconButtons::ICONS, 'publish' => 'cloud-arrow-up']));
+```
+
+### What is left alone
+
+A button that already names an icon has made the decision itself, and keeps it —
+in any of its library's attributes, bound or literal, leading or trailing. An
+empty button is an icon-only one the kit sized and placed on purpose, and has no
+label to read in the first place.
+
+Past that, only contents refit can read as a label count. A single `{{ __('…') }}`
+or a line of plain text is a label; anything with markup, a variable or a second
+node in it is not:
+
+```blade
+<flux:button variant="primary" wire:click="register">
+    <span x-show="!loading">{{ $label }}</span>
+    <span x-show="loading" x-cloak>{{ __('Registering...') }}</span>
+</flux:button>
+```
+
+There is no reading of that which is not a guess, so the passkey buttons are left
+as they are.
+
+### Which set the icons are spelled in
+
+Whichever one [you chose a moment earlier](/docs/using-refit/guide/icons), because
+the icon pass has already run by the time the buttons are swept — so the name
+that lands on the tag is the final one rather than one for a later sweep to
+translate:
+
+| Icon set | Save | Cancel | Reset password |
+|---|---|---|---|
+| The kit's mix, or Heroicons only | `check` | `x-mark` | `key` |
+| Lucide only | `check` | `x` | `key-round` |
+| Phosphor, on a Sheaf run | `ps:check` | `ps:x` | `ps:key` |
+
+A Lucide run gets the artwork with it. Flux draws Lucide through
+[override files](/docs/using-refit/guide/icons#staying-on-flux), and the icon pass
+generates one for every Lucide name your project already uses — which a button
+icon is not, because refit is what puts it there. So the task brings an override
+for each name it is the first to write, and leaves the ones the icon pass is
+already writing to it.
+
+The tag itself is whatever the button is called by the time the plan runs:
+`<flux:button>` on a project staying with Flux, `<x-ui.button>` on one
+[moving to Sheaf](/docs/using-refit/guide/libraries), which the migration has
+renamed it to earlier in the same pass.
+
+The sweep runs ahead of the tasks that write buttons of their own, so an answer
+you gave one of those is the one that stands — the way in
+[a guest gets](#what-the-way-in-shows) shows what you said it should show, icon
+or no icon.
 
 ## Flatten the layout folders
 

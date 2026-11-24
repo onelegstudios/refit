@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Onelegstudios\Refit\Plan;
 
 use Onelegstudios\Refit\Contracts\Action;
+use Onelegstudios\Refit\Plan\Actions\WriteFile;
 
 /**
  * The complete set of changes refit intends to make.
@@ -25,6 +26,24 @@ final class Plan
         $this->actions[$stage->value][] = $action;
 
         return $this;
+    }
+
+    /**
+     * Does the plan already write this file?
+     *
+     * Asked by a contributor that brings a file of its own: a task naming an
+     * icon the icon pass is already generating should leave that file to it,
+     * rather than putting a second line in the preview for the same work.
+     */
+    public function writes(string $path): bool
+    {
+        foreach ($this->actions() as $action) {
+            if ($action instanceof WriteFile && $action->path() === $path) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function isEmpty(): bool

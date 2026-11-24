@@ -33,6 +33,7 @@ return [
         MoveComponentsOutOfPages::class,
         NamespaceComponents::class,
         PositionToasts::class,
+        IconButtons::class,
         KeepOneLayout::class,
         FlattenLayouts::class,
         OpenLayoutsToGuests::class,

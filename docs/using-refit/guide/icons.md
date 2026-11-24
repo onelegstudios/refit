@@ -126,8 +126,10 @@ Heroicon behind.
 An icon refit writes itself gets the same treatment from the other direction. A
 task can put a name in your views that the kit used nowhere — the sign-in arrow
 on the way in
-[a guest gets](/docs/using-refit/guide/tasks#what-the-way-in-shows) is the one
-that does — and the scan cannot see a name that is not there yet. So the task
+[a guest gets](/docs/using-refit/guide/tasks#what-the-way-in-shows) is one, and
+the icons read off your
+[button labels](/docs/using-refit/guide/tasks#put-an-icon-on-the-buttons-that-have-none)
+are the rest — and the scan cannot see a name that is not there yet. So the task
 that names it brings the override with it, out of the same bundled artwork. A
 name with no override behind it would be drawn by Flux's own Heroicons, which is
 the one thing an all-Lucide run is meant to rule out.
