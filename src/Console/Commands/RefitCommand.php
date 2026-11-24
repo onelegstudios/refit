@@ -475,7 +475,7 @@ class RefitCommand extends Command
 
         return confirm(
             label: 'Apply these changes?',
-            default: false,
+            default: true,
             hint: 'Your working tree is clean, so `git checkout .` undoes everything.',
         );
     }
