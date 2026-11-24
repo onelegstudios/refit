@@ -82,6 +82,11 @@ class RefitCommand extends Command
         }
 
         $strategy = $this->askIcons($target, $answers);
+
+        // Attached before the tasks are asked anything, so a task's own
+        // questions can be written against the icon set the run is heading for.
+        $project = $project->withIcons($strategy);
+
         $tasks = $this->askTasks($refit, $project, $answers);
 
         $report = new Report;

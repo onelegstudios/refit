@@ -69,6 +69,42 @@ it('asks a chosen task its own question before planning', function (): void {
         ->toContain('<flux:toast.group position="bottom start">');
 });
 
+it('asks what a guest\'s way in should show, and plans with the answer', function (): void {
+    $root = useKit('livewire');
+
+    $this->artisan('refit', ['--force' => true])
+        ->expectsQuestion('Which component library should this project end up on?', 'flux')
+        ->expectsQuestion('The kit ships Heroicons with a few Lucide icons vendored in. What would you like?', 'keep')
+        ->expectsQuestion('Which tasks would you like to run?', ['guests-in-app-layouts'])
+        ->expectsQuestion('What should the way in a guest gets show?', 'icon')
+        ->expectsQuestion('Apply these changes?', true)
+        ->expectsQuestion('Remove refit from this project now?', false)
+        ->assertSuccessful();
+
+    expect(file_get_contents($root.'/resources/views/layouts/app/sidebar.blade.php'))
+        ->toContain('icon="arrow-right-end-on-rectangle" :aria-label="__(\'Log in\')"')
+        ->not->toContain('{{ __(\'Log in\') }}');
+});
+
+it('spells a task\'s icon in the set the run is heading for, artwork and all', function (): void {
+    $root = useKit('livewire');
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'icons' => 'lucide',
+            'tasks' => ['guests-in-app-layouts'],
+        ]),
+    ])->assertSuccessful();
+
+    // `log-in` is in the kit nowhere, so the icon pass generates no override for
+    // it and the task that names it has to bring the artwork itself — without
+    // the file Flux draws its own Heroicon there instead.
+    expect(file_get_contents($root.'/resources/views/layouts/app/sidebar.blade.php'))
+        ->toContain('icon="log-in"')
+        ->and(is_file($root.'/resources/views/flux/icon/log-in.blade.php'))->toBeTrue();
+});
+
 it('hands a task the answers --answers holds under its own key', function (): void {
     $root = useKit('livewire');
 

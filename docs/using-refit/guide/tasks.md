@@ -335,8 +335,8 @@ where the user menu was:
     <x-desktop-user-menu class="hidden lg:block" :name="auth()->user()->name" />
 @else
     <div class="hidden lg:flex items-center gap-2">
-        <flux:button :href="route('login')" variant="subtle" class="flex-1">{{ __('Log in') }}</flux:button>
-        <flux:button :href="route('register')" variant="primary" class="flex-1">{{ __('Register') }}</flux:button>
+        <flux:button :href="route('login')" icon="arrow-right-end-on-rectangle" variant="subtle" class="flex-1">{{ __('Log in') }}</flux:button>
+        <flux:button :href="route('register')" icon="user-plus" variant="primary" class="flex-1">{{ __('Register') }}</flux:button>
     </div>
 @endauth
 ```
@@ -426,6 +426,61 @@ share, and no class at all where the chrome it replaces had none.
 Past that the point is that a guest has somewhere to go, not that refit has
 styled your chrome — reorder them, stack them, move them, which the run report
 says as well.
+
+### What the way in shows
+
+Whether the links wear an icon is a follow-up question, because the project
+cannot answer it: an icon and a label read as the kit's own menu items do, an
+icon on its own fits a header that is already a row of them, and words on their
+own are the plainest thing a guest can be given.
+
+| Answer | What a link shows |
+|---|---|
+| `both` | An icon and a label — the default |
+| `text` | A label on its own |
+| `icon` | An icon on its own, with the label as its `aria-label` |
+
+The icons are not part of the question. They are written in whichever set
+[you chose a moment earlier](/docs/using-refit/guide/icons), because the icon
+pass has already run by the time the chrome is guarded — so the name that lands
+in the layout is the final one rather than one for a later sweep to translate:
+
+| Icon set | Log in | Register |
+|---|---|---|
+| The kit's mix, or Heroicons only | `arrow-right-end-on-rectangle` | `user-plus` |
+| Lucide only | `log-in` | `user-plus` |
+| Phosphor, on a Sheaf run | `ps:sign-in` | `ps:user-plus` |
+
+A Lucide run gets one extra file. Flux draws Lucide through
+[override files](/docs/using-refit/guide/icons#staying-on-flux), and the icon
+pass generates one for every Lucide name your project already uses — which
+`log-in` is not, because refit is what puts it there. So the task brings the
+artwork with it:
+
+```
+resources/views/flux/icon/log-in.blade.php   ← Lucide's log-in, for the way in
+```
+
+Without that file Flux would resolve `log-in` against its own Heroicons and leave
+one icon from the set you just left in the middle of the new one. `user-plus` is
+written the same way, unless the icon pass is already writing it — the teams kits
+name it on their own, and refit does not plan the same file twice.
+
+Only an icon refit can actually draw is offered. If the bundled artwork is ever
+missing a name, the question is not put at all and a guest gets the way in made
+of words, rather than a link pointing at an override nobody wrote.
+
+An icon on its own still says what it is. A button with nothing in it reads as
+its own route to a screen reader, so the label the icon stands in for becomes the
+link's `aria-label`, translated the way the words would have been:
+
+```blade
+<flux:button :href="route('login')" icon="arrow-right-end-on-rectangle" :aria-label="__('Log in')" variant="subtle" class="flex-1" />
+```
+
+Without prompts that is
+`--answers='{"tasks":["guests-in-app-layouts"],"guests-in-app-layouts":{"show":"icon"}}'`.
+See [running without prompts](/docs/using-refit/guide/the-refit-command#running-without-prompts).
 
 ### What is left alone
 

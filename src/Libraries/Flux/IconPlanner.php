@@ -196,7 +196,7 @@ final class IconPlanner
 
         foreach ($overrides as $filename => $art) {
             $plan->add(Stage::Write, new WriteFile(
-                sprintf('%s/%s.blade.php', self::OVERRIDE_DIRECTORY, $filename),
+                Overrides::icon($filename),
                 $this->generator->render($art, overrideName: $filename),
                 sprintf(
                     'write  %s/%s.blade.php%s',

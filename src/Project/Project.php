@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Onelegstudios\Refit\Project;
 
 use Onelegstudios\Refit\Contracts\Library;
+use Onelegstudios\Refit\Icons\IconStrategy;
 use Symfony\Component\Finder\Finder;
 
 /**
@@ -14,10 +15,11 @@ use Symfony\Component\Finder\Finder;
  * are resolved against the project root so the whole package can be pointed at a
  * fixture directory during tests.
  *
- * `target` is the one field disk cannot answer — it is the library the user chose
- * to end on, attached by {@see targeting()} once that question has been asked.
- * Carrying it here rather than threading it through every signature keeps the
- * `Task` contract to the two arguments it has always had.
+ * `target` and `icons` are the two fields disk cannot answer — the library the
+ * user chose to end on and what they want done about the kit's mixed icon set,
+ * attached by {@see targeting()} and {@see withIcons()} once those questions
+ * have been asked. Carrying them here rather than threading them through every
+ * signature keeps the `Task` contract to the two arguments it has always had.
  */
 final class Project
 {
@@ -32,6 +34,7 @@ final class Project
         public readonly array $libraries,
         public readonly bool $chiselPending,
         public readonly ?Library $target = null,
+        public readonly ?IconStrategy $icons = null,
     ) {}
 
     public function has(Feature $feature): bool
@@ -73,6 +76,27 @@ final class Project
             libraries: $this->libraries,
             chiselPending: $this->chiselPending,
             target: $library,
+            icons: $this->icons,
+        );
+    }
+
+    /**
+     * The same project, with the chosen icon strategy attached.
+     *
+     * Separate from {@see targeting()} because the two are asked in order: the
+     * library decides what the icon question even means, so it is attached
+     * first and this lands on a project that already knows its target.
+     */
+    public function withIcons(IconStrategy $icons): self
+    {
+        return new self(
+            root: $this->root,
+            componentStyle: $this->componentStyle,
+            features: $this->features,
+            libraries: $this->libraries,
+            chiselPending: $this->chiselPending,
+            target: $this->target,
+            icons: $icons,
         );
     }
 

@@ -35,10 +35,13 @@ not.
 which is what lets the entire package be pointed at a fixture directory during
 tests.
 
-`target` is the one field disk cannot answer: the library the user chose, attached
-by `Project::targeting()` once that question has been asked. Carrying it on the
-project rather than threading it through every signature is what keeps the `Task`
-contract at the two arguments it has always had.
+`target` and `icons` are the two fields disk cannot answer: the library the user
+chose and what they want done about the kit's mixed icon set, attached by
+`Project::targeting()` and `Project::withIcons()` once those questions have been
+asked, in that order. Carrying them on the project rather than threading them
+through every signature is what keeps the `Task` contract at the two arguments it
+has always had — and it is what lets a task's own follow-up question be narrowed
+to the run it is part of.
 
 `blades()` and `looseComponents()` are scanned live on every call, not cached.
 The plan moves and deletes files while it runs, and the reconcile pass has to see

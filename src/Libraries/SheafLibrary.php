@@ -99,6 +99,15 @@ final class SheafLibrary implements Library
     /** Sheaf's word for the tinted chip Flux draws when no variant is named at all. */
     private const string BADGE_TINT = 'outline';
 
+    /**
+     * What Sheaf's icon component reads a set that is not its default by.
+     *
+     * A bare name is a Heroicon, `ps:` is Phosphor, `bk:` is the Blade Icons
+     * ecosystem. Public because a task writing an icon of its own has to mark it
+     * the same way the migration's own sweep does.
+     */
+    public const string PHOSPHOR_PREFIX = 'ps:';
+
     public function key(): string
     {
         return self::KEY;
@@ -219,7 +228,7 @@ final class SheafLibrary implements Library
         // After the Lucide reconcile above, so the four names it produces are
         // Heroicons by the time the table is asked about them.
         $plan->add(Stage::Reconcile, new SwitchIconSet(
-            'ps:',
+            self::PHOSPHOR_PREFIX,
             IconMap::HEROICONS_TO_PHOSPHOR,
             'Phosphor',
             $this->vocabulary(),

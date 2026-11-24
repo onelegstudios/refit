@@ -50,8 +50,9 @@ use Onelegstudios\Refit\Project\Project;
  *
  * Where the guarded piece is the user menu — the one piece of chrome with a log
  * out in it — a log in link takes its place in the `@else`, written with the tag
- * of whichever library the project is ending on. It is deliberately plain: the
- * point is that a guest has somewhere to go, not that refit has styled it.
+ * of whichever library the project is ending on, and wearing the icon and the
+ * label it was given. It is deliberately plain beyond that: the point is that a
+ * guest has somewhere to go, not that refit has styled it.
  * Everything else, a team switcher among them, is guarded with nothing in its
  * place, because a guest has no counterpart for it.
  *
@@ -158,6 +159,17 @@ final class GuardSignedInChrome extends BladeSweep
     private const string PROMINENT = 'primary';
 
     /**
+     * The attribute a leading icon goes in.
+     *
+     * The one icon attribute Flux and Sheaf spell the same way, which is why it
+     * is written here rather than asked of the library. They disagree about the
+     * trailing one — `icon-trailing` against `iconAfter` — and nothing here
+     * writes one: a way in reads icon first, the way the kit's own menu items
+     * and sidebar items do.
+     */
+    private const string ICON = 'icon';
+
+    /**
      * @var list<string>
      */
     private array $guarded = [];
@@ -165,11 +177,15 @@ final class GuardSignedInChrome extends BladeSweep
     /**
      * @param  string  $family  the layout family to sweep — the delegating layout's filename, and the folder of variants beside it
      * @param  Vocabulary  $vocabulary  how the library this project is ending on spells its tags
+     * @param  array<string, string>  $icons  route name mapped to the icon the chosen set spells it with, empty for a way in that wears none
+     * @param  bool  $labels  whether a way in says what it is in words as well
      */
     public function __construct(
         private readonly string $family,
         private readonly Vocabulary $vocabulary,
         private readonly bool $registration = false,
+        private readonly array $icons = [],
+        private readonly bool $labels = true,
         private readonly TagParser $parser = new TagParser,
         private readonly Nesting $nesting = new Nesting,
     ) {}
@@ -177,6 +193,21 @@ final class GuardSignedInChrome extends BladeSweep
     public function describe(): string
     {
         return sprintf('guard  the %s layout chrome that needs a signed-in user', $this->family);
+    }
+
+    /**
+     * The icons the ways in will wear, for a plan that has to bring the artwork
+     * for one of them.
+     *
+     * Public for the same reason {@see regions()} is: the task that built this
+     * sweep has to answer a question about what it is going to write before a
+     * line of it has been written.
+     *
+     * @return list<string>
+     */
+    public function icons(): array
+    {
+        return array_values($this->icons);
     }
 
     /**
@@ -293,7 +324,7 @@ final class GuardSignedInChrome extends BladeSweep
             'Guests can render %s now. Where a user menu was guarded, %s stands in its place — move it '
             .'or dress it to match the rest of your chrome.',
             implode(', ', $this->guarded),
-            $this->registration ? 'a plain pair of log in and register links' : 'a plain log in link',
+            $this->registration ? 'a pair of log in and register links' : 'a log in link',
         ));
     }
 
@@ -643,14 +674,40 @@ final class GuardSignedInChrome extends BladeSweep
 
     /**
      * One way in, named as the kit's own welcome page names it.
+     *
+     * What it shows is the task's to answer, and the icon it shows with it is
+     * spelled in whichever set the run is heading for — so the name arrives
+     * ready to write rather than being worked out here.
+     *
+     * A way in with nothing but an icon in it still has to say what it is, or a
+     * screen reader is left reading the route: the label the icon stands in for
+     * becomes its `aria-label`, translated the same way the words would have
+     * been.
      */
     private function link(string $route, string $label, string $attribute, ?string $variant = null): string
     {
+        $icon = $this->icons[$route] ?? null;
+        $variant = $variant === null ? '' : sprintf(' variant="%s"', $variant);
+
+        if ($icon !== null && ! $this->labels) {
+            return sprintf(
+                '<%1$sbutton :href="route(\'%2$s\')" %3$s="%4$s" :aria-label="__(\'%5$s\')"%6$s%7$s />',
+                $this->vocabulary->prefix,
+                $route,
+                self::ICON,
+                $icon,
+                $label,
+                $variant,
+                $attribute,
+            );
+        }
+
         return sprintf(
-            '<%1$sbutton :href="route(\'%2$s\')"%3$s%4$s>{{ __(\'%5$s\') }}</%1$sbutton>',
+            '<%1$sbutton :href="route(\'%2$s\')"%3$s%4$s%5$s>{{ __(\'%6$s\') }}</%1$sbutton>',
             $this->vocabulary->prefix,
             $route,
-            $variant === null ? '' : sprintf(' variant="%s"', $variant),
+            $icon === null ? '' : sprintf(' %s="%s"', self::ICON, $icon),
+            $variant,
             $attribute,
             $label,
         );

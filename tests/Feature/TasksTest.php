@@ -2,8 +2,10 @@
 
 declare(strict_types=1);
 
+use Onelegstudios\Refit\Contracts\Library;
 use Onelegstudios\Refit\Contracts\Task;
 use Onelegstudios\Refit\Icons\IconStrategy;
+use Onelegstudios\Refit\Libraries\Flux\OverrideGenerator;
 use Onelegstudios\Refit\Libraries\FluxLibrary;
 use Onelegstudios\Refit\Libraries\SheafLibrary;
 use Onelegstudios\Refit\Plan\Applier;
@@ -739,7 +741,7 @@ it('offers a guest the way in the kit still has to offer', function (string $kit
         // children no room between them, so a loose pair comes out touching.
         $registers
             ? expect($source)
-                ->toMatch('/<flux:button :href="route\(\'register\'\)" variant="primary"[^>]*>\{\{ __\(\'Register\'\) \}\}<\/flux:button>/')
+                ->toMatch('/<flux:button :href="route\(\'register\'\)"[^>]*variant="primary"[^>]*>\{\{ __\(\'Register\'\) \}\}<\/flux:button>/')
                 ->toMatch('/<div class="(?:[^"]* )?flex items-center gap-2">\s+<flux:button :href="route\(\'login\'\)"/')
             : expect($source)
                 ->not->toContain('route(\'register\')')
@@ -818,8 +820,8 @@ it('guards the chrome a target wrote from its own stubs, in that target\'s tags'
     $sidebar = (new ProjectDetector)->detect($root)->get('resources/views/layouts/app/sidebar.blade.php');
 
     expect(unguardedLines($sidebar))->toBe([])
-        ->and($sidebar)->toContain('<x-ui.button :href="route(\'login\')" variant="ghost" class="flex-1">{{ __(\'Log in\') }}</x-ui.button>')
-        ->and($sidebar)->toContain('<x-ui.button :href="route(\'register\')" variant="primary" class="flex-1">{{ __(\'Register\') }}</x-ui.button>')
+        ->and($sidebar)->toContain('<x-ui.button :href="route(\'login\')" icon="arrow-right-end-on-rectangle" variant="ghost" class="flex-1">{{ __(\'Log in\') }}</x-ui.button>')
+        ->and($sidebar)->toContain('<x-ui.button :href="route(\'register\')" icon="user-plus" variant="primary" class="flex-1">{{ __(\'Register\') }}</x-ui.button>')
         ->and($sidebar)->toContain('items-center gap-2">')
         ->not->toContain('<flux:button');
 });
@@ -828,6 +830,141 @@ it('has nothing left to guard once the shell renders for a guest', function (): 
     [$project] = runTask(new OpenLayoutsToGuests, 'livewire');
 
     expect((new OpenLayoutsToGuests)->appliesTo($project))->toBeFalse();
+});
+
+/**
+ * Open the layouts of a project that has already answered the library and the
+ * icon question, which is the project the command hands a task.
+ */
+function runGuests(
+    string $kit,
+    Library $target,
+    IconStrategy $icons,
+    string $show = 'both',
+    ?OverrideGenerator $generator = null,
+): Project {
+    $project = (new ProjectDetector)->detect(copyFixture($kit))->targeting($target)->withIcons($icons);
+    $plan = new Plan;
+    $report = new Report;
+    $task = new OpenLayoutsToGuests('app', 'both', $generator ?? new OverrideGenerator);
+
+    $task->answered(new Answers(['show' => $show]))->contribute($plan, $project, $report);
+
+    (new Applier)->apply($plan, $project, $report);
+
+    return $project;
+}
+
+/**
+ * An artwork bundle with nothing in it, standing in for an icon refit cannot
+ * draw — which is the one thing that leaves a run with no icon to offer.
+ */
+function emptyBundle(): OverrideGenerator
+{
+    return new OverrideGenerator(iconDirectory: sys_get_temp_dir().'/refit-no-icons');
+}
+
+/**
+ * The ways in one guarded layout holds, as whole tags.
+ *
+ * @return list<string>
+ */
+function waysIn(Project $project, string $path = 'resources/views/layouts/app/sidebar.blade.php'): array
+{
+    preg_match_all('/<[a-z:.\-]*button [^>]*>/', $project->get($path), $matches);
+
+    return $matches[0];
+}
+
+it('asks what the way in shows, and offers it both ways round', function (): void {
+    $questions = (new OpenLayoutsToGuests)->questions(
+        detectFixture('livewire')->targeting(new FluxLibrary)->withIcons(IconStrategy::Keep),
+    );
+
+    expect($questions)->toHaveCount(1)
+        ->and($questions[0]->key)->toBe('show')
+        ->and(array_keys($questions[0]->options))->toBe(['both', 'text', 'icon'])
+        ->and($questions[0]->default())->toBe('both');
+});
+
+it('asks nothing where it has no icon it could draw', function (): void {
+    // The one thing that leaves a run with nothing to offer: a Lucide name refit
+    // bundles no artwork for. Flux would resolve it against its own Heroicons
+    // and leave one icon from the set the project is leaving in the new one.
+    $questions = (new OpenLayoutsToGuests('app', 'both', emptyBundle()))->questions(
+        detectFixture('livewire')->targeting(new FluxLibrary)->withIcons(IconStrategy::Lucide),
+    );
+
+    expect($questions)->toBe([]);
+});
+
+it('leaves the way in made of words where it has no icon it could draw', function (): void {
+    $project = runGuests('livewire', new FluxLibrary, IconStrategy::Lucide, generator: emptyBundle());
+
+    expect(waysIn($project))->not->toBeEmpty()
+        ->each(fn ($tag) => $tag->not->toContain('icon='));
+});
+
+it('brings the artwork for the Lucide icon only it names', function (): void {
+    // `log-in` is in the kit nowhere, so the icon pass never generates an
+    // override for it — and a name with no override behind it is drawn by Flux's
+    // own Heroicons. The task that names it brings its drawing.
+    $project = runGuests('livewire', new FluxLibrary, IconStrategy::Lucide);
+
+    expect($project->get('resources/views/layouts/app/sidebar.blade.php'))
+        ->toContain('<flux:button :href="route(\'login\')" icon="log-in" variant="subtle" class="flex-1">{{ __(\'Log in\') }}</flux:button>')
+        ->toContain('<flux:button :href="route(\'register\')" icon="user-plus" variant="primary" class="flex-1">{{ __(\'Register\') }}</flux:button>')
+        ->and($project->get('resources/views/flux/icon/log-in.blade.php'))
+        ->toContain('Credit: Lucide')
+        ->and($project->exists('resources/views/flux/icon/user-plus.blade.php'))->toBeTrue();
+});
+
+it('leaves an override the icon pass is already writing to the icon pass', function (): void {
+    // `user-plus` is in the teams kits, so the Lucide pass generates its override
+    // already. The same file planned twice is a preview line promising work
+    // nobody needs.
+    $project = detectFixture('livewire-teams')->targeting(new FluxLibrary)->withIcons(IconStrategy::Lucide);
+    $plan = new Plan;
+    $report = new Report;
+
+    (new FluxLibrary)->planIcons($plan, $project, IconStrategy::Lucide, $report);
+    (new OpenLayoutsToGuests)->contribute($plan, $project, $report);
+
+    $lines = $plan->describe();
+
+    expect(array_filter($lines, fn (string $line): bool => str_contains($line, 'flux/icon/user-plus.blade.php')))
+        ->toHaveCount(1)
+        ->and($lines)
+        ->toContain('  write  resources/views/flux/icon/log-in.blade.php (Lucide "log-in", for the way in a guest gets)');
+});
+
+it('spells the icon in the set the run is heading for', function (): void {
+    // Phosphor is Sheaf's other answer, and Sheaf's icon component reads the set
+    // off the name: a bare one is a Heroicon, `ps:` is Phosphor.
+    $project = runGuests('livewire', new SheafLibrary, IconStrategy::Phosphor);
+
+    expect($project->get('resources/views/layouts/app/sidebar.blade.php'))
+        ->toContain('<x-ui.button :href="route(\'login\')" icon="ps:sign-in" variant="ghost" class="flex-1">{{ __(\'Log in\') }}</x-ui.button>')
+        ->toContain('<x-ui.button :href="route(\'register\')" icon="ps:user-plus" variant="primary" class="flex-1">{{ __(\'Register\') }}</x-ui.button>');
+});
+
+it('writes the way in with nothing but words when that is the answer', function (): void {
+    $project = runGuests('livewire', new FluxLibrary, IconStrategy::Heroicons, 'text');
+
+    expect($project->get('resources/views/layouts/app/sidebar.blade.php'))
+        ->toContain('<flux:button :href="route(\'login\')" variant="subtle" class="flex-1">{{ __(\'Log in\') }}</flux:button>')
+        ->and(waysIn($project))->each(fn ($tag) => $tag->not->toContain('icon='));
+});
+
+it('leaves an icon on its own saying what it stands for', function (): void {
+    // A button with nothing in it reads as its own route to a screen reader, so
+    // the label the icon replaced becomes the aria-label.
+    $project = runGuests('livewire', new FluxLibrary, IconStrategy::Heroicons, 'icon');
+
+    expect($project->get('resources/views/layouts/app/sidebar.blade.php'))
+        ->toContain('<flux:button :href="route(\'login\')" icon="arrow-right-end-on-rectangle" :aria-label="__(\'Log in\')" variant="subtle" class="flex-1" />')
+        ->toContain('<flux:button :href="route(\'register\')" icon="user-plus" :aria-label="__(\'Register\')" variant="primary" class="flex-1" />')
+        ->not->toContain('{{ __(\'Log in\') }}');
 });
 
 it('drops the Flux Pro source line', function (): void {
