@@ -129,6 +129,7 @@ on the way in
 [a guest gets](/docs/using-refit/guide/tasks#what-the-way-in-shows) is one, and
 the icons read off your
 [button labels](/docs/using-refit/guide/tasks#put-an-icon-on-the-buttons-that-have-none)
+and the [settings sections](/docs/using-refit/guide/tasks#put-an-icon-on-the-settings-sections)
 are the rest — and the scan cannot see a name that is not there yet. So the task
 that names it brings the override with it, out of the same bundled artwork. A
 name with no override behind it would be drawn by Flux's own Heroicons, which is

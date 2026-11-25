@@ -18,6 +18,7 @@ use Onelegstudios\Refit\Questions\Answers;
 use Onelegstudios\Refit\Refit;
 use Onelegstudios\Refit\Tasks\FlattenLayouts;
 use Onelegstudios\Refit\Tasks\IconButtons;
+use Onelegstudios\Refit\Tasks\IconSettings;
 use Onelegstudios\Refit\Tasks\KeepOneLayout;
 use Onelegstudios\Refit\Tasks\MoveAuthViewsOutOfPages;
 use Onelegstudios\Refit\Tasks\MoveComponentsOutOfPages;
@@ -58,6 +59,7 @@ it('registers the configured tasks', function (): void {
             'namespace-components',
             'position-toasts',
             'icon-buttons',
+            'icon-settings',
             'single-layout',
             'flatten-layouts',
             'guests-in-app-layouts',
@@ -776,6 +778,240 @@ it('takes a table of its own, spelled however the caller spells it', function ()
     // The table it was given, and nothing of refit's: the saves stay bare.
     expect(viewsWith($project, '<flux:button icon="x-circle" variant="danger"'))->not->toBeEmpty()
         ->and(viewsWith($project, 'icon="check"'))->toBeEmpty();
+});
+
+/**
+ * Run the settings task against a throwaway kit, with the library and the icon
+ * set already settled — which is the state it is contributed in.
+ *
+ * @return array{Project, Report}
+ */
+function runSettingsIcons(string $kit, Library $target, IconStrategy $icons): array
+{
+    $project = (new ProjectDetector)->detect(copyFixture($kit))->targeting($target)->withIcons($icons);
+    $plan = new Plan;
+    $report = new Report;
+
+    (new IconSettings)->contribute($plan, $project, $report);
+
+    (new Applier)->apply($plan, $project, $report);
+
+    return [$project, $report];
+}
+
+/**
+ * The settings layout, wherever the kit keeps it.
+ */
+function settingsLayout(Project $project): string
+{
+    foreach ($project->blades() as $path) {
+        if (str_ends_with($path, 'settings/layout.blade.php')) {
+            return $project->get($path);
+        }
+    }
+
+    return '';
+}
+
+it('puts an icon on every row of the settings menu', function (string $kit): void {
+    [$project] = runSettingsIcons($kit, new FluxLibrary, IconStrategy::Keep);
+
+    expect(settingsLayout($project))
+        ->toContain('<flux:navlist.item icon="user" :href="route(\'profile.edit\')"')
+        ->toContain('<flux:navlist.item icon="swatch" :href="route(\'appearance.edit\')"');
+})->with(starterKits());
+
+it('puts the team and security rows behind their own icons where the kit has them', function (): void {
+    [$project] = runSettingsIcons('livewire-teams', new FluxLibrary, IconStrategy::Keep);
+
+    expect(settingsLayout($project))
+        ->toContain('<flux:navlist.item icon="shield-check" :href="route(\'security.edit\')"')
+        ->toContain('<flux:navlist.item icon="users" :href="route(\'teams.index\')"');
+});
+
+it('opens the settings layout\'s heading to an icon the page names', function (): void {
+    [$project] = runSettingsIcons('livewire', new FluxLibrary, IconStrategy::Keep);
+
+    expect(settingsLayout($project))
+        ->toContain('<flux:heading class="flex items-center gap-2">')
+        ->toContain('@isset($icon)')
+        ->toContain('<flux:icon :name="$icon" class="size-4" />')
+        ->toContain('@endisset')
+        // And the subheading is still the heading's next sibling, which is what
+        // Flux draws the gap between the two off.
+        ->toContain('</flux:heading>'."\n".'        <flux:subheading>');
+});
+
+it('names the icon at every page that calls the layout', function (string $kit): void {
+    [$project] = runSettingsIcons($kit, new FluxLibrary, IconStrategy::Keep);
+
+    // The password form's own heading, rather than the word on its menu row.
+    expect(viewsWith($project, 'settings.layout icon="key" :heading="__(\'Update password\')"'))->not->toBeEmpty()
+        ->and(viewsWith($project, 'settings.layout icon="user" :heading="__(\'Profile\')"'))->not->toBeEmpty();
+})->with(['livewire', 'livewire-class-components', 'livewire-teams']);
+
+it('puts an icon on the sections further down the security page', function (string $kit): void {
+    [$project] = runSettingsIcons($kit, new FluxLibrary, IconStrategy::Keep);
+
+    expect(viewsWith($project, '<flux:icon name="lock-closed" class="size-4" />'))->not->toBeEmpty()
+        ->and(viewsWith($project, '<flux:icon name="finger-print" class="size-4" />'))->not->toBeEmpty()
+        // Inside the heading, so the subheading under each section keeps its gap.
+        ->and(viewsWith($project, '</flux:heading>'."\n".'                <flux:subheading>'))->not->toBeEmpty();
+})->with(['livewire', 'livewire-class-components', 'livewire-teams']);
+
+it('leaves the headings a settings page writes outside the layout alone', function (): void {
+    [$project] = runSettingsIcons('livewire-teams', new FluxLibrary, IconStrategy::Keep);
+
+    // The screen-reader heading above the slot says the same word as the menu
+    // row, and the modal titles below it say the same words as the sections.
+    expect(viewsWith($project, '<flux:heading level="2" class="sr-only">{{ __(\'Teams\') }}</flux:heading>'))->not->toBeEmpty()
+        ->and(viewsWith($project, '<flux:heading size="lg">{{ __(\'Remove passkey\') }}</flux:heading>'))->not->toBeEmpty();
+});
+
+it('leaves a row that already chose an icon alone', function (): void {
+    $root = copyFixture('livewire');
+    $layout = $root.'/resources/views/pages/settings/layout.blade.php';
+
+    file_put_contents($layout, str_replace(
+        '<flux:navlist.item :href="route(\'profile.edit\')"',
+        '<flux:navlist.item icon="identification" :href="route(\'profile.edit\')"',
+        (string) file_get_contents($layout),
+    ));
+
+    $project = (new ProjectDetector)->detect($root)->targeting(new FluxLibrary)->withIcons(IconStrategy::Keep);
+    $plan = new Plan;
+    $report = new Report;
+
+    (new IconSettings)->contribute($plan, $project, $report);
+    (new Applier)->apply($plan, $project, $report);
+
+    expect($project->get('resources/views/pages/settings/layout.blade.php'))
+        ->toContain('icon="identification"')
+        ->not->toContain('icon="user"');
+});
+
+it('says which settings sections it had no icon for', function (): void {
+    $root = copyFixture('livewire');
+    $layout = $root.'/resources/views/pages/settings/layout.blade.php';
+
+    file_put_contents($layout, str_replace(
+        '</flux:navlist>',
+        '    <flux:navlist.item :href="route(\'billing.edit\')" wire:navigate>{{ __(\'Billing\') }}</flux:navlist.item>'."\n        </flux:navlist>",
+        (string) file_get_contents($layout),
+    ));
+
+    $project = (new ProjectDetector)->detect($root)->targeting(new FluxLibrary)->withIcons(IconStrategy::Keep);
+    $plan = new Plan;
+    $report = new Report;
+
+    (new IconSettings)->contribute($plan, $project, $report);
+    (new Applier)->apply($plan, $project, $report);
+
+    expect($report->notes())->toHaveCount(1)
+        ->and($report->notes()[0])->toContain('"Billing"');
+});
+
+it('spells the settings icons in the set the run is heading for', function (): void {
+    [$project] = runSettingsIcons('livewire', new FluxLibrary, IconStrategy::Lucide);
+
+    expect(settingsLayout($project))
+        ->toContain('icon="swatch-book"')
+        ->toContain('icon="user"')
+        ->and(viewsWith($project, 'icon="key-round"'))->not->toBeEmpty();
+});
+
+it('brings the artwork for the Lucide icons the settings sections are the first to name', function (): void {
+    // `users` the kit already draws, so that override is the icon pass's to
+    // write; the person, the shield and the swatches are refit's.
+    $project = detectFixture('livewire-teams')->targeting(new FluxLibrary)->withIcons(IconStrategy::Lucide);
+    $plan = new Plan;
+    $report = new Report;
+
+    (new FluxLibrary)->planIcons($plan, $project, IconStrategy::Lucide, $report);
+    (new IconSettings)->contribute($plan, $project, $report);
+
+    $lines = $plan->describe();
+
+    expect($lines)->toContain('  write  resources/views/flux/icon/shield-check.blade.php (Lucide "shield-check", for a settings icon)')
+        ->toContain('  write  resources/views/flux/icon/swatch-book.blade.php (Lucide "swatch-book", for a settings icon)')
+        ->and(array_filter($lines, fn (string $line): bool => str_contains($line, 'flux/icon/users.blade.php')))
+        ->toHaveCount(1)
+        // The padlock and the fingerprint the security page's own sections want
+        // are names the kit already draws, so those two stay the icon pass's.
+        ->and(array_filter($lines, fn (string $line): bool => str_contains($line, 'flux/icon/lock.blade.php')))
+        ->toHaveCount(1)
+        ->and(array_filter($lines, fn (string $line): bool => str_contains($line, 'flux/icon/fingerprint-pattern.blade.php')))
+        ->toHaveCount(1);
+});
+
+it('writes the settings icons on the components the project ends on', function (): void {
+    $root = sheafKit('livewire-teams');
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'library' => 'sheaf',
+            'icons' => 'phosphor',
+            'tasks' => ['icon-settings'],
+        ]),
+    ])->assertSuccessful();
+
+    $project = (new ProjectDetector)->detect($root);
+
+    // Sheaf moves a nav row's label into an attribute, so the sweep reads it
+    // from there and the icon still lands.
+    expect(settingsLayout($project))
+        ->toContain('<x-ui.navlist.item icon="ps:user"')
+        ->toContain('<x-ui.navlist.item icon="ps:users"')
+        ->toContain('<x-ui.icon :name="$icon"')
+        ->and(viewsWith($project, 'settings.layout icon="ps:key"'))->not->toBeEmpty();
+});
+
+it('lands on the settings layout wherever the rest of the run has moved it', function (): void {
+    $root = useKit('livewire-teams');
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'library' => 'flux',
+            'icons' => 'lucide',
+            'tasks' => ['components-out-of-pages', 'icon-settings'],
+        ]),
+    ])->assertSuccessful();
+
+    $project = (new ProjectDetector)->detect($root);
+
+    // The layout is out of the pages folder and the pages call it by its new
+    // name, so the sweep had to find both after the move.
+    expect($project->get('resources/views/components/settings/layout.blade.php'))
+        ->toContain('<flux:navlist.item icon="swatch-book"')
+        ->toContain('<flux:icon :name="$icon"')
+        ->and(viewsWith($project, '<x-settings.layout icon="user"'))->not->toBeEmpty()
+        // And the artwork for the names refit was the first to write.
+        ->and($project->exists('resources/views/flux/icon/user.blade.php'))->toBeTrue()
+        ->and($project->exists('resources/views/flux/icon/shield-check.blade.php'))->toBeTrue()
+        ->and($project->exists('resources/views/flux/icon/swatch-book.blade.php'))->toBeTrue();
+});
+
+it('has nothing left to do once the settings sections have icons', function (): void {
+    [$project] = runSettingsIcons('livewire', new FluxLibrary, IconStrategy::Keep);
+
+    expect((new IconSettings)->appliesTo($project))->toBeFalse();
+});
+
+it('takes a settings table of its own', function (): void {
+    $project = (new ProjectDetector)->detect(copyFixture('livewire'));
+    $plan = new Plan;
+    $report = new Report;
+
+    (new IconSettings(['Profile' => 'identification']))->contribute($plan, $project, $report);
+
+    (new Applier)->apply($plan, $project, $report);
+
+    // The table it was given, and nothing of refit's: appearance stays bare.
+    expect(settingsLayout($project))
+        ->toContain('<flux:navlist.item icon="identification" :href="route(\'profile.edit\')"')
+        ->not->toContain('icon="swatch"');
 });
 
 /**
