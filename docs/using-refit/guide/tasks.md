@@ -18,6 +18,7 @@ something that would do nothing.
 | Structure | Group components into folders | `namespace-components` |
 | Structure | Move the toast stack to another corner | `position-toasts` |
 | Structure | Put an icon on the buttons that have none | `icon-buttons` |
+| Structure | Put an icon on the settings sections | `icon-settings` |
 | Structure | Flatten the layout folders | `flatten-layouts` |
 | Structure | Let the app layouts render for a guest | `guests-in-app-layouts` |
 | Cleanup | Delete the layouts the kit does not render | `single-layout` |
@@ -369,6 +370,159 @@ The sweep runs ahead of the tasks that write buttons of their own, so an answer
 you gave one of those is the one that stands — the way in
 [a guest gets](#what-the-way-in-shows) shows what you said it should show, icon
 or no icon.
+
+## Put an icon on the settings sections
+
+The settings sub-navigation is the one navlist the kit writes without icons.
+Every other nav row in the shell has one — Dashboard, Repository, Documentation,
+the user menu's own Settings and Log out — and then the page those rows open puts
+four words in a column and a heading above the form.
+
+The task gives each section a drawing, everywhere the section is named. On its
+row in the menu:
+
+```blade
+{{-- before --}}
+<flux:navlist.item :href="route('profile.edit')" wire:navigate>{{ __('Profile') }}</flux:navlist.item>
+
+{{-- after --}}
+<flux:navlist.item icon="user" :href="route('profile.edit')" wire:navigate>{{ __('Profile') }}</flux:navlist.item>
+```
+
+And over the page that row opens, which is the useful half on a narrow screen:
+there the menu scrolls away above the fold and the heading is the only thing left
+saying which of the four you are on. The heading is the layout's to draw and the
+section's to name, so the two halves are rewritten together — the layout learns
+an `icon` prop:
+
+```blade
+<flux:heading class="flex items-center gap-2">
+    @isset($icon)
+        <flux:icon :name="$icon" class="size-4" />
+    @endisset
+
+    {{ $heading ?? '' }}
+</flux:heading>
+```
+
+and each page passes the one its own heading asks for:
+
+```blade
+<x-settings.layout icon="key" :heading="__('Update password')" :subheading="__('Ensure your account is using a long, random password to stay secure')">
+```
+
+The icon goes inside the heading rather than in a wrapper around it, because the
+gap under a heading is the heading's own: Flux draws it with
+`[&:has(+[data-flux-subheading])]:mb-2`, a rule that only fires while the
+subheading is the heading's next sibling. A wrapper would put a `<div>` between
+the two and take the gap with it, so the arrangement of the page is left exactly
+as the kit wrote it and only the heading's own contents change. The svg is
+`aria-hidden`, so the heading reads the same with an icon in it as without, and
+the prop is guarded, so a page that passes no icon renders the heading it always
+had.
+
+And over each section written further down the same page. The security page is
+where that shows: under the password form it has a two-factor block and a passkey
+block, each a heading of its own, and those are given their icon on the spot
+rather than through a prop. The `size-4` and the bare colour are the kit's own
+and not a choice: its recovery codes panel already writes an iconed section
+heading, and that is the icon it writes — so that panel needs nothing, and the
+icon takes the heading's colour rather than naming one of its own.
+
+```blade
+<flux:heading class="flex items-center gap-2">
+    <flux:icon name="finger-print" class="size-4" />
+    {{ __('Passkeys') }}
+</flux:heading>
+```
+
+Nothing is asked, because nothing here is a choice your project cannot make for
+itself: the sections are the kit's own, and the icons are their labels read back.
+
+### Which icon a section gets
+
+| Icon | Label | Where |
+|---|---|---|
+| `user` | Profile | Menu row, page heading |
+| `shield-check` | Security | Menu row |
+| `users` | Teams | Menu row, page heading |
+| `swatch` | Appearance | Menu row, page heading |
+| `key` | Update password | Page heading |
+| `lock-closed` | Two-factor authentication | Section heading |
+| `finger-print` | Passkeys | Section heading |
+
+Three kinds of label, because a section is named wherever it is written. Security
+is the words on the menu row; Update password is the heading on the page that row
+opens; Passkeys and Two-factor authentication are the sections further down the
+same page. Each is answered on its own terms rather than one being made to stand
+for the others, so the shield marks the section, the key marks the form at the
+top of it, and the padlock and the fingerprint mark the two below.
+
+Labels are matched on their words rather than on their spelling, so case and the
+line breaks a long tag is wrapped over make no difference. A menu row or a page
+heading whose label refit has never seen gets no icon and is named in
+[`REFIT-NOTES.md`](/docs/using-refit/reference/troubleshooting) instead, which is
+what a settings section of your own gets: the row keeps its words, the page keeps
+its heading, and the note says which.
+
+To name your application's own sections, register the task with your own table.
+It replaces refit's rather than adding to it, so spread that one in to keep it,
+and write the names as Heroicons spells them — the set every translation starts
+from:
+
+```php
+use Onelegstudios\Refit\Facades\Refit;
+use Onelegstudios\Refit\Tasks\IconSettings;
+
+Refit::task(new IconSettings([...IconSettings::ICONS, 'billing' => 'credit-card']));
+```
+
+### What is left alone
+
+A row that already names an icon has made the decision itself, and keeps it — in
+any of its library's attributes, bound or literal. A layout call that already
+passes one keeps that too, and a heading that already has an icon — inside it or
+in front of it, the way the recovery codes panel does — is not given a second
+one. A heading styled through a bound `:class` is left alone as well, there being
+no reading of one that is not a guess.
+
+Only the headings inside the layout count as sections, which is what makes a
+label safe to match on at all. The screen-reader heading above the slot says
+Teams as well, and the modal titles below it say Remove passkey and Delete
+account, and none of those is a section — so a page's headings outside the slot
+are left alone, as are the ones that live in components of their own: the account
+deletion form, the recovery codes panel.
+
+A section heading the table has no icon for is passed over in silence rather than
+noted, because the sweep reads every heading in the slot and a note would list
+your application's headings rather than its settings sections. In the teams kits
+that is Team members, Pending invitations and Delete team, which stay bare. Menu
+rows and page headings are the ones the notes are about.
+
+### Which set the icons are spelled in
+
+Whichever one [you chose a moment earlier](/docs/using-refit/guide/icons), the
+same way the [button labels](#put-an-icon-on-the-buttons-that-have-none) are:
+
+| Icon set | Profile | Appearance | Passkeys |
+|---|---|---|---|
+| The kit's mix, or Heroicons only | `user` | `swatch` | `finger-print` |
+| Lucide only | `user` | `swatch-book` | `fingerprint-pattern` |
+| Phosphor, on a Sheaf run | `ps:user` | `ps:swatches` | `ps:fingerprint` |
+
+A Lucide run gets the artwork with it, for the reason the buttons do: a settings
+icon is a name the icon pass cannot see, because refit is what puts it there. So
+the task brings an override for each name it is the first to write, and leaves
+the ones the icon pass is already writing — `users` in a teams kit, which the
+team switcher already draws — to it.
+
+The components are whatever they are called by the time the plan runs:
+`<flux:navlist.item>` and `<flux:heading>` on a project staying with Flux,
+`<x-ui.navlist.item>` and `<x-ui.heading>` on one
+[moving to Sheaf](/docs/using-refit/guide/libraries). Sheaf's nav row takes
+its label as an attribute rather than as contents, which the migration has
+already moved it to earlier in the same pass, so the label is read from there
+instead — the words are the same either way.
 
 ## Flatten the layout folders
 

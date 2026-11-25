@@ -34,6 +34,7 @@ return [
         NamespaceComponents::class,
         PositionToasts::class,
         IconButtons::class,
+        IconSettings::class,
         KeepOneLayout::class,
         FlattenLayouts::class,
         OpenLayoutsToGuests::class,

@@ -67,9 +67,14 @@ final class IconMap
         'moon' => 'moon',
         'plus' => 'plus',
         'qr-code' => 'qr-code',
+        'shield-check' => 'shield-check',
         'slash' => 'slash',
         'sun' => 'sun',
+        // Lucide draws no single swatch; the book of them is where it keeps the
+        // colours.
+        'swatch' => 'swatch-book',
         'trash' => 'trash',
+        'user' => 'user',
         'user-plus' => 'user-plus',
         'users' => 'users',
         'x-circle' => 'circle-x',
@@ -135,9 +140,13 @@ final class IconMap
         'moon' => 'moon',
         'plus' => 'plus',
         'qr-code' => 'qr-code',
+        'shield-check' => 'shield-check',
         'squares-2x2' => 'squares-four',
         'sun' => 'sun',
+        // Phosphor keeps its colours in the plural, as a row of swatches.
+        'swatch' => 'swatches',
         'trash' => 'trash',
+        'user' => 'user',
         'user-plus' => 'user-plus',
         'users' => 'users',
         'x-circle' => 'x-circle',
