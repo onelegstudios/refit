@@ -1,14 +1,14 @@
 ---
 title: Tasks
-description: The structural and cleanup tasks refit offers once the icon set is chosen.
+description: The structural, tooling and cleanup tasks refit offers once the icon set is chosen.
 order: 4
 ---
 
 # Tasks
 
-After the icon question you pick from a list of structural tasks. Only tasks that
-fit the kit refit detected are offered, so you are never asked to choose
-something that would do nothing.
+After the icon question you pick from a list of tasks. Only tasks that fit the
+kit refit detected are offered, so you are never asked to choose something that
+would do nothing.
 
 | Group | Task | Key |
 |---|---|---|
@@ -21,6 +21,7 @@ something that would do nothing.
 | Structure | Put an icon on the settings sections | `icon-settings` |
 | Structure | Flatten the layout folders | `flatten-layouts` |
 | Structure | Let the app layouts render for a guest | `guests-in-app-layouts` |
+| Tooling | Offer developer logins on the login page | `login-links` |
 | Cleanup | Delete the layouts the kit does not render | `single-layout` |
 | Cleanup | Remove the Flux Pro `@source` line from `app.css` | `remove-flux-pro-source` |
 | Cleanup | Use Flux's own components instead of the kit's overrides | `remove-flux-overrides` |
@@ -772,6 +773,137 @@ use Onelegstudios\Refit\Tasks\OpenLayoutsToGuests;
 
 Refit::task(new OpenLayoutsToGuests('marketing'));
 ```
+
+## Offer developer logins on the login page
+
+Typing a password into your own application a dozen times a day is a tax the kit
+leaves you paying, and the usual answer is a seeder plus a password you have
+memorised. [`spatie/laravel-login-link`](https://github.com/spatie/laravel-login-link)
+is the better one: a link that signs you in as whoever it names. The task
+installs it as a dev dependency and writes the links into the login view, under
+the form:
+
+```blade
+        </form>
+
+        @env('local')
+            <flux:card variant="outline" class="rounded-lg p-4 text-sm text-center">
+                <flux:heading size="base" class="mb-2">Log in as</flux:heading>
+                <div class="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5">
+                    <x-login-link email="test@example.com" :user-attributes="['name' => 'Test User']" label="Test User" />
+                    <span aria-hidden="true" class="text-zinc-300 dark:text-zinc-600">|</span>
+                    <x-login-link email="admin@example.com" :user-attributes="['name' => 'Admin User']" label="Admin User" />
+                </div>
+            </flux:card>
+        @endenv
+```
+
+A card of its own, with the verb in the heading and the accounts divided by
+pipes: "Log in as: Test User | Admin User" says in one line what a column of
+"Log in as the …" links says in five, and it reads as a panel belonging to the
+page rather than something loose under your login form. Each login renders as its
+own little form — the package posts rather than links — so the row is laid out
+with flex and wraps on a narrow screen.
+
+The rounding and the padding are written out as utilities rather than left to the
+card, and `variant="outline"` gives it no fill of its own. Both are deliberate.
+Each library keeps a card's geometry in a stylesheet — Flux derives it from CSS
+variables in `flux.css`, Sheaf writes `:where()` defaults into the component it
+installs — so a project whose build does not have that stylesheet renders a
+square, unpadded box. Utilities land in Tailwind's own layer, above both, in a
+file Tailwind scans. And a filled card carries a tint mixed for the page it was
+drawn on, so giving this page a background later would leave the card sitting on
+a patch of the old one.
+
+The card and its heading are the ones your application already has. `flux:card`
+is in Flux's free edition, so a project staying on Flux has both; a project
+[heading for Sheaf](/docs/using-refit/guide/libraries) gets `<x-ui.card>` and
+`<x-ui.heading>`, and the task installs the card, because the kit builds its own
+cards out of divs and nothing in the migration would otherwise bring one. The
+heading needs no install: the kit writes `flux:heading` above every form it
+ships, so the migration has already brought Sheaf's.
+
+The heading sits at the size of the labels over the inputs above it, which is the
+line it belongs with — `flux:label` is `text-sm font-medium` over
+`text-zinc-800 dark:text-white`, and a heading at any size under `lg` is the same
+three things. Not the page's title, which is `xl` and belongs to the page rather
+than to a panel inside it. `base` is Flux's own default for the prop, written out
+rather than left unsaid. The card itself stays centred, like the footer the kit
+writes under it: it is a block of its own rather than another field in the form,
+and a row that wraps reads better centred than ragged.
+
+The two libraries put those words at different points on their scales, which is
+why the Sheaf spelling says `size="xs"`;
+[`ComponentMap`](/docs/development/internals/component-mapping) records that
+translation for the headings the kit itself wrote, and this is the same step
+taken by hand. Both spellings are decided
+before the plan runs rather than left to the migration: the migration renames
+Flux's tags in the same pass as this, and ahead of it, so a `flux:card` written
+here would be the one tag left behind on a project that has just dropped Flux.
+
+Which accounts is a follow-up question, because the project cannot answer it. The
+kit seeds exactly one user — `Test User`, at `test@example.com`, from
+`DatabaseSeeder` — and everything past that is about how you work:
+
+| Account | Name | The link it writes |
+|---|---|---|
+| `test` | Test User | `test@example.com`, the user the kit's seeder creates |
+| `admin` | Admin User | `admin@example.com` |
+| `new` | The factory's | A random address every time the page renders, so every click is an account with nothing behind it |
+| `unverified` | Unverified User | No address, and `email_verified_at` held at `null` — so you land on the "verify your email" screen instead of the dashboard |
+| `first` | — | No attributes at all, which is how the package means "whoever is first in the users table" |
+
+They do not rule each other out, so the question takes
+[several answers](/docs/using-refit/guide/custom-tasks#several-answers-to-one-question)
+rather than one. Pick as many as you use; the links come out in the order above
+whichever order you tick them in. The addresses are refit's, because a fresh kit
+has no opinion about them — what comes out is ordinary Blade, so pointing a link
+at `owner@acme.test` afterwards is an edit rather than a setting.
+
+None of them has to exist first. The package creates a user it cannot find
+through your user model's factory, so a link is a login the first time it is
+clicked and the same login every time after — which is also why `new` is written
+as a random address rather than a fixed one. A fresh account on every click costs
+a row in the users table each time you use it.
+
+The name comes from `:user-attributes`, which the package passes to the factory,
+because the kit's `UserFactory` fills the name with `fake()->name()` — and an
+admin called Rosalyn Bartoletti is not much of a second account to test with.
+`new` is the one left to the factory, name and all: it stands in for somebody who
+has just signed up, so a random name belongs with the random address, and there
+is nothing to come back to anyway.
+
+`unverified` is the same trick aimed at the other screen. The kit guards the
+dashboard with `verified` and its `User` implements `MustVerifyEmail`, so an
+account whose `email_verified_at` is `null` lands on the verify page — which is
+the one page you otherwise have to register a throwaway address to see. It is
+offered only where that contract is actually on the user model, because without
+it the middleware waves everyone through and the link would be an ordinary login
+wearing a name that says otherwise.
+
+Its link carries no address on purpose. The lookup becomes
+`where name = ? and email_verified_at is null`, so it comes back to the same
+account while that account is unverified, and the moment you verify it — the
+whole reason to be there — it stops matching and the next click gets a fresh one.
+A fixed address would make that second click a unique constraint instead.
+
+> [!NOTE]
+> The package looks an account up by *every* attribute the link gives it, the name
+> included, so a row at that address under a different name is not a match — and
+> the package would then try to create a second one at an address your users table
+> holds unique. That is why `test` is spelled exactly as `DatabaseSeeder` writes
+> it. If you rename an account in the view, rename it in your seeder too.
+
+> [!NOTE]
+> Three things keep this out of production: the links are wrapped in
+> `@env('local')`, the package throws outside its own `allowed_environments`, and
+> it is installed under `require-dev`. The package's own config is published with
+> `php artisan vendor:publish --tag="login-link-config"` if you want to widen any
+> of that — a `*.test` host, or an account that is never created.
+
+Nothing is offered on the WorkOS variations. They have no login view to put a
+link in: the kit redirects to AuthKit, and the password never reaches the
+application at all.
 
 ## Delete the layouts the kit does not render
 

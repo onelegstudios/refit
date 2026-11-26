@@ -8,6 +8,7 @@ enum TaskGroup: string
 {
     case Structure = 'structure';
     case Naming = 'naming';
+    case Tooling = 'tooling';
     case Cleanup = 'cleanup';
 
     public function label(): string
@@ -15,6 +16,7 @@ enum TaskGroup: string
         return match ($this) {
             self::Structure => 'Structure',
             self::Naming => 'Naming',
+            self::Tooling => 'Tooling',
             self::Cleanup => 'Cleanup',
         };
     }
@@ -24,7 +26,8 @@ enum TaskGroup: string
         return match ($this) {
             self::Structure => 1,
             self::Naming => 2,
-            self::Cleanup => 3,
+            self::Tooling => 3,
+            self::Cleanup => 4,
         };
     }
 }

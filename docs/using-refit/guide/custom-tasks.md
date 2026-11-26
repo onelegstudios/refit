@@ -49,7 +49,7 @@ Refit::task(new DropTheWelcomePage);
 | Method | Purpose |
 |---|---|
 | `key()` | Stable identifier, used by `--answers` and in tests |
-| `group()` | `TaskGroup::Structure`, `Naming` or `Cleanup` — sorts the list and prefixes the label |
+| `group()` | `TaskGroup::Structure`, `Naming`, `Tooling` or `Cleanup` — sorts the list and prefixes the label |
 | `label()` | The line shown in the multiselect |
 | `hint()` | The dimmer line under it |
 | `appliesTo()` | Whether this task makes sense for the detected project |
@@ -170,15 +170,16 @@ bring the artwork for it where the run needs a file to draw it from.
 ### Questions
 
 A question is a choice between named options. That is the whole shape on purpose:
-one prompt to render, one string to put in `--answers`, one value to branch on.
+one prompt to render, one value to put in `--answers`, one answer to branch on.
 
 | Argument | What it is |
 |---|---|
 | `key` | Stable identifier, scoped to your task — this is what `--answers` names |
 | `label` | The prompt. It has to stand on its own: several tasks can be asking in a row, and the prompt shows the question rather than the task that asked it |
 | `options` | `answer value => the line shown for it` |
-| `default` | What a run without prompts falls back to. `null` means the first option |
+| `default` | What a run without prompts falls back to, and what a multiselect arrives pre-ticked with. `null` means the first option |
 | `hint` | The dimmer line under the prompt |
+| `multiple` | Several answers rather than one. Defaults to `false` |
 
 A yes/no question is two options with words on them. "Move them too" and "Leave
 them where they are" tell the reader more than "Yes" and "No" ever do, the same
@@ -207,6 +208,41 @@ public function questions(Project $project): array
 Returning no questions at all is how a task that has nothing to ask of *this*
 project stays quiet without a second interface.
 
+### Several answers to one question
+
+Some questions are not a fork. Which developer logins a login page should offer
+is a list: every answer is true at once, and picking the admin does not rule out
+the test user. Asked one account at a time it would be four prompts nobody wants;
+asked as one option per combination it would be fifteen lines to read.
+
+`multiple: true` makes it one prompt with several answers — a multiselect rather
+than a select — and `default` becomes the list it arrives pre-ticked with:
+
+```php
+public function questions(Project $project): array
+{
+    return [new Question(
+        key: 'accounts',
+        label: 'Which developer logins should the login page offer?',
+        options: [
+            'test' => 'The test user the kit seeds — test@example.com',
+            'admin' => 'An admin — admin@example.com',
+        ],
+        default: ['test'],
+        multiple: true,
+    )];
+}
+```
+
+The prompt insists on at least one answer. "None of them" is an answer the task
+multiselect already has — leaving the task unpicked — so a question that could
+resolve to nothing would only be a way to pick a task and then have it do
+nothing.
+
+Everything else is the same question: a single option is still taken as given
+rather than asked, and `--answers` still falls back to the default. What changes
+for your task is which side of `Answers` it reads.
+
 ### Answers
 
 `Answers` is built from the questions your task declared, so every key you asked
@@ -216,7 +252,13 @@ about is present and holds one of the options you offered.
 |---|---|
 | `get('corner')` | The option chosen, or `''` for a key nothing asked about |
 | `is('corner', 'top-right')` | The same comparison, read as a sentence |
+| `many('accounts')` | Every option chosen, as a list |
+| `chose('accounts', 'admin')` | Whether that option was among them |
 | `all()` | Every answer, keyed by question |
+
+Both sides read either way round: `get()` takes the first of a list, and `many()`
+wraps a single answer in a list of one. So a question that grows from one answer
+into several does not break the task reading it.
 
 `answered()` hands back a task rather than mutating this one, so the registered
 instance stays answer-free and one run cannot leak its choices into the next.
@@ -250,10 +292,18 @@ under a key of its own, beside `library`, `icons` and `tasks`:
 php artisan refit --answers='{"tasks":["position-toasts"],"position-toasts":{"corner":"bottom-left"}}'
 ```
 
+A question that takes several answers reads a list there:
+
+```bash
+php artisan refit --answers='{"tasks":["login-links"],"login-links":{"accounts":["test","admin"]}}'
+```
+
 An answer that is missing, or that the question never offered, falls back to the
 question's default rather than failing the run — the same way an unknown icon set
 does. There is nothing to ask again: the options were narrowed to the answers
-that make sense before the question was put.
+that make sense before the question was put. A list drops the values it never
+offered one at a time, so a payload naming two live answers and one typo still
+runs the two.
 
 ## Stages
 

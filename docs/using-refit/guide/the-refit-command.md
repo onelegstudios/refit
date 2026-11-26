@@ -71,15 +71,18 @@ the next:
    up for is still offered — installing it is the first thing the plan does.
 2. **Icons.** Only the sets your chosen library can resolve are offered. See
    [Icons](/docs/using-refit/guide/icons).
-3. **Tasks.** A multiselect of the structural and cleanup tasks that fit the
-   detected kit *and* the chosen target. Only applicable tasks are listed, so you
-   are never asked to pick something that would do nothing. See
+3. **Tasks.** A multiselect of the tasks that fit the detected kit *and* the
+   chosen target. Only applicable tasks are listed, so you are never asked to
+   pick something that would do nothing. See
    [Tasks](/docs/using-refit/guide/tasks).
 
 A task can then ask a follow-up question of its own, and only the tasks you
-picked get to ask. [Move the toast stack](/docs/using-refit/guide/tasks#move-the-toast-stack-to-another-corner)
-is the one that does — it wants to know which corner. The interface behind it is
-in [writing your own task](/docs/using-refit/guide/custom-tasks#asking-a-follow-up-question).
+picked get to ask — which corner [the toasts stack in](/docs/using-refit/guide/tasks#move-the-toast-stack-to-another-corner),
+what a guest gets [where the user menu was](/docs/using-refit/guide/tasks#what-the-way-in-shows),
+which accounts [the login page offers a way in as](/docs/using-refit/guide/tasks#offer-developer-logins-on-the-login-page).
+Most take one answer. One whose options do not rule each other out takes several,
+and comes as a multiselect rather than a select. The interface behind both is in
+[writing your own task](/docs/using-refit/guide/custom-tasks#asking-a-follow-up-question).
 
 ## Plan
 
@@ -139,7 +142,7 @@ php artisan refit --answers='{"icons":"lucide","tasks":["partials-to-components"
 | `library` | `flux` or `sheaf`. Omitted means `flux`, which is what the kit ships. An unregistered key fails the run rather than falling back |
 | `icons` | An icon set your chosen library offers. Anything else falls back to that library's first choice |
 | `tasks` | A list of task keys. Unknown keys are ignored — see [Tasks](/docs/using-refit/guide/tasks) for the list |
-| A task's own key | An object of that task's follow-up answers, for a task that asks any. A missing or unoffered answer falls back to the question's default |
+| A task's own key | An object of that task's follow-up answers, for a task that asks any. A missing or unoffered answer falls back to the question's default; a question that takes several answers reads a list and drops the values it never offered one at a time |
 
 With `--answers` there is no confirmation step (passing answers *is* the
 confirmation) and no offer to remove refit at the end. Combine it with

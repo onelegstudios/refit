@@ -8,6 +8,7 @@ use Onelegstudios\Refit\Tasks\FlattenLayouts;
 use Onelegstudios\Refit\Tasks\IconButtons;
 use Onelegstudios\Refit\Tasks\IconSettings;
 use Onelegstudios\Refit\Tasks\KeepOneLayout;
+use Onelegstudios\Refit\Tasks\LoginLinks;
 use Onelegstudios\Refit\Tasks\MoveAuthViewsOutOfPages;
 use Onelegstudios\Refit\Tasks\MoveComponentsOutOfPages;
 use Onelegstudios\Refit\Tasks\NamespaceComponents;
@@ -66,6 +67,7 @@ return [
         KeepOneLayout::class,
         FlattenLayouts::class,
         OpenLayoutsToGuests::class,
+        LoginLinks::class,
         RemoveFluxProSource::class,
         RemoveFluxOverrides::class,
     ],
