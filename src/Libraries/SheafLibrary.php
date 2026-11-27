@@ -541,7 +541,7 @@ final class SheafLibrary implements Library
         $needed = [];
 
         foreach (Components::closure(ComponentMap::components()) as $component) {
-            if ($this->hasComponent($project, $component)) {
+            if (self::hasComponent($project, $component)) {
                 continue;
             }
 
@@ -554,13 +554,17 @@ final class SheafLibrary implements Library
     /**
      * Whether every part of a component Sheaf records is on disk.
      *
+     * Public because a task can need a component of its own — one the kit never
+     * used, so nothing in the migration brings it — and deciding whether to
+     * install it is this same question asked from outside.
+     *
      * Sheaf installs a component either as a directory of parts or as a single
      * file, depending on how many pieces it has, so the component's own tag counts
      * in either shape. The directory alone does not: an empty or half-emptied one
      * — a reset that removed files and left folders — would otherwise skip the
      * install and leave every view that uses the component unable to render.
      */
-    private function hasComponent(Project $project, string $component): bool
+    public static function hasComponent(Project $project, string $component): bool
     {
         $base = self::COMPONENT_DIRECTORY.'/'.$component;
         $parts = Components::components()[$component] ?? [''];

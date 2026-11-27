@@ -38,6 +38,7 @@ return [
         KeepOneLayout::class,
         FlattenLayouts::class,
         OpenLayoutsToGuests::class,
+        LoginLinks::class,
         RemoveFluxProSource::class,
         RemoveFluxOverrides::class,
     ],

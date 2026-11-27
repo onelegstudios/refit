@@ -20,6 +20,7 @@ use Onelegstudios\Refit\Tasks\FlattenLayouts;
 use Onelegstudios\Refit\Tasks\IconButtons;
 use Onelegstudios\Refit\Tasks\IconSettings;
 use Onelegstudios\Refit\Tasks\KeepOneLayout;
+use Onelegstudios\Refit\Tasks\LoginLinks;
 use Onelegstudios\Refit\Tasks\MoveAuthViewsOutOfPages;
 use Onelegstudios\Refit\Tasks\MoveComponentsOutOfPages;
 use Onelegstudios\Refit\Tasks\NamespaceComponents;
@@ -63,6 +64,7 @@ it('registers the configured tasks', function (): void {
             'single-layout',
             'flatten-layouts',
             'guests-in-app-layouts',
+            'login-links',
             'remove-flux-pro-source',
             'remove-flux-overrides',
         ]);
@@ -1391,4 +1393,261 @@ it('does not offer the override cleanup once only icons are left', function (): 
     [$project] = runTask(new RemoveFluxOverrides, 'livewire');
 
     expect((new RemoveFluxOverrides)->appliesTo($project->targeting(new FluxLibrary)))->toBeFalse();
+});
+
+/**
+ * A copied fixture that looks like `composer require --dev spatie/laravel-login-link`
+ * has already been run, so a plan over it is the view edit and nothing else.
+ *
+ * Fixtures are raw checkouts with no vendor directory, and a test that let the
+ * install run would be a test of Packagist.
+ */
+function loginLinkKit(string $kit): string
+{
+    $root = copyFixture($kit);
+
+    @unlink($root.'/chisel.php');
+
+    $manifest = json_decode((string) file_get_contents($root.'/composer.json'), true);
+    $manifest['require-dev'][LoginLinks::PACKAGE] = '^1.6';
+    file_put_contents($root.'/composer.json', (string) json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+
+    app()->setBasePath($root);
+
+    return $root;
+}
+
+function loginPage(string $root): string
+{
+    return (string) file_get_contents($root.'/resources/views/pages/auth/login.blade.php');
+}
+
+it('offers developer logins to every kit that has a login form of its own', function (string $kit): void {
+    // The WorkOS variations have no login view at all: the kit redirects to
+    // AuthKit, and the password never reaches the application.
+    expect((new LoginLinks)->appliesTo(detectFixture($kit)))->toBe(! str_contains($kit, 'workos'));
+})->with(starterKits());
+
+it('installs the package before it writes a view that points at it', function (): void {
+    $plan = new Plan;
+
+    (new LoginLinks(['test', 'admin']))->contribute($plan, detectFixture('livewire'), new Report);
+
+    expect($plan->describe())
+        ->toContain('Dependencies')
+        ->toContain('  run    composer require spatie/laravel-login-link --dev --no-interaction (Installing spatie/laravel-login-link)')
+        ->toContain('  edit   the login view — 2 developer logins under the form, for local only');
+});
+
+it('leaves the install out of a project that already has the package', function (): void {
+    $root = loginLinkKit('livewire');
+    $plan = new Plan;
+
+    (new LoginLinks)->contribute($plan, (new ProjectDetector)->detect($root), new Report);
+
+    expect(implode("\n", $plan->describe()))
+        ->not->toContain('composer require')
+        ->toContain('1 developer login under the form');
+});
+
+it('writes a working link for every account it offers', function (): void {
+    $root = loginLinkKit('livewire');
+    $project = (new ProjectDetector)->detect($root);
+    $plan = new Plan;
+    $report = new Report;
+
+    (new LoginLinks(array_keys(LoginLinks::ACCOUNTS)))->contribute($plan, $project, $report);
+    (new Applier)->apply($plan, $project, $report);
+
+    expect(loginPage($root))
+        ->toContain('<x-login-link email="test@example.com" :user-attributes="[\'name\' => \'Test User\']" label="Test User" />')
+        ->toContain('<x-login-link email="admin@example.com" :user-attributes="[\'name\' => \'Admin User\']" label="Admin User" />')
+        ->toContain('<x-login-link label="First user" />')
+        // The new user is a different one every render, which is the only way to
+        // land on an account with nothing behind it twice in a row — down to the
+        // name, which is the factory's to invent.
+        ->toContain('<x-login-link :email="\'new-\'.Str::random(8).\'@example.com\'" label="New user" />')
+        // And the unverified one carries no address at all, so verifying it does
+        // not turn the next click into a unique constraint.
+        ->toContain('<x-login-link :user-attributes="[\'name\' => \'Unverified User\', \'email_verified_at\' => null]" label="Unverified user" />');
+});
+
+it('wraps the logins in Flux\'s own card on a project staying on Flux', function (): void {
+    $root = loginLinkKit('livewire');
+    $project = (new ProjectDetector)->detect($root)->targeting(new FluxLibrary);
+    $plan = new Plan;
+    $report = new Report;
+
+    (new LoginLinks)->contribute($plan, $project, $report);
+    (new Applier)->apply($plan, $project, $report);
+
+    // `flux:card` is in the free edition, so a kit that has Flux has the card —
+    // there is nothing for the plan to install.
+    expect(loginPage($root))->toContain('<flux:card variant="outline" class="rounded-lg p-4 text-sm text-center">')
+        ->toContain('<flux:heading size="base" class="mb-2">Log in as</flux:heading>')
+        ->toContain('</flux:card>')
+        ->and(implode("\n", $plan->describe()))->not->toContain('sheaf:install');
+});
+
+it('wraps them in Sheaf\'s card on a project heading for Sheaf', function (): void {
+    $root = loginLinkKit('livewire');
+
+    // Stand in for the install below, so this test is about the spelling.
+    @mkdir($root.'/'.SheafLibrary::COMPONENT_DIRECTORY.'/card', 0755, true);
+    touch($root.'/'.SheafLibrary::COMPONENT_DIRECTORY.'/card/index.blade.php');
+
+    $project = (new ProjectDetector)->detect($root)->targeting(new SheafLibrary);
+    $plan = new Plan;
+    $report = new Report;
+
+    (new LoginLinks)->contribute($plan, $project, $report);
+    (new Applier)->apply($plan, $project, $report);
+
+    // Written as Sheaf's rather than left to the migration: that runs in this
+    // same pass, and ahead of this, so a flux: tag written here would survive it.
+    expect(loginPage($root))->toContain('<x-ui.card class="rounded-lg p-4 text-sm text-center">')
+        ->toContain('</x-ui.card>')
+        // Including the heading: Sheaf puts the same word one step further up its
+        // own scale, so `lg` there is the size Flux calls `xl`.
+        ->toContain('<x-ui.heading size="xs" class="mb-2">Log in as</x-ui.heading>')
+        // The rest of the view is still full of flux: tags — the migration that
+        // renames those is not part of this plan. Only the two refit writes here
+        // have to arrive in Sheaf's spelling.
+        ->not->toContain('flux:card')
+        ->not->toContain('flux:heading');
+});
+
+it('brings Sheaf the card the kit never gave it a reason to install', function (): void {
+    $plan = new Plan;
+
+    // The fixture has neither the package nor the component, so both installs are
+    // planned — and both in the stage that runs before anything is written.
+    (new LoginLinks)->contribute($plan, detectFixture('livewire')->targeting(new SheafLibrary), new Report);
+
+    expect($plan->describe())
+        ->toContain('  run    php artisan sheaf:install card --no-interaction (Installing Sheaf\'s "card")')
+        ->toContain('  run    composer require spatie/laravel-login-link --dev --no-interaction (Installing spatie/laravel-login-link)');
+
+    $stages = array_keys($plan->grouped());
+
+    expect(array_slice($stages, 0, 1))->toBe(['Dependencies']);
+});
+
+it('offers an unverified login where something holds a user to their address', function (): void {
+    $accounts = fn (string $kit): array => array_keys(
+        (new LoginLinks)->questions(detectFixture($kit))[0]->options,
+    );
+
+    // The kit's own User model implements MustVerifyEmail and its routes are
+    // guarded with `verified`, so an unverified login lands on the verify screen.
+    expect($accounts('livewire'))->toContain('unverified')
+        // The WorkOS variations ship that import commented out above a class that
+        // does not implement it, which is a project the middleware waves through.
+        ->and($accounts('livewire-workos'))->not->toContain('unverified')
+        ->and($accounts('livewire-workos'))->toContain('test');
+});
+
+it('writes the unverified link only where it was asked for', function (): void {
+    $root = loginLinkKit('livewire');
+    $project = (new ProjectDetector)->detect($root);
+    $plan = new Plan;
+    $report = new Report;
+
+    (new LoginLinks(['test']))->contribute($plan, $project, $report);
+    (new Applier)->apply($plan, $project, $report);
+
+    expect(loginPage($root))->not->toContain('email_verified_at');
+});
+
+it('names the accounts it creates, rather than leaving them to the factory', function (): void {
+    $root = loginLinkKit('livewire');
+    $project = (new ProjectDetector)->detect($root);
+    $plan = new Plan;
+    $report = new Report;
+
+    (new LoginLinks(['test', 'admin', 'new']))->contribute($plan, $project, $report);
+    (new Applier)->apply($plan, $project, $report);
+
+    // The kit's UserFactory fills the name with fake()->name(), so an account
+    // the package creates is nameless unless the link says otherwise — and the
+    // test user's name is spelled exactly as DatabaseSeeder writes it, because
+    // the package looks an account up by every attribute it is given.
+    expect($project->get('database/seeders/DatabaseSeeder.php'))->toContain("'name' => 'Test User'")
+        ->and(loginPage($root))
+        ->toContain("'name' => 'Test User'")
+        ->toContain("'name' => 'Admin User'")
+        // Not the one standing in for a signup, though: a new user arrives with
+        // a name of their own, and the factory's is closer to that than ours.
+        ->not->toContain("'name' => 'New User'");
+});
+
+it('has nothing left to offer once the login page offers logins', function (): void {
+    $root = loginLinkKit('livewire');
+    $project = (new ProjectDetector)->detect($root);
+    $plan = new Plan;
+    $report = new Report;
+
+    (new LoginLinks)->contribute($plan, $project, $report);
+    (new Applier)->apply($plan, $project, $report);
+
+    expect((new LoginLinks)->appliesTo($project))->toBeFalse();
+});
+
+it('says so rather than installing a package it would use nowhere', function (): void {
+    $plan = new Plan;
+    $report = new Report;
+
+    (new LoginLinks([]))->contribute($plan, detectFixture('livewire'), $report);
+
+    expect($plan->isEmpty())->toBeTrue()
+        ->and(implode("\n", $report->warnings()))->toContain('none of the accounts');
+});
+
+it('asks which developer logins to offer, and writes the ones picked', function (): void {
+    $root = loginLinkKit('livewire');
+
+    $this->artisan('refit', ['--force' => true])
+        ->expectsQuestion('Which component library should this project end up on?', 'flux')
+        ->expectsQuestion('The kit ships Heroicons with a few Lucide icons vendored in. What would you like?', 'keep')
+        ->expectsQuestion('Which tasks would you like to run?', ['login-links'])
+        ->expectsQuestion('Which developer logins should the login page offer?', ['admin', 'new'])
+        ->expectsQuestion('Apply these changes?', true)
+        ->expectsQuestion('Remove refit from this project now?', false)
+        ->assertSuccessful();
+
+    expect(loginPage($root))
+        ->toContain('email="admin@example.com"')
+        ->toContain('Str::random(8)')
+        ->not->toContain('email="test@example.com"');
+});
+
+it('reads the accounts out of --answers under the task\'s own key', function (): void {
+    $root = loginLinkKit('livewire');
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'tasks' => ['login-links'],
+            'login-links' => ['accounts' => ['test', 'first']],
+        ]),
+    ])->assertSuccessful();
+
+    expect(loginPage($root))
+        ->toContain('email="test@example.com"')
+        ->toContain('<x-login-link label="First user" />')
+        ->not->toContain('admin@example.com');
+});
+
+it('falls back to the one account the kit seeds when --answers names none it knows', function (): void {
+    $root = loginLinkKit('livewire');
+
+    $this->artisan('refit', [
+        '--force' => true,
+        '--answers' => json_encode([
+            'tasks' => ['login-links'],
+            'login-links' => ['accounts' => ['nobody']],
+        ]),
+    ])->assertSuccessful();
+
+    expect(loginPage($root))->toContain('email="test@example.com"');
 });

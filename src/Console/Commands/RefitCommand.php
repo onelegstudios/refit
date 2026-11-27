@@ -22,6 +22,7 @@ use Onelegstudios\Refit\Plan\Stage;
 use Onelegstudios\Refit\Project\Project;
 use Onelegstudios\Refit\Project\ProjectDetector;
 use Onelegstudios\Refit\Questions\Answers;
+use Onelegstudios\Refit\Questions\Question;
 use Onelegstudios\Refit\Refit;
 use Onelegstudios\Refit\Support\Git;
 
@@ -354,7 +355,8 @@ class RefitCommand extends Command
      * own, beside `library`, `icons` and `tasks`, so one payload drives the whole
      * run. An answer that is missing or not on offer falls back to the question's
      * default, which is also what a question with a single option is given
-     * without asking.
+     * without asking. A question that takes several answers reads a list there
+     * and drops the values it never offered one at a time.
      *
      * @param  array<string, mixed>|null  $answers
      */
@@ -376,17 +378,54 @@ class RefitCommand extends Command
         $values = [];
 
         foreach ($questions as $question) {
-            $values[$question->key] = $answers !== null || count($question->options) < 2
-                ? $question->resolve($given[$question->key] ?? null)
-                : (string) select(
-                    label: $question->label,
-                    options: $question->options,
-                    default: $question->default(),
-                    hint: $question->hint,
-                );
+            $values[$question->key] = $this->answer(
+                $question,
+                $given[$question->key] ?? null,
+                unprompted: $answers !== null,
+            );
         }
 
         return $task->answered(new Answers($values));
+    }
+
+    /**
+     * One question's answer — asked, or resolved without asking.
+     *
+     * A question with a single option is not put, in either shape. There is
+     * nothing to choose between, so its one answer is taken as given: a select
+     * with one line is a prompt with no decision in it, and a multiselect that
+     * insists on an answer can only be answered the one way.
+     *
+     * The multiselect insists, rather than letting an empty list through, because
+     * the task has already been picked by this point. "None of them" is an answer
+     * the multiselect question above it already has — leaving the task unchosen.
+     *
+     * @return string|list<string>
+     */
+    private function answer(Question $question, mixed $given, bool $unprompted): string|array
+    {
+        $decided = $unprompted || count($question->options) < 2;
+
+        if ($question->multiple) {
+            return $decided
+                ? $question->resolveMany($given)
+                : array_values(array_filter(multiselect(
+                    label: $question->label,
+                    options: $question->options,
+                    default: $question->defaults(),
+                    required: true,
+                    hint: $question->hint,
+                ), 'is_string'));
+        }
+
+        return $decided
+            ? $question->resolve($given)
+            : (string) select(
+                label: $question->label,
+                options: $question->options,
+                default: $question->default(),
+                hint: $question->hint,
+            );
     }
 
     /**

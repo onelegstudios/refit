@@ -70,6 +70,9 @@ A task that also implements `Contracts\Asks` gets questions of its own.
 `RefitCommand::followUp()` puts them — only for the tasks the user picked, and
 only once the target and the icon set are settled — resolves each one against
 `--answers` or a prompt, and hands the task the `Answers` through `answered()`.
+A `Question` is a select unless it says `multiple`, which makes it a multiselect
+that insists on an answer; either way the command resolves it to a value the task
+reads off `Answers`, as one answer or as a list.
 That returns a `Task` rather than mutating the registered instance, so the
 registry stays answer-free and the plan is still a pure function of the project
 plus the answers.
