@@ -67,6 +67,10 @@
     "starter-kits": [
       "@php bin/download-starter-kits.php"
     ],
+    "starter-kits:install": [
+      "Composer\\Config::disableProcessTimeout",
+      "@php bin/install-starter-kits.php"
+    ],
     "icons:run": [
       "@php bin/download-icons.php"
     ],

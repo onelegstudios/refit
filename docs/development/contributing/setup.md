@@ -25,6 +25,7 @@ full suite passes without either installed.
 | `composer test:unit` | Pest, in parallel |
 | `composer test:types` | Type coverage, 100% required |
 | `composer starter-kits` | Download every `laravel new` Livewire variation to `tests/fixtures/starter-kits` |
+| `composer starter-kits:install` | Install every variation as a real application next to this checkout |
 | `composer icons:run` / `composer icons:check` | Refresh the committed Lucide bundle, or report drift |
 | `composer flux:run` / `composer flux:check` | Re-record the icons Flux renders internally, or report drift |
 | `composer sheaf:run` / `composer sheaf:check` | Re-record the components Sheaf ships, or report drift |
@@ -36,12 +37,70 @@ Run `composer starter-kits` early. Tests that exercise a real starter kit skip
 themselves until the fixtures are on disk, so a suite that looks green may not
 have run the half you are changing.
 
+## Playground applications
+
+The fixtures are repository sources: no `vendor`, no `.env`, no built assets.
+For a run against something that actually boots, install the variations as
+applications instead:
+
+```bash
+composer starter-kits:install
+```
+
+That drives the real `laravel new` once per variation, with the flags the
+installer would otherwise have asked for, and leaves the applications in the
+directory above this checkout:
+
+```
+code/
+├── refit/
+├── refit-livewire/
+├── refit-livewire-class-components/
+├── refit-livewire-teams/
+├── refit-livewire-workos/
+└── refit-livewire-workos-teams/
+```
+
+The variation names are the fixture names, so `--only` takes the same list the
+downloader does; the directories are prefixed, since they land next to whatever
+else you keep there.
+
+Each one gets this checkout wired in as a Composer path repository, which
+Composer symlinks, so refit there *is* the working copy — edit `src`, run the
+command again, no reinstall:
+
+```bash
+cd ../refit-livewire
+php artisan refit
+```
+
+Refit is one-way scaffolding, so an application is spent once a run has been
+applied. Throw it away and install that one again:
+
+```bash
+rm -rf ../refit-livewire
+composer starter-kits:install -- --only=livewire
+```
+
+| Option | What it does |
+|---|---|
+| `--list` | The variations, and the `laravel new` command behind each |
+| `--only=a,b` | Install a subset |
+| `--dest=path` | Install somewhere other than the directory above this checkout |
+| `--force` | Hand `--force` to the installer, which installs over an existing directory |
+| `--no-link` | Leave the application alone instead of requiring refit into it |
+| `--no-node` | Skip installing and building NPM dependencies |
+| `--phpunit`, `--git`, `--database=name` | Passed straight through to the installer |
+
+The WorkOS variations install without credentials. Their pages render, but
+signing in needs `WORKOS_*` values in the application's `.env`.
+
 ## The workbench
 
 `composer serve` boots a Testbench application with refit registered, which is
 the quickest way to run the command against something. The workbench is *not* a
-starter kit, though — for a realistic run, point a copied fixture at it or use a
-throwaway `laravel new` project.
+starter kit, though — for a realistic run, use one of the playground
+applications above.
 
 The documentation you are reading is served from that same workbench: Laradocs is
 a dev dependency, and the workbench provider points it at this repository's
@@ -86,7 +145,7 @@ src/
 ├── Tasks/        The tasks refit ships
 ├── Facades/      The Refit facade
 └── Refit.php     The task registry
-bin/              Maintenance scripts (fixtures, icons, Flux internals)
+bin/              Maintenance scripts (fixtures, playgrounds, icons, Flux internals)
 resources/        Bundled Lucide artwork, recorded Flux internals
 stubs/            The Flux icon override template
 docs/             This documentation
